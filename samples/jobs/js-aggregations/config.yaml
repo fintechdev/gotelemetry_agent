@@ -1,0 +1,12 @@
+listen: ":8000"
+data:
+    path: /tmp/agent.sqlite3
+    ttl: 3600
+jobs:
+  - config:
+      flow_tag: test_flow
+      path: ./demo.js
+      refresh: 100
+      variant: value
+      template:
+        value: 123
