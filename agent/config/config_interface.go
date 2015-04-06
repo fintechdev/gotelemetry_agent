@@ -46,11 +46,13 @@ type AccountConfig struct {
 	APIKey             string     `yaml:"api_key"`
 	APIToken           string     `yaml:"api_token"`
 	Data               DataConfig `yaml:"data"`
+	Listen             string     `yaml:"listen"`
 	SubmissionInterval float64    `yaml:"submission_interval"`
 	Jobs               []Job      `yaml:"jobs"`
 }
 
 type ConfigInterface interface {
+	ListenAddress() string
 	Accounts() []AccountConfig
 	DataConfig() DataConfig
 }

@@ -8,11 +8,13 @@ import (
 	"io"
 	"log"
 	"os"
+	"sort"
 	"strings"
 )
 
 func printFunctionList() {
 	var groups = map[string]map[string]map[string]interface{}{}
+
 	for index, schema := range schemas.RawSchemas {
 		var group map[string]map[string]interface{}
 
@@ -30,13 +32,47 @@ func printFunctionList() {
 		group[index] = schema
 	}
 
-	for groupName, group := range groups {
-		writer := tablewriter.NewWriter(os.Stdout)
+	groupNames := make([]string, len(groups))
+	index := 0
+
+	for groupName, _ := range groups {
+		groupNames[index] = groupName
+		index += 1
+	}
+
+	sort.Strings(groupNames)
+
+	for _, groupName := range groupNames {
+		group := groups[groupName]
 
 		fmt.Printf("\n%s\n---------------------------------\n\n", groupName)
 
-		for index, schema := range group {
-			writer.Append([]string{index, schema["description"].(string)})
+		functionNames := make([]string, len(group))
+		index := 0
+
+		for functionName, _ := range group {
+			functionNames[index] = functionName
+			index += 1
+		}
+
+		sort.Strings(functionNames)
+
+		writer := tablewriter.NewWriter(os.Stdout)
+
+		writer.SetColWidth(60)
+		writer.SetBorder(false)
+		writer.SetRowSeparator("")
+		writer.SetRowLine(true)
+		writer.SetColumnSeparator("")
+		writer.SetCenterSeparator("")
+
+		for _, functionName := range functionNames {
+			schema := group[functionName]
+
+			writer.Append([]string{
+				fmt.Sprintf("%10s", functionName),
+				fmt.Sprintf("%60s", schema["description"].(string)),
+			})
 		}
 
 		writer.Render()
@@ -51,6 +87,8 @@ func printArgList(schema map[string]interface{}, output io.Writer) {
 	}
 
 	writer := tablewriter.NewWriter(output)
+
+	writer.SetColWidth(60)
 
 	requireds, ok := schema["required"].([]interface{})
 
@@ -67,16 +105,26 @@ func printArgList(schema map[string]interface{}, output io.Writer) {
 	if len(properties) == 0 {
 		fmt.Fprintln(output, "This function has no parameters.")
 	} else {
-		writer.SetHeader([]string{"Required", "Name", "Type", "Description"})
+		writer.SetHeader([]string{"Req", "Name", "Type", "Description"})
 	}
 
-	for name, data := range properties {
-		data := data.(map[string]interface{})
+	names := make([]string, len(properties))
+	index := 0
+
+	for name, _ := range properties {
+		names[index] = name
+		index += 1
+	}
+
+	sort.Strings(names)
+
+	for _, name := range names {
+		data := properties[name].(map[string]interface{})
 		required := ""
 
 		for _, property := range requireds {
 			if property == name {
-				required = "*"
+				required = "Yes"
 				break
 			}
 		}
@@ -85,6 +133,20 @@ func printArgList(schema map[string]interface{}, output io.Writer) {
 
 		if !ok {
 			description = "No description available"
+		}
+
+		if enum, ok := data["enum"].([]interface{}); ok {
+			description += " (valid values: "
+
+			for index, value := range enum {
+				description += fmt.Sprintf("`%s`", value)
+
+				if index < len(enum)-1 {
+					description += ", "
+				}
+			}
+
+			description += ")"
 		}
 
 		typeName, ok := data["type"]
@@ -121,7 +183,12 @@ func printArgList(schema map[string]interface{}, output io.Writer) {
 			}
 		}
 
-		writer.Append([]string{required, name, fmt.Sprintf("%v", typeName), description})
+		writer.Append([]string{
+			required,
+			name,
+			fmt.Sprintf("%v", typeName),
+			fmt.Sprintf("%60s", description),
+		})
 	}
 
 	writer.Render()
@@ -151,6 +218,8 @@ func printFunctionHelp(name string) {
 
 			writer := tablewriter.NewWriter(os.Stdout)
 
+			writer.SetColWidth(60)
+
 			writer.SetHeader([]string{"Name", "Type", "Description"})
 
 			props := returnInfo["properties"].(map[string]interface{})
@@ -158,7 +227,11 @@ func printFunctionHelp(name string) {
 			for index, prop := range props {
 				propData := prop.(map[string]interface{})
 
-				writer.Append([]string{index, fmt.Sprintf("%v", propData["type"]), fmt.Sprintf("%v", propData["description"])})
+				writer.Append([]string{
+					fmt.Sprintf("%10s", index),
+					fmt.Sprintf("%13v", propData["type"]),
+					fmt.Sprintf("%60v", propData["description"]),
+				})
 			}
 
 			writer.Render()

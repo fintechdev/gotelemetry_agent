@@ -1,31 +1,23 @@
 {
-  "id": "/compute",
+  "id": "/anomaly",
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "$compute",
+  "title": "$anomaly",
   "group": "Aggregations and Timeseries",
-  "description": "Computes an operation over the values of certain data points in a series",
+  "description": "Determines whether a value is more than three sigmas away from the mean value of certain data points in a series",
   "return": {
-    "type": "number",
-    "description": "The result of the requested operation"
+    "type": "bool",
+    "description": "`true` if the value is anomalous"
   },
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "op": {
-      "type": "string",
-      "description": "The operation to be computed",
-      "enum": [
-        "sum",
-        "avg",
-        "max",
-        "min",
-        "count",
-        "stddev"
-      ]
-    },
     "series": {
       "type": "string",
       "description": "The name of the series that contains the data points to be analyzed"
+    },
+    "value": {
+      "type": "number",
+      "description": "The value to check"
     },
     "period": {
       "oneOf": [
@@ -45,12 +37,12 @@
         },
         {
           "type": "number",
-          "description": "The number of seconds before now from which to compute the function"
+          "description": "The number of seconds from now from which to compute the function"
         }
       ]
     }
   },
   "required": [
-    "op", "series"
+    "series", "value"
   ]
 }

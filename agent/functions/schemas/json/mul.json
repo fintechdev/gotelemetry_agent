@@ -1,0 +1,26 @@
+{
+  "id": "/mul",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "$mul",
+  "group": "Math Functions",
+  "return": {
+    "type": "number",
+    "description": "The result of the multiplication"
+  },
+  "description": "Multiplies two values together",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "left": {
+      "type": "number",
+      "description": "The left operand"
+    },
+    "right": {
+      "type": "number",
+      "description": "The right operand"
+    }
+  },
+  "required": [
+    "left", "right"
+  ]
+}

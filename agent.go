@@ -7,6 +7,7 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/functions"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
+	"github.com/telemetryapp/gotelemetry_agent/agent/server"
 	"io/ioutil"
 	"log"
 	"os"
@@ -90,6 +91,11 @@ func run() {
 	} else if config.CLIConfig.IsNotifying {
 		agent.ProcessNotificationRequest(configFile, errorChannel, completionChannel, config.CLIConfig.NotificationChannel, config.CLIConfig.Notification)
 	} else {
+
+		if configFile.ListenAddress() != "" {
+			server.Init(configFile.ListenAddress(), errorChannel)
+		}
+
 		_, err := job.NewJobManager(configFile, errorChannel, completionChannel)
 
 		if err != nil {

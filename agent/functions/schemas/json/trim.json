@@ -1,0 +1,31 @@
+{
+  "id": "/trim",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "$trim",
+  "group": "Aggregations and Timeseries",
+  "description": "Trims values from a data series by only keeping at most `keep` data points, or by deleting every data point that predates `since`",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "series": {
+      "type": "string",
+      "description": "The name of the series to which the value is to be appended"
+    },
+    "keep": {
+      "type": "integer",
+      "description": "Keep only the last `keep` data points"
+    },
+    "since": {
+      "type": "integer",
+      "description": "Keep only data points recorded at or after `since`"
+    }
+  },
+  "oneOf": [
+    {
+      "required": ["series", "keep"]
+    },
+    {
+      "required": ["series", "since"]
+    }
+  ]
+}

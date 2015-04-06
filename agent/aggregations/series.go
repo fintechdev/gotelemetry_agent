@@ -3,6 +3,7 @@ package aggregations
 import (
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"time"
 )
@@ -10,11 +11,12 @@ import (
 type FunctionType int
 
 const (
-	Sum   FunctionType = iota
-	Avg   FunctionType = iota
-	Min   FunctionType = iota
-	Max   FunctionType = iota
-	Count FunctionType = iota
+	Sum    FunctionType = iota
+	Avg    FunctionType = iota
+	Min    FunctionType = iota
+	Max    FunctionType = iota
+	Count  FunctionType = iota
+	StdDev FunctionType = iota
 )
 
 type Series struct {
@@ -93,19 +95,28 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 
 	switch functionType {
 	case Sum:
-		operation = "TOTAL"
+		operation = "TOTAL(value)"
 
 	case Avg:
-		operation = "AVG"
+		operation = "AVG(value)"
 
 	case Min:
-		operation = "MIN"
+		operation = "MIN(value)"
 
 	case Max:
-		operation = "MAX"
+		operation = "MAX(value)"
 
 	case Count:
-		operation = "COUNT"
+		operation = "COUNT(*)"
+
+	case StdDev:
+		avg, err := s.Compute(Avg, start, end)
+
+		if err != nil {
+			return 0.0, err
+		}
+
+		operation = fmt.Sprintf("AVG((value - %f) * (value - %f))", avg, avg)
 
 	default:
 		return 0.0, errors.New(fmt.Sprintf("Unknown operation %d", functionType))
@@ -121,13 +132,17 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 		*end = time.Now()
 	}
 
-	row, err := s.fetchRow("SELECT CAST("+operation+"(value) AS FLOAT) AS result FROM ?? WHERE ts BETWEEN ? AND ?", *start, *end)
+	row, err := s.fetchRow("SELECT CAST("+operation+" AS FLOAT) AS result FROM ?? WHERE ts BETWEEN ? AND ?", *start, *end)
 
 	if err != nil {
 		return 0.0, err
 	}
 
-	return row["result"].(float64), nil
+	if functionType == StdDev {
+		return math.Sqrt(row["result"].(float64)), nil
+	} else {
+		return row["result"].(float64), nil
+	}
 }
 
 func (s *Series) Aggregate(functionType FunctionType, interval, count int) (interface{}, error) {
@@ -190,4 +205,12 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int) (inte
 	}
 
 	return interface{}(output), nil
+}
+
+func (s *Series) TrimSince(since time.Time) error {
+	return s.exec("DELETE FROM ?? WHERE ts < ?", since.Unix())
+}
+
+func (s *Series) TrimCount(count int) error {
+	return s.exec("DELETE FROM ?? WHERE rowid <= (SELECT rowid FROM ?? ORDER BY ts DESC LIMIT 1 OFFSET ?)", count)
 }

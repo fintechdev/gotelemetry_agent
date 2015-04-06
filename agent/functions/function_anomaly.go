@@ -1,51 +1,23 @@
 package functions
 
 import (
-	"errors"
-	"fmt"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/functions/schemas"
+	"math"
 	"time"
 )
 
 func init() {
-	schemas.LoadSchema("compute")
-	functionHandlers["$compute"] = computeHandler
+	schemas.LoadSchema("anomaly")
+	functionHandlers["$anomaly"] = anomalyHandler
 }
 
-func computeHandler(context *aggregations.Context, input interface{}) (interface{}, error) {
-	if err := validatePayload("$compute", input); err != nil {
+func anomalyHandler(context *aggregations.Context, input interface{}) (interface{}, error) {
+	if err := validatePayload("$anomaly", input); err != nil {
 		return nil, err
 	}
 
 	data := input.(map[string]interface{})
-
-	var op aggregations.FunctionType
-
-	switch data["op"].(string) {
-	case "sum":
-		op = aggregations.Sum
-
-	case "avg":
-		op = aggregations.Avg
-
-	case "max":
-		op = aggregations.Max
-
-	case "min":
-		op = aggregations.Min
-
-	case "count":
-		op = aggregations.Count
-
-	case "stddev":
-		op = aggregations.StdDev
-
-	default:
-		return nil, errors.New(fmt.Sprintf("Unknown operation %s", data["op"].(string)))
-	}
-
-	seriesName := data["series"].(string)
 
 	var start, end *time.Time
 
@@ -69,11 +41,27 @@ func computeHandler(context *aggregations.Context, input interface{}) (interface
 		}
 	}
 
+	value := data["value"].(float64)
+
+	seriesName := data["series"].(string)
+
 	series, err := aggregations.GetSeries(context, seriesName)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return series.Compute(op, start, end)
+	stdDev, err := series.Compute(aggregations.StdDev, start, end)
+
+	if err != nil {
+		return nil, err
+	}
+
+	mean, err := series.Compute(aggregations.Avg, start, end)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return math.Abs(value-mean) > 3*stdDev, nil
 }

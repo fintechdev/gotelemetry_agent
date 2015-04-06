@@ -43,3 +43,7 @@ func (c *ConfigFile) Accounts() []AccountConfig {
 func (c *ConfigFile) DataConfig() DataConfig {
 	return c.Data
 }
+
+func (c *ConfigFile) ListenAddress() string {
+	return c.AllAccounts[0].Listen
+}

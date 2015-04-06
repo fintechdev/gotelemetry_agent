@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "$last",
   "group": "Aggregations and Timeseries",
-  "description": "Removes the last value from a data series",
+  "description": "Retrieves the last value from a data series",
   "return": {
     "type": "object",
     "description": "The last value in the series",
