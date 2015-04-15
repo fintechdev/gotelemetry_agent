@@ -80,14 +80,22 @@ func (c *Context) Begin() error {
 	return c.conn.Begin()
 }
 
-func (c *Context) Close() {
+func (c *Context) Commit() error {
+	return c.conn.Commit()
+}
+
+func (c *Context) Close() error {
 	if c.inTransaction {
 		if c.hasError {
-			c.conn.Rollback()
+			if err := c.conn.Rollback(); err != nil {
+				return err
+			}
 		} else {
-			c.conn.Commit()
+			if err := c.conn.Commit(); err != nil {
+				return err
+			}
 		}
 	}
 
-	c.conn.Close()
+	return c.conn.Close()
 }

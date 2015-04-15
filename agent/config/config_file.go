@@ -9,6 +9,7 @@ import (
 
 type ConfigFile struct {
 	Data        DataConfig
+	Graphite    GraphiteConfig
 	AllAccounts []AccountConfig
 }
 
@@ -19,6 +20,7 @@ func NewConfigFile() (*ConfigFile, error) {
 		if CLIConfig.IsPiping || CLIConfig.IsNotifying {
 			return &ConfigFile{
 				Data:        DataConfig{},
+				Graphite:    GraphiteConfig{},
 				AllAccounts: []AccountConfig{AccountConfig{}},
 			}, nil
 		}
@@ -32,6 +34,7 @@ func NewConfigFile() (*ConfigFile, error) {
 
 	return &ConfigFile{
 		Data:        result.Data,
+		Graphite:    result.Graphite,
 		AllAccounts: []AccountConfig{*result},
 	}, err
 }
@@ -42,6 +45,10 @@ func (c *ConfigFile) Accounts() []AccountConfig {
 
 func (c *ConfigFile) DataConfig() DataConfig {
 	return c.Data
+}
+
+func (c *ConfigFile) GraphiteConfig() GraphiteConfig {
+	return c.Graphite
 }
 
 func (c *ConfigFile) ListenAddress() string {

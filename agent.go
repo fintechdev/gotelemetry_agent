@@ -6,6 +6,7 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/functions"
+	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/server"
 	"io/ioutil"
@@ -74,9 +75,11 @@ Done:
 }
 
 func run() {
-	err := aggregations.Init(configFile, errorChannel)
+	if err := aggregations.Init(configFile, errorChannel); err != nil {
+		log.Fatalf("Initialization error: %s", err)
+	}
 
-	if err != nil {
+	if err := graphite.Init(configFile, errorChannel); err != nil {
 		log.Fatalf("Initialization error: %s", err)
 	}
 

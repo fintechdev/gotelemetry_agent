@@ -42,19 +42,26 @@ type DataConfig struct {
 	DefaultTTL   *int    `yaml:"ttl"`
 }
 
+type GraphiteConfig struct {
+	TCPListenPort string `yaml:"listen_tcp"`
+	UDPListenPort string `yaml:"listen_udp"`
+}
+
 type AccountConfig struct {
-	APIKey             string     `yaml:"api_key"`
-	APIToken           string     `yaml:"api_token"`
-	Data               DataConfig `yaml:"data"`
-	Listen             string     `yaml:"listen"`
-	SubmissionInterval float64    `yaml:"submission_interval"`
-	Jobs               []Job      `yaml:"jobs"`
+	APIKey             string         `yaml:"api_key"`
+	APIToken           string         `yaml:"api_token"`
+	Graphite           GraphiteConfig `yaml:"graphite"`
+	Data               DataConfig     `yaml:"data"`
+	Listen             string         `yaml:"listen"`
+	SubmissionInterval float64        `yaml:"submission_interval"`
+	Jobs               []Job          `yaml:"jobs"`
 }
 
 type ConfigInterface interface {
 	ListenAddress() string
 	Accounts() []AccountConfig
 	DataConfig() DataConfig
+	GraphiteConfig() GraphiteConfig
 }
 
 func (a AccountConfig) GetAPIKey() (string, error) {
