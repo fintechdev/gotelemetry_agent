@@ -4,7 +4,7 @@
   "title": "$neq",
   "group": "Comparison and Flow Control",
   "return": {
-    "type": "number",
+    "type": "boolean",
     "description": "The result of the operation"
   },
   "description": "Compares two values for inequality",

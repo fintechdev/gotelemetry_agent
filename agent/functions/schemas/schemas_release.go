@@ -1,4 +1,4 @@
 // +build release
-//go:generate go-bindata -pkg=schemas -debug=false -prefix=schemas ./json
+//go:generate go-bindata -pkg=schemas ./json
 
 package schemas

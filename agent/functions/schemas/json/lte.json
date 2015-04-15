@@ -4,7 +4,7 @@
   "title": "$lte",
   "group": "Comparison and Flow Control",
   "return": {
-    "type": "number",
+    "type": "boolean",
     "description": "The result of the operation"
   },
   "description": "Compares two values and returns true if `left` is less than or equal to `right`",

@@ -5,7 +5,7 @@
   "group": "Aggregations and Timeseries",
   "description": "Determines whether a value is more than three sigmas away from the mean value of certain data points in a series",
   "return": {
-    "type": "bool",
+    "type": "boolean",
     "description": "`true` if the value is anomalous"
   },
   "type": "object",

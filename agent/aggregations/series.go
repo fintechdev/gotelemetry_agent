@@ -26,7 +26,7 @@ type Series struct {
 
 var cachedSeries = map[string]*Series{}
 
-var seriesNameRegex = regexp.MustCompile("^[A-Za-z_][A-Za-z0-9_]*$")
+var seriesNameRegex = regexp.MustCompile("^[A-Za-z][A-Za-z0-9_]*$")
 
 func GetSeries(context *Context, name string) (*Series, error) {
 	if err := validateSeriesName(name); err != nil {

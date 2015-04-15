@@ -39,6 +39,10 @@ func Init(cfg config.ConfigInterface, errorChannel chan error) error {
 
 		defer c.Close()
 
+		if err := c.conn.Exec("CREATE TABLE IF NOT EXISTS _counters (name VARCHAR NOT NULL PRIMARY KEY, value INT NOT NULL DEFAULT(0), rollover_last INT NOT NULL, rollover_interval INT NOT NULL DEFAULT(0), rollover_expression VARCHAR)"); err != nil {
+			return err
+		}
+
 		c.Debugf("Writing data layer database to %s", manager.path)
 		c.Debugf("Default data layer TTL is set to %d", manager.ttl)
 

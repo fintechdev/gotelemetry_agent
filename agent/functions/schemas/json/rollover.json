@@ -1,0 +1,25 @@
+{
+  "id": "/rollover",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "$rollover",
+  "group": "Counters",
+  "description": "Sets the rollover metadata for a counter",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the counter"
+    },
+    "interval": {
+      "type": "integer",
+      "description": "The number of seconds between each rollover"
+    },
+    "expression": {
+      "description": "An expression that is evaluated whenever a rollover occurs"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

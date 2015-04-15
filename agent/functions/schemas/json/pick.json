@@ -6,14 +6,14 @@
   "description": "Extracts the value for a named property from a hash",
   "return": {
     "type": "any",
-    "description": "The value of the requested property"
+    "description": "The value of the requested property; if `from` is an array, the result is an array of values extracted from each item of `from`. Use `$extract` to extract more than one property."
   },
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "prop": {
       "type": "string",
-      "description": "The name of the proeprty whose value to return"
+      "description": "The name of the property whose value to return"
     },
     "from": {
       "oneOf": [

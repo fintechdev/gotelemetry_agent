@@ -1,0 +1,22 @@
+{
+  "id": "/incr",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "$incr",
+  "group": "Counters",
+  "description": "Increments the value of a counter",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the counter"
+    },
+    "value": {
+      "type": "integer",
+      "description": "The increment value (may be negative)"
+    }
+  },
+  "required": [
+    "name", "value"
+  ]
+}

@@ -2,6 +2,7 @@ package aggregations
 
 import (
 	"code.google.com/p/go-sqlite/go1/sqlite3"
+	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 )
@@ -23,6 +24,9 @@ func GetContext() (*Context, error) {
 		conn: conn,
 	}
 
+	conn.Exec("PRAGMA journal_mode = WAL")
+	conn.Exec("PRAGMA cache_size = 100")
+
 	return result, nil
 }
 
@@ -40,8 +44,32 @@ func (c *Context) Debugf(format string, v ...interface{}) {
 	}
 }
 
+func (c *Context) Errorf(format string, v ...interface{}) {
+	if manager.errorChannel != nil {
+		manager.errorChannel <- errors.New(fmt.Sprintf("Data Manager -> "+format, v...))
+	}
+}
+
 func (c *Context) SetError() {
 	c.hasError = true
+}
+
+// Data
+
+func (c *Context) fetchRow(query string, values ...interface{}) (sqlite3.RowMap, error) {
+	result := sqlite3.RowMap{}
+
+	rs, err := c.conn.Query(query, values...)
+
+	if err != nil {
+		return result, err
+	}
+
+	defer rs.Close()
+
+	rs.Scan(result)
+
+	return result, nil
 }
 
 // Transactions
