@@ -31,7 +31,7 @@ func createSeries(context *Context, name string) error {
 }
 
 func (s *Series) prepQuery(query string) string {
-	return strings.Replace(query, "??", s.Name, -1)
+	return strings.Replace(query, "??", `"`+s.Name+`"`, -1)
 }
 
 func (s *Series) query(query string, values ...interface{}) (*sqlite3.Stmt, error) {
@@ -63,7 +63,9 @@ func (s *Series) createTable() error {
 		return err
 	}
 
-	if err := s.exec("CREATE INDEX IF NOT EXISTS ??_index ON ?? (ts)"); err != nil {
+	n := `"` + s.Name + `_index"`
+
+	if err := s.exec("CREATE INDEX IF NOT EXISTS " + n + " ON ?? (ts)"); err != nil {
 		return err
 	}
 

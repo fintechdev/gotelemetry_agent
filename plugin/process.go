@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/functions"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -33,17 +38,21 @@ func ProcessPluginFactory() job.PluginInstance {
 // For configuration parameters, see the Init() function
 type ProcessPlugin struct {
 	*job.PluginHelper
-	expiration time.Duration
-	flowTag    string
-	path       string
-	args       []string
-	template   map[string]interface{}
-	flow       *gotelemetry.Flow
+	expiration   time.Duration
+	flowTag      string
+	url          string
+	templateFile string
+	path         string
+	args         []string
+	template     map[string]interface{}
+	flow         *gotelemetry.Flow
 }
 
 // Function Init initializes the plugin.
 //
 // The required configuration parameters are:
+//
+// - url													The URL from where to retrieve the data to evaluate
 //
 // - path                         The executable's path
 //
@@ -66,11 +75,12 @@ type ProcessPlugin struct {
 // output to log and the plugin is not allowed to run. If the flow does not exist, it is created using
 // the contents of `template`. If the creation fails, the plugin is not allowed to run.
 //
+// If `path` is specified, the plugin will attempt to execute the file it points to, optionally passing
+// `args` if they are specified.
+//
 // In output, the process has two options:
 //
 // - Output a JSON payload, which is used to PATCH the payload of the flow using a simple top-level property replacement operation
-//
-// - Output the text PATCH, followed by a newline, followed by a JSON-Patch payload that is applied to the flow.
 //
 // - Output the text REPLACE, followed by a newline, followed by a payload that is used to replace the contents of the flow.
 //
@@ -96,8 +106,21 @@ type ProcessPlugin struct {
 //
 //   #!/usr/bin/php
 //   <?php
-//   echo "PATCH\n";
-//   echo '[{"op":"replace", "path":"/value", "value":' + $argv[2] + '}]';
+//   echo json_encode(array('value' => $argv[1]));
+//
+//   If `url` is specified and points to an HTTP/S resource, the plugin will download the expression
+//   to be evaluated from the URL specified instead, expecting the same kind of output it would receive
+//   from an external process.
+//
+//   If `url` is specified and points to a resource with the special prefix `tpl`, the plugin will load
+//   the expression payload from the corresponding file and interpret it, once again expecting the
+//   same kind of input it would receive from a process, with one exception: if the resource ends in `.yaml`,
+//   the template can be specified in YAML instead of JSON. For example, you could store a
+//   template locally in the file `update_timeseries.yaml`, and point to it by providing the value
+//   `tpl://./update_timeseries.yaml` for the job's `url` property.
+//
+//   It is a user error to specify both a `url` and `path` property, or to provide an `args` property
+//   without a `path` property.
 
 func (p *ProcessPlugin) Init(job *job.Job) error {
 	var ok bool
@@ -112,10 +135,15 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
 	}
 
-	p.path, ok = c["path"].(string)
+	p.path, _ = c["path"].(string)
+	p.url, _ = c["url"].(string)
 
-	if !ok {
-		return errors.New("The required `path` property (`string`) is either missing or of the wrong type.")
+	if p.path == "" && p.url == "" {
+		return errors.New("You must provide either a `path` or `url` property.")
+	}
+
+	if p.path != "" && p.url != "" {
+		return errors.New("You cannot provide both a `path` and `url` property.")
 	}
 
 	p.args = []string{}
@@ -130,8 +158,30 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	}
 
-	if _, err := os.Stat(p.path); os.IsNotExist(err) {
-		return errors.New("File " + p.path + " does not exist.")
+	if p.path == "" && len(p.args) > 0 {
+		return errors.New("You cannot specify an `args` property if you do not specify a `path` property.")
+	}
+
+	if p.path != "" {
+		if _, err := os.Stat(p.path); os.IsNotExist(err) {
+			return errors.New("File " + p.path + " does not exist.")
+		}
+	}
+
+	if p.url != "" {
+		if strings.HasPrefix(p.url, "tpl://") {
+			URL, err := url.Parse(p.url)
+
+			if err != nil {
+				return err
+			}
+
+			p.templateFile = URL.Host + URL.Path
+
+			if _, err := os.Stat(p.templateFile); os.IsNotExist(err) {
+				return errors.New("Template " + p.templateFile + " does not exist.")
+			}
+		}
 	}
 
 	template, templateOK := c["template"]
@@ -173,15 +223,11 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 }
 
 func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response string) error {
-	isJSONPatch := false
 	isReplace := false
 
 	if strings.HasPrefix(response, "REPLACE\n") {
 		isReplace = true
 		response = strings.TrimPrefix(response, "REPLACE\n")
-	} else if strings.HasPrefix(response, "PATCH\n") {
-		isJSONPatch = true
-		response = strings.TrimPrefix(response, "PATCH\n")
 	}
 
 	context, err := aggregations.GetContext()
@@ -236,13 +282,7 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 		return nil
 	}
 
-	if isJSONPatch {
-		if p.expiration > 0 {
-			j.Logf("Warning: Forced expiration is not supported for JSON-Patch operations")
-		}
-
-		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypeJSONPATCH)
-	} else if isReplace {
+	if isReplace {
 		if p.expiration > 0 {
 			newExpiration := time.Now().Add(p.expiration)
 			newUnixExpiration := newExpiration.Unix()
@@ -269,11 +309,7 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 	return nil
 }
 
-func (p *ProcessPlugin) performAllTasks(j *job.Job) {
-	j.Debugf("Starting process plugin...")
-
-	defer p.PluginHelper.TrackTime(j, time.Now(), "Process plugin completed in %s.")
-
+func (p *ProcessPlugin) performScriptTask(j *job.Job) (string, error) {
 	if len(p.args) > 0 {
 		j.Debugf("Executing `%s` with arguments %#v", p.path, p.args)
 	} else {
@@ -283,12 +319,77 @@ func (p *ProcessPlugin) performAllTasks(j *job.Job) {
 	out, err := exec.Command(p.path, p.args...).Output()
 
 	if err != nil {
-		j.SetFlowError(p.flowTag, map[string]interface{}{"error": err.Error(), "output": string(out)})
+		return "", err
+	}
+
+	return string(out), nil
+}
+
+func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
+	j.Debugf("Retrieving expression from URL `%s`", p.url)
+
+	r, err := http.Get(p.url)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer r.Body.Close()
+
+	out, err := ioutil.ReadAll(r.Body)
+
+	if r.StatusCode > 399 {
+		return string(out), gotelemetry.NewErrorWithFormat(r.StatusCode, "HTTP request failed with status %d", nil, r.StatusCode)
+	}
+
+	return string(out), nil
+}
+
+func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
+	j.Debugf("Retrieving expression from template `%s`", p.templateFile)
+
+	out, err := ioutil.ReadFile(p.templateFile)
+
+	if err != nil {
+		return string(out), err
+	}
+
+	if strings.HasSuffix(strings.ToLower(p.templateFile), "yaml") {
+		s := map[interface{}]interface{}{}
+
+		if err := yaml.Unmarshal(out, &s); err != nil {
+			return string(out), err
+		}
+
+		out, err = json.Marshal(config.MapFromYaml(s))
+	}
+
+	return string(out), err
+}
+
+func (p *ProcessPlugin) performAllTasks(j *job.Job) {
+	j.Debugf("Starting process plugin...")
+
+	defer p.PluginHelper.TrackTime(j, time.Now(), "Process plugin completed in %s.")
+
+	var response string
+	var err error
+
+	if p.path != "" {
+		response, err = p.performScriptTask(j)
+	} else if p.templateFile != "" {
+		response, err = p.performTemplateTask(j)
+	} else if p.url != "" {
+		response, err = p.performHTTPTask(j)
+	} else {
+		err = errors.New("Nothing to do!")
+	}
+
+	if err != nil {
+		j.SetFlowError(p.flowTag, map[string]interface{}{"error": err.Error(), "output": string(response)})
 		j.ReportError(err)
 		return
 	}
-
-	response := string(out)
 
 	j.Debugf("Process output: %s", strings.Replace(response, "\n", "\\n", -1))
 	j.Debugf("Posting flow %s", p.flowTag)

@@ -216,25 +216,29 @@ func printFunctionHelp(name string) {
 		if returnInfo["type"].(string) == "object" {
 			fmt.Println("\nReturned object properties\n--------------------------\n")
 
-			writer := tablewriter.NewWriter(os.Stdout)
+			props, ok := returnInfo["properties"].(map[string]interface{})
 
-			writer.SetColWidth(60)
+			if ok {
+				writer := tablewriter.NewWriter(os.Stdout)
 
-			writer.SetHeader([]string{"Name", "Type", "Description"})
+				writer.SetColWidth(60)
 
-			props := returnInfo["properties"].(map[string]interface{})
+				writer.SetHeader([]string{"Name", "Type", "Description"})
 
-			for index, prop := range props {
-				propData := prop.(map[string]interface{})
+				for index, prop := range props {
+					propData := prop.(map[string]interface{})
 
-				writer.Append([]string{
-					fmt.Sprintf("%10s", index),
-					fmt.Sprintf("%13v", propData["type"]),
-					fmt.Sprintf("%60v", propData["description"]),
-				})
+					writer.Append([]string{
+						fmt.Sprintf("%10s", index),
+						fmt.Sprintf("%13v", propData["type"]),
+						fmt.Sprintf("%60v", propData["description"]),
+					})
+				}
+
+				writer.Render()
+			} else {
+				fmt.Println("None.")
 			}
-
-			writer.Render()
 		}
 	}
 

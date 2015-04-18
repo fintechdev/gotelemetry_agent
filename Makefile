@@ -47,17 +47,17 @@ postbuild:
 
 $(BUILD_LIST_OSX): %_build_osx: %_fmt
 	@echo "Building Darwin AMD64..."
-	@GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 $(GOBUILD) -tags release -o bin/darwin-amd64/$*
+	@GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 $(GOBUILD) -tags release -o bin/darwin-amd64/telemetry_agent
 	@echo "Building complete."
 
 $(BUILD_LIST_WIN): %_build_win: %_fmt
 	@echo "Building Windows 386..."
-	@GOARCH=386 CGO_ENABLED=1 GOOS=windows CC="i686-w64-mingw32-gcc -fno-stack-protector -D_FORTIFY_SOURCE=0 -lssp -D_localtime32=localtime" $(GOBUILD)  -tags release -o bin/windows-386/$* 
+	@GOARCH=386 CGO_ENABLED=1 GOOS=windows CC="i686-w64-mingw32-gcc -fno-stack-protector -D_FORTIFY_SOURCE=0 -lssp -D_localtime32=localtime" $(GOBUILD)  -tags release -o bin/windows-386/telemetry_agent.exe
 	@echo "Building complete."
 
 $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 	@echo "Building Linux AMD64..."
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-amd64/$*
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-amd64/telemetry_agent
 	@echo "Building complete."
 
 $(TEST_LIST): %_test:

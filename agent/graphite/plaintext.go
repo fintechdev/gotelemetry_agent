@@ -9,6 +9,7 @@ import (
 	"net"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -87,7 +88,9 @@ func setupUDPListener(listen string, errorChannel chan error) {
 		if n, addr, err := conn.ReadFromUDP(buf); err == nil {
 			remoteAddress := addr.String() + ", UDP"
 
-			parseRequest(context, remoteAddress, string(buf[0:n]), errorChannel)
+			if err := parseRequest(context, remoteAddress, string(buf[0:n]), errorChannel); err != nil {
+				errorChannel <- gotelemetry.NewErrorWithFormat(400, "Graphite => [%s, UDP] Error %s while receving data", nil, addr, err)
+			}
 		} else {
 			errorChannel <- gotelemetry.NewErrorWithFormat(400, "Graphite => [%s, UDP] Error %s while receving data", nil, addr, err)
 		}
@@ -97,6 +100,12 @@ func setupUDPListener(listen string, errorChannel chan error) {
 var splitter = regexp.MustCompile(" +")
 
 func parseRequest(context *aggregations.Context, remoteAddress, request string, errorChannel chan error) error {
+	request = strings.TrimSpace(request)
+
+	if request == "" {
+		return nil
+	}
+
 	line := splitter.Split(request, -1)
 
 	if len(line) != 3 {

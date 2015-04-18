@@ -3,6 +3,7 @@ package aggregations
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"regexp"
 	"time"
@@ -26,7 +27,7 @@ type Series struct {
 
 var cachedSeries = map[string]*Series{}
 
-var seriesNameRegex = regexp.MustCompile("^[A-Za-z][A-Za-z0-9_]*$")
+var seriesNameRegex = regexp.MustCompile(`^[A-Za-z\-][A-Za-z0-9_.\-]*$`)
 
 func GetSeries(context *Context, name string) (*Series, error) {
 	if err := validateSeriesName(name); err != nil {
@@ -138,10 +139,16 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 		return 0.0, err
 	}
 
+	result, ok := row["result"].(float64)
+
+	if !ok {
+		result = 0.0
+	}
+
 	if functionType == StdDev {
-		return math.Sqrt(row["result"].(float64)), nil
+		return math.Sqrt(result), nil
 	} else {
-		return row["result"].(float64), nil
+		return result, nil
 	}
 }
 
@@ -172,23 +179,25 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int) (inte
 
 	rs, err := s.query("SELECT (ts - ?) / ? * ? AS interval, "+operation+"(value) AS result FROM ?? WHERE ts >= ? GROUP BY interval", start, interval, interval, start)
 
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return nil, err
 	}
 
 	rows := map[int]float64{}
 
-	for rs.Next() == nil {
-		var index int
-		var value float64
+	if err != io.EOF {
+		for rs.Next() == nil {
+			var index int
+			var value float64
 
-		err := rs.Scan(&index, &value)
+			err := rs.Scan(&index, &value)
 
-		if err != nil {
-			return nil, err
+			if err != nil {
+				return nil, err
+			}
+
+			rows[index] = value
 		}
-
-		rows[index] = value
 	}
 
 	output := []interface{}{}

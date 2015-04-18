@@ -1,0 +1,14 @@
+value:
+  $compute:
+    series: cpu_load
+    op: avg
+    period: 10
+sparkline:
+  $pick:
+    prop: value
+    from: 
+      $aggregate:
+        series: cpu_load
+        op: avg
+        count: 100
+        interval: 5
