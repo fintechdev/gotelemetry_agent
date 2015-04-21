@@ -1,0 +1,258 @@
+
+state 0
+	$accept: .commands $end 
+	commands: .    (1)
+
+	.  reduce 1 (src line 26)
+
+	commands  goto 1
+
+state 1
+	$accept:  commands.$end 
+	commands:  commands.command 
+
+	$end  accept
+	T_IDENTIFIER  shift 4
+	.  error
+
+	command  goto 2
+	set_property  goto 3
+
+state 2
+	commands:  commands command.    (2)
+
+	.  reduce 2 (src line 27)
+
+
+state 3
+	command:  set_property.    (3)
+
+	.  reduce 3 (src line 29)
+
+
+state 4
+	set_property:  T_IDENTIFIER.T_COLON expr 
+
+	T_COLON  shift 5
+	.  error
+
+
+state 5
+	set_property:  T_IDENTIFIER T_COLON.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 6
+
+state 6
+	set_property:  T_IDENTIFIER T_COLON expr.    (4)
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+
+	T_PLUS  shift 12
+	T_MINUS  shift 13
+	T_MULTIPLY  shift 14
+	T_DIVIDE  shift 15
+	.  reduce 4 (src line 33)
+
+
+state 7
+	expr:  T_OPEN_PARENS.expr T_CLOSE_PARENS 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 16
+
+state 8
+	expr:  T_MINUS.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 17
+
+state 9
+	expr:  T_PLUS.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 18
+
+state 10
+	expr:  T_NUMBER.    (12)
+
+	.  reduce 12 (src line 54)
+
+
+state 11
+	expr:  T_STRING.    (13)
+
+	.  reduce 13 (src line 56)
+
+
+state 12
+	expr:  expr T_PLUS.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 19
+
+state 13
+	expr:  expr T_MINUS.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 20
+
+state 14
+	expr:  expr T_MULTIPLY.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 21
+
+state 15
+	expr:  expr T_DIVIDE.expr 
+
+	T_STRING  shift 11
+	T_NUMBER  shift 10
+	T_PLUS  shift 9
+	T_MINUS  shift 8
+	T_OPEN_PARENS  shift 7
+	.  error
+
+	expr  goto 22
+
+state 16
+	expr:  T_OPEN_PARENS expr.T_CLOSE_PARENS 
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+
+	T_PLUS  shift 12
+	T_MINUS  shift 13
+	T_MULTIPLY  shift 14
+	T_DIVIDE  shift 15
+	T_CLOSE_PARENS  shift 23
+	.  error
+
+
+state 17
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+	expr:  T_MINUS expr.    (10)
+
+	.  reduce 10 (src line 50)
+
+
+state 18
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+	expr:  T_PLUS expr.    (11)
+
+	.  reduce 11 (src line 52)
+
+
+state 19
+	expr:  expr.T_PLUS expr 
+	expr:  expr T_PLUS expr.    (6)
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+
+	T_MULTIPLY  shift 14
+	T_DIVIDE  shift 15
+	.  reduce 6 (src line 42)
+
+
+state 20
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr T_MINUS expr.    (7)
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+
+	T_MULTIPLY  shift 14
+	T_DIVIDE  shift 15
+	.  reduce 7 (src line 44)
+
+
+state 21
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr T_MULTIPLY expr.    (8)
+	expr:  expr.T_DIVIDE expr 
+
+	.  reduce 8 (src line 46)
+
+
+state 22
+	expr:  expr.T_PLUS expr 
+	expr:  expr.T_MINUS expr 
+	expr:  expr.T_MULTIPLY expr 
+	expr:  expr.T_DIVIDE expr 
+	expr:  expr T_DIVIDE expr.    (9)
+
+	.  reduce 9 (src line 48)
+
+
+state 23
+	expr:  T_OPEN_PARENS expr T_CLOSE_PARENS.    (5)
+
+	.  reduce 5 (src line 40)
+
+
+19 terminals, 5 nonterminals
+14 grammar rules, 24/2000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+54 working sets used
+memory: parser 10/30000
+11 extra closures
+55 shift entries, 1 exceptions
+11 goto entries
+0 entries saved by goto default
+Optimizer space used: output 30/30000
+30 table entries, 1 zero
+maximum spread: 15, maximum offset: 15

@@ -39,7 +39,6 @@ type Job struct {
 
 type DataConfig struct {
 	DataLocation *string `yaml:"path"`
-	DefaultTTL   *int    `yaml:"ttl"`
 }
 
 type GraphiteConfig struct {

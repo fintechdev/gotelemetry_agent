@@ -2,32 +2,19 @@ package aggregations
 
 import (
 	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
 type Manager struct {
 	path         string
-	ttl          int
 	errorChannel chan error
 }
 
 var manager *Manager = nil
 
-func Init(cfg config.ConfigInterface, errorChannel chan error) error {
-	dataConfig := cfg.DataConfig()
-
-	if dataConfig.DataLocation != nil {
-		var ttl int
-
-		if dataConfig.DefaultTTL != nil {
-			ttl = *dataConfig.DefaultTTL
-		} else {
-			ttl = -1
-		}
-
+func Init(location *string, errorChannel chan error) error {
+	if location != nil {
 		manager = &Manager{
-			path:         *dataConfig.DataLocation,
-			ttl:          ttl,
+			path:         *location,
 			errorChannel: errorChannel,
 		}
 
@@ -44,7 +31,6 @@ func Init(cfg config.ConfigInterface, errorChannel chan error) error {
 		}
 
 		c.Debugf("Writing data layer database to %s", manager.path)
-		c.Debugf("Default data layer TTL is set to %d", manager.ttl)
 
 		return nil
 	}
