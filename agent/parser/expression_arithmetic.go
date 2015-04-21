@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 )
 
 func forceNumeric(c *executionContext, left, right expression, line, position int) (float64, float64, error) {
@@ -38,19 +39,19 @@ func forceNumeric(c *executionContext, left, right expression, line, position in
 type artihmeticExpression struct {
 	left     expression
 	right    expression
-	operator terminal
+	operator token
 	l        int
 	p        int
 }
 
-func newArithmeticExpression(left, right expression, operator terminal, line, position int) expression {
+func newArithmeticExpression(left, right expression, operator token, line, position int) expression {
 	return &artihmeticExpression{left, right, operator, line, position}
 }
 
 func (a *artihmeticExpression) evaluate(c *executionContext) (interface{}, error) {
 	l, r, err := forceNumeric(c, a.left, a.right, a.l, a.p)
 
-	switch a.operator {
+	switch a.operator.terminal {
 	case T_PLUS:
 		return l + r, err
 
@@ -77,10 +78,22 @@ func (a *artihmeticExpression) evaluate(c *executionContext) (interface{}, error
 	}
 }
 
+func (a *artihmeticExpression) extract(c *executionContext, property string) (expression, error) {
+	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", a, property))
+}
+
+func (a *artihmeticExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
+	return nil, errors.New(fmt.Sprintf("%s is not a function", a))
+}
+
 func (a *artihmeticExpression) line() int {
 	return a.l
 }
 
 func (a *artihmeticExpression) position() int {
 	return a.p
+}
+
+func (a *artihmeticExpression) String() string {
+	return fmt.Sprintf("%s %s %s", a.left, a.operator.source, a.right)
 }

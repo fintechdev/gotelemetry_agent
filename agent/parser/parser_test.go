@@ -3,6 +3,7 @@ package parser
 import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"testing"
+	"time"
 )
 
 func testRun(s string, t *testing.T) map[string]interface{} {
@@ -114,9 +115,31 @@ func TestArithmeticDeviance(t *testing.T) {
 
 	err := testRunAndReturnErrors(`a:"test"+10`)
 
-	t.Logf("%+v", err)
-
 	if err == nil {
 		t.Error("Numeric operations can be performed with non-numeric values")
+	}
+}
+
+func TestVariableAssignment(t *testing.T) {
+	l := "/tmp/telemetry.sqlite"
+	aggregations.Init(&l, make(chan error, 99999))
+
+	res := testRun("$a: 10 a:$a+10", t)
+
+	if res["a"] == 20 {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+}
+
+func TestGlobalMethods(t *testing.T) {
+	l := "/tmp/telemetry.sqlite"
+	aggregations.Init(&l, make(chan error, 99999))
+
+	now := time.Now().Unix()
+
+	res := testRun("a: now()", t)
+
+	if n, ok := res["a"].(float64); !ok || int64(n) < now {
+		t.Errorf("Unexpected expression result: %v", res)
 	}
 }

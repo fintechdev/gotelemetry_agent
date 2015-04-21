@@ -30,6 +30,9 @@ func newNumericExpression(value interface{}, line, position int) expression {
 	case int:
 		result.value = float64(value.(int))
 
+	case int64:
+		result.value = float64(value.(int64))
+
 	case string:
 		if v, err := strconv.ParseFloat(value.(string), 64); err == nil {
 			result.value = v
@@ -44,8 +47,16 @@ func newNumericExpression(value interface{}, line, position int) expression {
 	return result
 }
 
-func (e *numericExpression) evaluate(c *executionContext) (interface{}, error) {
-	return e.value, e.err
+func (n *numericExpression) evaluate(c *executionContext) (interface{}, error) {
+	return n.value, n.err
+}
+
+func (n *numericExpression) extract(c *executionContext, property string) (expression, error) {
+	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", n, property))
+}
+
+func (n *numericExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
+	return nil, errors.New(fmt.Sprintf("%s is not a function", n))
 }
 
 func (n *numericExpression) line() int {
@@ -54,4 +65,8 @@ func (n *numericExpression) line() int {
 
 func (n *numericExpression) position() int {
 	return n.p
+}
+
+func (n *numericExpression) String() string {
+	return fmt.Sprintf("Number(%f)", n.value)
 }

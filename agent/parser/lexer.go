@@ -5,15 +5,16 @@ import (
 )
 
 const (
-	symbol      = "+-/*:.,()[]"
-	numeric     = "0123456789."
-	whitespace  = " \n\t"
-	openParens  = "("
-	closeParens = ")"
-	stringStart = `"`
-	stringEnd   = `\"`
+	symbol        = "+-/*:.,()[]"
+	numeric       = "0123456789."
+	whitespace    = " \n\t"
+	openParens    = "("
+	closeParens   = ")"
+	stringStart   = `"`
+	stringEnd     = `\"`
+	variableStart = "$"
 
-	identifier = symbol + whitespace + openParens + closeParens + stringStart + stringEnd
+	identifier = symbol + whitespace + openParens + closeParens + stringStart + stringEnd + variableStart
 )
 
 var symbolMap = map[rune]terminal{
@@ -76,6 +77,12 @@ func aslInitial(l *lexer) stateFn {
 		return aslString
 	}
 
+	// Check for variable names
+
+	if l.accept(variableStart, false) != utf8.RuneError {
+		return aslVariableName
+	}
+
 	// Must be an identifier
 
 	l.acceptRun(identifier, true)
@@ -109,4 +116,20 @@ func aslString(l *lexer) stateFn {
 		return nil
 	}
 
+}
+
+func aslVariableName(l *lexer) stateFn {
+	r := l.accept(identifier, true)
+
+	switch r {
+	case eofRune, utf8.RuneError:
+		l.errorf("Invalid variable name `$`")
+		return nil
+
+	default:
+		l.acceptRun(identifier, true)
+		l.emit(T_VARIABLE)
+
+		return aslInitial
+	}
 }

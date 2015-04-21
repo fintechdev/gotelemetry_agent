@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -23,14 +24,26 @@ func newStringExpression(value interface{}, line, position int) expression {
 	return result
 }
 
-func (e *stringExpression) evaluate(c *executionContext) (interface{}, error) {
-	return e.value, e.err
+func (s *stringExpression) evaluate(c *executionContext) (interface{}, error) {
+	return s.value, s.err
 }
 
-func (n *stringExpression) line() int {
-	return n.l
+func (s *stringExpression) extract(c *executionContext, property string) (expression, error) {
+	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", s, property))
 }
 
-func (n *stringExpression) position() int {
-	return n.p
+func (s *stringExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
+	return nil, errors.New(fmt.Sprintf("%s is not a function", s))
+}
+
+func (s *stringExpression) line() int {
+	return s.l
+}
+
+func (s *stringExpression) position() int {
+	return s.p
+}
+
+func (s *stringExpression) String() string {
+	return fmt.Sprintf("String(%s)", s.value)
 }
