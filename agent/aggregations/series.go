@@ -6,19 +6,43 @@ import (
 	"io"
 	"math"
 	"regexp"
+	"strings"
 	"time"
 )
 
 type FunctionType int
 
 const (
-	Sum    FunctionType = iota
-	Avg    FunctionType = iota
-	Min    FunctionType = iota
-	Max    FunctionType = iota
-	Count  FunctionType = iota
-	StdDev FunctionType = iota
+	None FunctionType = iota
+	Sum
+	Avg
+	Min
+	Max
+	Count
+	StdDev
 )
+
+func AggregationFunctionTypeFromName(name string) (FunctionType, error) {
+	switch strings.ToLower(name) {
+	case "avg", "average":
+		return Avg, nil
+
+	case "sum":
+		return Sum, nil
+
+	case "min", "minimum":
+		return Min, nil
+
+	case "max", "maximum":
+		return Max, nil
+
+	case "count":
+		return Count, nil
+
+	default:
+		return None, errors.New(fmt.Sprintf("Unknown aggregation function `%s`", name))
+	}
+}
 
 type Series struct {
 	context *Context

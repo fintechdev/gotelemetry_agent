@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -25,21 +26,61 @@ func newPropertyExpression(target expression, name string, line, position int) e
 }
 
 func (p *propertyExpression) evaluate(c *executionContext) (interface{}, error) {
-	return p.target.extract(c, p.name)
+	ex := p.target
+
+	if exx, err := p.target.evaluate(c); err == nil {
+		if _, ok := exx.(extractable); ok {
+			ex = exx.(expression)
+		}
+	}
+
+	if ex, ok := ex.(extractable); ok {
+		return ex.extract(c, p.name)
+	}
+
+	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", p.target, p.name))
 }
 
 func (p *propertyExpression) extract(c *executionContext, property string) (expression, error) {
-	return p.target.extract(c, p.name)
+	ex := p.target
+
+	if exx, err := p.target.evaluate(c); err == nil {
+		if _, ok := exx.(extractable); ok {
+			ex = exx.(expression)
+		}
+	}
+
+	if ex, ok := ex.(extractable); ok {
+		return ex.extract(c, p.name)
+	}
+
+	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", p.target, property))
 }
 
 func (p *propertyExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
-	target, err := p.target.extract(c, p.name)
+	ex := p.target
 
-	if err != nil {
-		return nil, err
+	if exx, err := p.target.evaluate(c); err == nil {
+		if _, ok := exx.(extractable); ok {
+			ex = exx.(expression)
+		}
 	}
 
-	return target.call(c, arguments)
+	if ex, ok := ex.(extractable); ok {
+		target, err := ex.extract(c, p.name)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if cl, ok := target.(callable); ok {
+			return cl.call(c, arguments)
+		}
+
+		return nil, errors.New(fmt.Sprintf("%s is not a function", target))
+	}
+
+	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", p.target, p.name))
 }
 
 func (p *propertyExpression) line() int {

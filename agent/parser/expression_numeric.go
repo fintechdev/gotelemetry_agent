@@ -51,14 +51,6 @@ func (n *numericExpression) evaluate(c *executionContext) (interface{}, error) {
 	return n.value, n.err
 }
 
-func (n *numericExpression) extract(c *executionContext, property string) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", n, property))
-}
-
-func (n *numericExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s is not a function", n))
-}
-
 func (n *numericExpression) line() int {
 	return n.l
 }

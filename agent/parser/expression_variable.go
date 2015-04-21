@@ -31,14 +31,6 @@ func (v *variableExpression) evaluate(c *executionContext) (interface{}, error) 
 	}
 }
 
-func (v *variableExpression) extract(c *executionContext, property string) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", v, property))
-}
-
-func (v *variableExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s is not a function", v))
-}
-
 func (v *variableExpression) line() int {
 	return v.l
 }

@@ -5,9 +5,9 @@ graphite:
 data:
     path: /tmp/agent.sqlite3
     ttl: 3600
-# jobs:
-#     - config:
-#           url: tpl://set_test_flow.yaml
-#           flow_tag: test_flow
-#           expiration: 0
-#           refresh: 10
+jobs:
+    - config:
+          url: tpl://set_test_flow.asl
+          flow_tag: test_flow
+          expiration: 0
+          refresh: 10

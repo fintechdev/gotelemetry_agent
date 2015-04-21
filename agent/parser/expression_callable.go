@@ -40,10 +40,6 @@ func (e *callableExpression) evaluate(c *executionContext) (interface{}, error) 
 	return nil, errors.New(fmt.Sprintf("%s is a function call and cannot be evaluated", e.name))
 }
 
-func (e *callableExpression) extract(c *executionContext, property string) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", e, property))
-}
-
 func (e *callableExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
 	args := map[string]interface{}{}
 
@@ -54,25 +50,31 @@ func (e *callableExpression) call(c *executionContext, arguments map[string]inte
 				if s, err := newStringExpression(arg, e.l, e.p).evaluate(c); err == nil {
 					args[index] = s
 				} else {
-					return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s", e, index, err))
+					return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s on line %d:%d", e, index, err, e.l, e.p))
 				}
 
 			case callableArgumentNumeric:
 				if n, err := newNumericExpression(arg, e.l, e.p).evaluate(c); err == nil {
 					args[index] = n
 				} else {
-					return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s", e, index, err))
+					return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s on line %d:%d", e, index, err, e.l, e.p))
 				}
 
 			default:
-				return nil, errors.New(fmt.Sprintf("%s: unknown argument type `%s` for argument `%s", e, argumentType, index))
+				return nil, errors.New(fmt.Sprintf("%s: unknown argument type `%s` for argument `%s` on line %d:%d", e, argumentType, index, e.l, e.p))
 			}
 		} else {
-			return nil, errors.New(fmt.Sprintf("%s: missing argument `%s`", e, index))
+			return nil, errors.New(fmt.Sprintf("%s: missing argument `%s` on line %d:%d", e, index, e.l, e.p))
 		}
 	}
 
-	return e.closure(c, args)
+	res, err := e.closure(c, args)
+
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("%s while evaluating %s on line %d:%d", err, e, e.l, e.p))
+	}
+
+	return res, nil
 }
 
 func (e *callableExpression) line() int {

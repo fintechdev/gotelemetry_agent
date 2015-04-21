@@ -462,7 +462,7 @@ parserdefault:
 	case 22:
 		//line internal_parser.y:98
 		{
-			parserVAL.ex = newPropertyExpression(parserS[parserpt-2].ex, parserS[parserpt-1].t.source, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
+			parserVAL.ex = newPropertyExpression(parserS[parserpt-2].ex, parserS[parserpt-0].t.source, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 23:
 		//line internal_parser.y:102

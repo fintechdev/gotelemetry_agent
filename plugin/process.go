@@ -9,7 +9,7 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/functions"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
-	"gopkg.in/yaml.v2"
+	"github.com/telemetryapp/gotelemetry_agent/agent/parser"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -348,21 +348,29 @@ func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
 func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 	j.Debugf("Retrieving expression from template `%s`", p.templateFile)
 
-	out, err := ioutil.ReadFile(p.templateFile)
+	source, err := ioutil.ReadFile(p.templateFile)
 
 	if err != nil {
-		return string(out), err
+		return "", err
 	}
 
-	if strings.HasSuffix(strings.ToLower(p.templateFile), "yaml") {
-		s := map[interface{}]interface{}{}
+	commands, errs := parser.Parse(p.flowTag, string(source))
 
-		if err := yaml.Unmarshal(out, &s); err != nil {
-			return string(out), err
-		}
-
-		out, err = json.Marshal(config.MapFromYaml(s))
+	if len(errs) > 0 {
+		return "", errs[0]
 	}
+
+	output, err := parser.Run(commands)
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(output) == 0 {
+		return "", nil
+	}
+
+	out, err := json.Marshal(config.MapFromYaml(output))
 
 	return string(out), err
 }

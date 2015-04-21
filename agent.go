@@ -75,7 +75,7 @@ Done:
 }
 
 func run() {
-	if err := aggregations.Init(configFile, errorChannel); err != nil {
+	if err := aggregations.Init(configFile.DataConfig().DataLocation, errorChannel); err != nil {
 		log.Fatalf("Initialization error: %s", err)
 	}
 

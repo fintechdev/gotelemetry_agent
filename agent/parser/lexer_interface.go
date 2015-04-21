@@ -39,5 +39,5 @@ func (a *aslLexer) Error(s string) {
 		source = source[0:29] + "..."
 	}
 
-	a.errors = append(a.errors, errors.New(fmt.Sprintf("Error: %s at line %d:%d (%q)", s, a.current.line, a.current.start, source)))
+	a.errors = append(a.errors, errors.New(fmt.Sprintf("Parse error: %s at line %d:%d (%q)", s, a.current.line, a.current.start, source)))
 }

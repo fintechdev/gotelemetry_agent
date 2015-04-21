@@ -6,13 +6,13 @@ import (
 )
 
 func forceNumeric(c *executionContext, left, right expression, line, position int) (float64, float64, error) {
-	l, err := left.evaluate(c)
+	l, err := resolveExpression(c, left)
 
 	if err != nil {
 		return 0, 0, err
 	}
 
-	r, err := right.evaluate(c)
+	r, err := resolveExpression(c, right)
 
 	if err != nil {
 		return 0, 0, err
@@ -76,14 +76,6 @@ func (a *artihmeticExpression) evaluate(c *executionContext) (interface{}, error
 		panic("Unknown operator " + a.operator.String())
 		return 0, nil
 	}
-}
-
-func (a *artihmeticExpression) extract(c *executionContext, property string) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", a, property))
-}
-
-func (a *artihmeticExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s is not a function", a))
 }
 
 func (a *artihmeticExpression) line() int {

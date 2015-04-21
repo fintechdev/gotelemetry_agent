@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"errors"
+	"fmt"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 )
 
@@ -15,7 +17,7 @@ func Run(commands []command) (map[string]interface{}, error) {
 
 	for _, cmd := range commands {
 		if err := cmd.execute(ec); err != nil {
-			return nil, err
+			return nil, errors.New(fmt.Sprintf("Runtime error: %s", err))
 		}
 	}
 

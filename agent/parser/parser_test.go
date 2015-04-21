@@ -41,7 +41,7 @@ func testRunAndReturnErrors(s string) []error {
 }
 
 func TestNumericExpression(t *testing.T) {
-	l := "/tmp/telemetry.sqlite"
+	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))
 
 	res := testRun("a:123", t)
@@ -52,7 +52,7 @@ func TestNumericExpression(t *testing.T) {
 }
 
 func TestArithmeticExpressions(t *testing.T) {
-	l := "/tmp/telemetry.sqlite"
+	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))
 
 	res := testRun("a:123+10", t)
@@ -93,7 +93,7 @@ func TestArithmeticExpressions(t *testing.T) {
 }
 
 func TestUnaryExpressions(t *testing.T) {
-	l := "/tmp/telemetry.sqlite"
+	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))
 
 	res := testRun("a:123+-10", t)
@@ -110,7 +110,7 @@ func TestUnaryExpressions(t *testing.T) {
 }
 
 func TestArithmeticDeviance(t *testing.T) {
-	l := "/tmp/telemetry.sqlite"
+	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))
 
 	err := testRunAndReturnErrors(`a:"test"+10`)
@@ -121,7 +121,7 @@ func TestArithmeticDeviance(t *testing.T) {
 }
 
 func TestVariableAssignment(t *testing.T) {
-	l := "/tmp/telemetry.sqlite"
+	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))
 
 	res := testRun("$a: 10 a:$a+10", t)
@@ -129,10 +129,16 @@ func TestVariableAssignment(t *testing.T) {
 	if res["a"] == 20 {
 		t.Errorf("Unexpected expression result: %v", res)
 	}
+
+	res = testRun(`$a: series(name:"cpu_load") a: $a.last()`, t)
+
+	if _, ok := res["a"].(float64); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
 }
 
 func TestGlobalMethods(t *testing.T) {
-	l := "/tmp/telemetry.sqlite"
+	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))
 
 	now := time.Now().Unix()
@@ -141,5 +147,28 @@ func TestGlobalMethods(t *testing.T) {
 
 	if n, ok := res["a"].(float64); !ok || int64(n) < now {
 		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun("$a: now() a: $a", t)
+
+	if n, ok := res["a"].(float64); !ok || int64(n) < now {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+}
+
+func TestSeries(t *testing.T) {
+	l := "/tmp/agent.sqlite3"
+	aggregations.Init(&l, make(chan error, 99999))
+
+	res := testRun(`a: series(name:"cpu_load").last() + 10`, t)
+
+	res = testRun(`a: series(name:"cpu_load").aggregate(func:"avg", interval: "10s", count: 50)`, t)
+
+	if r, ok := res["a"].([]interface{}); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	} else {
+		if len(r) != 50 {
+			t.Errorf("Unexpected expression result: %v", res)
+		}
 	}
 }

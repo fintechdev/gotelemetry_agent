@@ -4,11 +4,17 @@ import (
 	"fmt"
 )
 
+type callable interface {
+	call(c *executionContext, arguments map[string]interface{}) (expression, error)
+}
+
+type extractable interface {
+	extract(c *executionContext, property string) (expression, error)
+}
+
 type expression interface {
 	fmt.Stringer
 	evaluate(c *executionContext) (interface{}, error)
-	extract(c *executionContext, property string) (expression, error)
-	call(c *executionContext, arguments map[string]interface{}) (expression, error)
 	line() int
 	position() int
 }

@@ -95,7 +95,7 @@ callable_expr		: T_IDENTIFIER
 								;
 
 property 				: expr T_DOT T_IDENTIFIER
-										{ $$ = newPropertyExpression($1, $2.source, $1.line(), $1.position()) }
+										{ $$ = newPropertyExpression($1, $3.source, $1.line(), $1.position()) }
 								;
 
 expr_list				: expr_list T_COMMA expr_item

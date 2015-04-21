@@ -26,25 +26,21 @@ func newFunctionCallExpression(target expression, argumentList map[string]expres
 }
 
 func (f *functionCallExpression) evaluate(c *executionContext) (interface{}, error) {
-	args := map[string]interface{}{}
+	if cl, ok := f.target.(callable); ok {
+		args := map[string]interface{}{}
 
-	for key, argument := range f.argumentList {
-		if res, err := argument.evaluate(c); err == nil {
-			args[key] = res
-		} else {
-			return nil, err
+		for key, argument := range f.argumentList {
+			if res, err := argument.evaluate(c); err == nil {
+				args[key] = res
+			} else {
+				return nil, err
+			}
 		}
+
+		return cl.call(c, args)
 	}
 
-	return f.target.call(c, args)
-}
-
-func (f *functionCallExpression) extract(c *executionContext, property string) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", f, property))
-}
-
-func (f *functionCallExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
-	return nil, errors.New(fmt.Sprintf("%s is not a function", f))
+	return nil, errors.New(fmt.Sprintf("%s is not a function", f.target))
 }
 
 func (f *functionCallExpression) line() int {
