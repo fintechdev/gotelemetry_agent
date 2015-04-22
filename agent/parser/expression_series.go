@@ -30,12 +30,56 @@ func newSeriesExpression(name string, series *aggregations.Series, line, positio
 type seriesProperty func(g *seriesExpression) expression
 
 var seriesProperties = map[string]seriesProperty{
+	"avg": func(s *seriesExpression) expression {
+		return s.compute("avg", aggregations.Avg)
+	},
+	"min": func(s *seriesExpression) expression {
+		return s.compute("min", aggregations.Min)
+	},
+	"max": func(s *seriesExpression) expression {
+		return s.compute("max", aggregations.Max)
+	},
+	"sum": func(s *seriesExpression) expression {
+		return s.compute("sum", aggregations.Sum)
+	},
+	"count": func(s *seriesExpression) expression {
+		return s.compute("count", aggregations.Count)
+	},
 	"last": func(s *seriesExpression) expression {
 		return s.last()
 	},
 	"aggregate": func(s *seriesExpression) expression {
 		return s.aggregate()
 	},
+}
+
+func (s *seriesExpression) compute(name string, functionType aggregations.FunctionType) expression {
+	return newCallableExpression(
+		"name",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			intervalDuration, err := time.ParseDuration(args["interval"].(string))
+
+			if err != nil {
+				return nil, err
+			}
+
+			end := time.Now()
+			start := end.Add(-intervalDuration)
+
+			l, err := s.series.Compute(functionType, &start, &end)
+
+			if err != nil {
+				return nil, err
+			}
+
+			return newNumericExpression(l, s.l, s.p), nil
+		},
+		map[string]callableArgument{
+			"interval": callableArgumentString,
+		},
+		s.l,
+		s.p,
+	)
 }
 
 func (s *seriesExpression) last() expression {

@@ -178,4 +178,34 @@ func TestSeries(t *testing.T) {
 			t.Errorf("Unexpected expression result: %v", res)
 		}
 	}
+
+	res = testRun(`a: series(name:"cpu_load").avg(interval:"100m")`, t)
+
+	if _, ok := res["a"].(float64); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: series(name:"cpu_load").sum("100m")`, t)
+
+	if _, ok := res["a"].(float64); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: series(name:"cpu_load").min(interval:"100m")`, t)
+
+	if _, ok := res["a"].(float64); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: series(name:"cpu_load").max(interval:"100m")`, t)
+
+	if _, ok := res["a"].(float64); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: series(name:"cpu_load").count(interval:"100m")`, t)
+
+	if _, ok := res["a"].(float64); !ok {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
 }
