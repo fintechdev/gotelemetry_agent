@@ -32,6 +32,8 @@ func (p *propertyExpression) evaluate(c *executionContext) (interface{}, error) 
 		if _, ok := exx.(extractable); ok {
 			ex = exx.(expression)
 		}
+	} else {
+		return nil, err
 	}
 
 	if ex, ok := ex.(extractable); ok {
@@ -48,6 +50,8 @@ func (p *propertyExpression) extract(c *executionContext, property string) (expr
 		if _, ok := exx.(extractable); ok {
 			ex = exx.(expression)
 		}
+	} else {
+		return nil, err
 	}
 
 	if ex, ok := ex.(extractable); ok {
@@ -64,6 +68,8 @@ func (p *propertyExpression) call(c *executionContext, arguments map[string]inte
 		if _, ok := exx.(extractable); ok {
 			ex = exx.(expression)
 		}
+	} else {
+		return nil, err
 	}
 
 	if ex, ok := ex.(extractable); ok {

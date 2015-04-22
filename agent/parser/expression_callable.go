@@ -41,6 +41,18 @@ func (e *callableExpression) evaluate(c *executionContext) (interface{}, error) 
 }
 
 func (e *callableExpression) call(c *executionContext, arguments map[string]interface{}) (expression, error) {
+	// Handle the case of a single unnamed parameter by rewriting the parameter
+	// with the correct name
+
+	if len(arguments) == 1 && len(e.argumentList) == 1 {
+		if val, ok := arguments[singleUnnamedArgument]; ok {
+			for index, _ := range e.argumentList {
+				arguments[index] = val
+				delete(arguments, singleUnnamedArgument)
+			}
+		}
+	}
+
 	args := map[string]interface{}{}
 
 	for index, argumentType := range e.argumentList {

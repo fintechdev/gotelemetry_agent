@@ -9,7 +9,9 @@ type parseArgument struct {
 	value expression
 }
 
-//line internal_parser.y:12
+const singleUnnamedArgument = "----"
+
+//line internal_parser.y:14
 type parserSymType struct {
 	yys int
 	cmd command
@@ -74,63 +76,63 @@ var parserExca = []int{
 	-2, 18,
 }
 
-const parserNprod = 27
+const parserNprod = 28
 const parserPrivate = 57344
 
 var parserTokenNames []string
 var parserStates []string
 
-const parserLast = 52
+const parserLast = 59
 
 var parserAct = []int{
 
-	9, 29, 37, 14, 13, 19, 15, 12, 11, 20,
-	41, 26, 27, 28, 10, 21, 22, 23, 24, 8,
-	25, 25, 30, 31, 32, 33, 21, 22, 23, 24,
-	7, 25, 40, 1, 35, 38, 39, 23, 24, 34,
-	25, 36, 43, 42, 5, 6, 17, 18, 16, 4,
-	3, 2,
+	39, 41, 37, 23, 24, 40, 25, 29, 9, 20,
+	42, 26, 27, 28, 8, 14, 13, 19, 15, 12,
+	11, 7, 30, 31, 32, 33, 10, 14, 13, 38,
+	15, 12, 11, 25, 21, 22, 23, 24, 10, 25,
+	5, 6, 35, 44, 43, 21, 22, 23, 24, 34,
+	25, 1, 36, 17, 18, 16, 4, 3, 2,
 }
 var parserPact = []int{
 
-	-1000, 38, -1000, -1000, -1000, 16, 5, -1, -1, 7,
-	-1, -1, -1, -1000, -1000, -1000, -1000, -1000, -14, -1000,
-	7, -1, -1, -1, -1, 33, 18, 8, 8, 29,
-	27, 27, 8, 8, -1000, -1000, 20, -1000, -4, -1000,
-	29, -1, -1000, 7,
+	-1000, 34, -1000, -1000, -1000, 7, 0, 11, 11, 37,
+	11, 11, 11, -1000, -1000, -1000, -1000, -1000, -8, -1000,
+	37, 11, 11, 11, 11, 43, 26, 20, 20, 23,
+	-7, -7, 20, 20, -1000, -1000, -11, -1000, -4, 37,
+	-1000, 23, 11, -1000, 37,
 }
 var parserPgo = []int{
 
-	0, 51, 50, 49, 0, 48, 47, 46, 41, 2,
-	33,
+	0, 58, 57, 56, 0, 55, 54, 53, 52, 2,
+	51,
 }
 var parserR1 = []int{
 
 	0, 10, 10, 1, 1, 2, 3, 4, 4, 4,
 	4, 4, 4, 4, 4, 4, 4, 4, 4, 5,
-	6, 6, 7, 8, 8, 8, 9,
+	6, 6, 7, 8, 8, 8, 9, 9,
 }
 var parserR2 = []int{
 
 	0, 0, 2, 1, 1, 3, 3, 3, 3, 3,
 	3, 3, 2, 2, 1, 1, 1, 1, 1, 4,
-	1, 1, 3, 3, 1, 0, 3,
+	1, 1, 3, 3, 1, 0, 3, 1,
 }
 var parserChk = []int{
 
 	-1000, -10, -1, -2, -3, 6, 7, 14, 14, -4,
 	15, 9, 8, 5, 4, 7, -5, -7, -6, 6,
 	-4, 8, 9, 10, 11, 13, -4, -4, -4, 15,
-	-4, -4, -4, -4, 6, 16, -8, -9, 6, 16,
-	12, 14, -9, -4,
+	-4, -4, -4, -4, 6, 16, -8, -9, 6, -4,
+	16, 12, 14, -9, -4,
 }
 var parserDef = []int{
 
 	1, -2, 2, 3, 4, 0, 0, 0, 0, 5,
 	0, 0, 0, 14, 15, 16, 17, -2, 0, 20,
 	6, 0, 0, 0, 0, 0, 0, 12, 13, 25,
-	8, 9, 10, 11, 22, 7, 0, 24, 0, 19,
-	0, 0, 23, 26,
+	8, 9, 10, 11, 22, 7, 0, 24, 20, 27,
+	19, 0, 0, 23, 26,
 }
 var parserTok1 = []int{
 
@@ -375,114 +377,119 @@ parserdefault:
 	case 4:
 		parserVAL.cmd = parserS[parserpt-0].cmd
 	case 5:
-		//line internal_parser.y:48
+		//line internal_parser.y:50
 		{
 			parserlex.(*aslLexer).AddCommand(newOutputCommand(parserS[parserpt-2].t, parserS[parserpt-0].ex))
 		}
 	case 6:
-		//line internal_parser.y:55
+		//line internal_parser.y:57
 		{
 			parserlex.(*aslLexer).AddCommand(newAssignCommand(parserS[parserpt-2].t, parserS[parserpt-0].ex))
 		}
 	case 7:
-		//line internal_parser.y:61
+		//line internal_parser.y:63
 		{
 			parserVAL.ex = parserS[parserpt-1].ex
 		}
 	case 8:
-		//line internal_parser.y:63
-		{
-			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
-		}
-	case 9:
 		//line internal_parser.y:65
 		{
 			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
-	case 10:
+	case 9:
 		//line internal_parser.y:67
 		{
 			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
-	case 11:
+	case 10:
 		//line internal_parser.y:69
 		{
 			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
-	case 12:
+	case 11:
 		//line internal_parser.y:71
 		{
-			parserVAL.ex = newArithmeticExpression(numericExpressionZero, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
+			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
-	case 13:
+	case 12:
 		//line internal_parser.y:73
 		{
 			parserVAL.ex = newArithmeticExpression(numericExpressionZero, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
 		}
-	case 14:
+	case 13:
 		//line internal_parser.y:75
+		{
+			parserVAL.ex = newArithmeticExpression(numericExpressionZero, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
+		}
+	case 14:
+		//line internal_parser.y:77
 		{
 			parserVAL.ex = newNumericExpression(parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 15:
-		//line internal_parser.y:77
+		//line internal_parser.y:79
 		{
 			parserVAL.ex = newStringExpression(parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 16:
-		//line internal_parser.y:79
+		//line internal_parser.y:81
 		{
 			parserVAL.ex = newVariableExpression(parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 17:
-		//line internal_parser.y:81
-		{
-			parserVAL.ex = parserS[parserpt-0].ex
-		}
-	case 18:
 		//line internal_parser.y:83
 		{
 			parserVAL.ex = parserS[parserpt-0].ex
 		}
+	case 18:
+		//line internal_parser.y:85
+		{
+			parserVAL.ex = parserS[parserpt-0].ex
+		}
 	case 19:
-		//line internal_parser.y:87
+		//line internal_parser.y:89
 		{
 			parserVAL.ex = newFunctionCallExpression(parserS[parserpt-3].ex, parserS[parserpt-1].exl, parserS[parserpt-3].ex.line(), parserS[parserpt-3].ex.position())
 		}
 	case 20:
-		//line internal_parser.y:91
+		//line internal_parser.y:93
 		{
 			parserVAL.ex = newPropertyExpression(newGlobalExpression(parserS[parserpt-0].t.line, parserS[parserpt-0].t.start), parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 21:
-		//line internal_parser.y:94
+		//line internal_parser.y:96
 		{
 			parserVAL.ex = parserS[parserpt-0].ex
 		}
 	case 22:
-		//line internal_parser.y:98
+		//line internal_parser.y:100
 		{
 			parserVAL.ex = newPropertyExpression(parserS[parserpt-2].ex, parserS[parserpt-0].t.source, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 23:
-		//line internal_parser.y:102
+		//line internal_parser.y:104
 		{
 			parserVAL.exl[parserS[parserpt-0].exi.key] = parserS[parserpt-0].exi.value
 		}
 	case 24:
-		//line internal_parser.y:104
+		//line internal_parser.y:106
 		{
 			parserVAL.exl = map[string]expression{parserS[parserpt-0].exi.key: parserS[parserpt-0].exi.value}
 		}
 	case 25:
-		//line internal_parser.y:106
+		//line internal_parser.y:108
 		{
 			parserVAL.exl = map[string]expression{}
 		}
 	case 26:
-		//line internal_parser.y:110
+		//line internal_parser.y:112
 		{
 			parserVAL.exi = parseArgument{parserS[parserpt-2].t.source, parserS[parserpt-0].ex}
+		}
+	case 27:
+		//line internal_parser.y:115
+		{
+			parserVAL.exi = parseArgument{singleUnnamedArgument, parserS[parserpt-0].ex}
 		}
 	}
 	goto parserstack /* stack new state and value */

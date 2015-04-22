@@ -156,6 +156,13 @@ func TestGlobalMethods(t *testing.T) {
 	}
 }
 
+func TestSingleUnnamedMethods(t *testing.T) {
+	l := "/tmp/agent.sqlite3"
+	aggregations.Init(&l, make(chan error, 99999))
+
+	testRun(`a: series("cpu_load").last() + 10`, t)
+}
+
 func TestSeries(t *testing.T) {
 	l := "/tmp/agent.sqlite3"
 	aggregations.Init(&l, make(chan error, 99999))

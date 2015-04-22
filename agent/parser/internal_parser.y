@@ -6,6 +6,8 @@
 		key string
 		value expression
 	}
+
+	const singleUnnamedArgument = "----"
 	
 %}
 
@@ -108,6 +110,9 @@ expr_list				: expr_list T_COMMA expr_item
 
 expr_item				: T_IDENTIFIER T_COLON expr
 										{ $$ = parseArgument{$1.source, $3} }
+								|
+									expr
+										{ $$ = parseArgument{singleUnnamedArgument, $1} }
 								;
 
 
