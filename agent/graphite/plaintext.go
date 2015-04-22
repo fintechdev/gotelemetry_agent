@@ -99,24 +99,7 @@ func setupUDPListener(listen string, errorChannel chan error) {
 
 var splitter = regexp.MustCompile(" +")
 
-func parseRequest(context *aggregations.Context, remoteAddress, request string, errorChannel chan error) error {
-	request = strings.TrimSpace(request)
-
-	if request == "" {
-		return nil
-	}
-
-	line := splitter.Split(request, -1)
-
-	if len(line) != 3 {
-		return gotelemetry.NewErrorWithFormat(
-			400, "Graphite => [%s] Unable to parse request %s",
-			nil,
-			remoteAddress,
-			request,
-		)
-	}
-
+func parseTraditionalRequest(context *aggregations.Context, remoteAddress string, line []string, errorChannel chan error) error {
 	seriesName := line[0]
 
 	value, err := strconv.ParseFloat(line[1], 64)
@@ -178,6 +161,64 @@ func parseRequest(context *aggregations.Context, remoteAddress, request string, 
 	)
 
 	return nil
+}
+
+func parseCounterRequest(context *aggregations.Context, remoteAddress string, line []string, errorChannel chan error) error {
+	counterName := line[0]
+
+	value, err := strconv.ParseInt(line[1], 10, 64)
+
+	if err != nil {
+		return gotelemetry.NewErrorWithFormat(
+			400, "Graphite => [%s] Invalid value %s: %s",
+			nil,
+			remoteAddress,
+			line[1],
+			err.Error(),
+		)
+	}
+
+	counter, err := aggregations.GetCounter(context, counterName)
+
+	if err != nil {
+		return gotelemetry.NewErrorWithFormat(
+			500, "Graphite => [%s] Unable to get counter %s: %s",
+			nil,
+			remoteAddress,
+			counterName,
+			err.Error(),
+		)
+	}
+
+	counter.Increment(value)
+
+	return nil
+}
+
+func parseRequest(context *aggregations.Context, remoteAddress, request string, errorChannel chan error) error {
+	request = strings.TrimSpace(request)
+
+	if request == "" {
+		return nil
+	}
+
+	line := splitter.Split(request, -1)
+
+	switch len(line) {
+	case 2:
+		return parseCounterRequest(context, remoteAddress, line, errorChannel)
+
+	case 3:
+		return parseTraditionalRequest(context, remoteAddress, line, errorChannel)
+
+	default:
+		return gotelemetry.NewErrorWithFormat(
+			400, "Graphite => [%s] Unable to parse request %s",
+			nil,
+			remoteAddress,
+			request,
+		)
+	}
 }
 
 func handleTCPRequest(conn net.Conn, errorChannel chan error, closeOnError bool) {
