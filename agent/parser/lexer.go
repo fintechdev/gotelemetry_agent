@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	symbol        = "+-/*:.,()[]"
+	symbol        = "+-/*:.,()[]=&|!"
 	numeric       = "0123456789."
 	whitespace    = " \n\t"
 	openParens    = "("
@@ -17,18 +17,28 @@ const (
 	identifier = symbol + whitespace + openParens + closeParens + stringStart + stringEnd + variableStart
 )
 
-var symbolMap = map[rune]terminal{
-	'+': T_PLUS,
-	'-': T_MINUS,
-	'/': T_DIVIDE,
-	'*': T_MULTIPLY,
-	':': T_COLON,
-	'.': T_DOT,
-	',': T_COMMA,
-	'(': T_OPEN_PARENS,
-	')': T_CLOSE_PARENS,
-	'[': T_OPEN_BRACKET,
-	']': T_CLOSE_BRACKET,
+var symbolMap = map[string]terminal{
+	"+":  T_PLUS,
+	"-":  T_MINUS,
+	"/":  T_DIVIDE,
+	"*":  T_MULTIPLY,
+	":":  T_COLON,
+	".":  T_DOT,
+	",":  T_COMMA,
+	"(":  T_OPEN_PARENS,
+	")":  T_CLOSE_PARENS,
+	"[":  T_OPEN_BRACKET,
+	"]":  T_CLOSE_BRACKET,
+	"==": T_EQUAL,
+	"&&": T_AND,
+	"||": T_OR,
+	"!":  T_NEGATE,
+	"!=": T_NOT_EQUAL,
+}
+
+var identifierMap = map[string]terminal{
+	"false": T_FALSE,
+	"true":  T_TRUE,
 }
 
 func lexASL(name string, source string) chan token {
@@ -52,13 +62,7 @@ func aslInitial(l *lexer) stateFn {
 	// Check for symbols
 
 	if r := l.accept(symbol, false); r != utf8.RuneError {
-		if t, ok := symbolMap[r]; ok {
-			l.emit(t)
-			return aslInitial
-		} else {
-			l.errorf("Unknown symbol %q", r)
-			return nil
-		}
+		return aslSymbol
 	}
 
 	// Check for numbers
@@ -67,7 +71,7 @@ func aslInitial(l *lexer) stateFn {
 		l.acceptRun(numeric, false)
 		l.emit(T_NUMBER)
 
-		return aslInitial(l)
+		return aslInitial
 	}
 
 	// Check for strings
@@ -86,9 +90,32 @@ func aslInitial(l *lexer) stateFn {
 	// Must be an identifier
 
 	l.acceptRun(identifier, true)
-	l.emit(T_IDENTIFIER)
+
+	if t, ok := identifierMap[l.current()]; ok {
+		l.emit(t)
+	} else {
+		l.emit(T_IDENTIFIER)
+	}
 
 	return aslInitial
+}
+
+func aslSymbol(l *lexer) stateFn {
+	for {
+		s := l.current()
+
+		if t, ok := symbolMap[s]; ok {
+			l.emit(t)
+			return aslInitial
+		}
+
+		switch l.accept(symbol, false) {
+		case eofRune, utf8.RuneError:
+			l.errorf("Unknown symbol %q", s)
+			return nil
+		}
+	}
+
 }
 
 func aslString(l *lexer) stateFn {

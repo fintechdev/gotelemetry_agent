@@ -209,3 +209,68 @@ func TestSeries(t *testing.T) {
 		t.Errorf("Unexpected expression result: %v", res)
 	}
 }
+
+func TestBoolean(t *testing.T) {
+	l := "/tmp/agent.sqlite3"
+	aggregations.Init(&l, make(chan error, 99999))
+
+	res := testRun(`a: false`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == true {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: true`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == false {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: true || true`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == false {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: true || false`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == false {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: false || true`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == false {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: false || false`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == true {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: true && true`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == false {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: true && false`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == true {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: false && true`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == true {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+
+	res = testRun(`a: false && false`, t)
+
+	if _, ok := res["a"].(bool); !ok || res["a"] == true {
+		t.Errorf("Unexpected expression result: %v", res)
+	}
+}

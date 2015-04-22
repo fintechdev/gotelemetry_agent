@@ -36,7 +36,7 @@ func forceNumeric(c *executionContext, left, right expression, line, position in
 	return lll.(float64), rrr.(float64), nil
 }
 
-type artihmeticExpression struct {
+type arithmeticExpression struct {
 	left     expression
 	right    expression
 	operator token
@@ -45,10 +45,10 @@ type artihmeticExpression struct {
 }
 
 func newArithmeticExpression(left, right expression, operator token, line, position int) expression {
-	return &artihmeticExpression{left, right, operator, line, position}
+	return &arithmeticExpression{left, right, operator, line, position}
 }
 
-func (a *artihmeticExpression) evaluate(c *executionContext) (interface{}, error) {
+func (a *arithmeticExpression) evaluate(c *executionContext) (interface{}, error) {
 	l, r, err := forceNumeric(c, a.left, a.right, a.l, a.p)
 
 	switch a.operator.terminal {
@@ -78,14 +78,14 @@ func (a *artihmeticExpression) evaluate(c *executionContext) (interface{}, error
 	}
 }
 
-func (a *artihmeticExpression) line() int {
+func (a *arithmeticExpression) line() int {
 	return a.l
 }
 
-func (a *artihmeticExpression) position() int {
+func (a *arithmeticExpression) position() int {
 	return a.p
 }
 
-func (a *artihmeticExpression) String() string {
+func (a *arithmeticExpression) String() string {
 	return fmt.Sprintf("%s %s %s", a.left, a.operator.source, a.right)
 }

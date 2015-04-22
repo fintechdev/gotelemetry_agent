@@ -3,7 +3,7 @@ state 0
 	$accept: .commands $end 
 	commands: .    (1)
 
-	.  reduce 1 (src line 39)
+	.  reduce 1 (src line 44)
 
 	commands  goto 1
 
@@ -23,19 +23,19 @@ state 1
 state 2
 	commands:  commands command.    (2)
 
-	.  reduce 2 (src line 40)
+	.  reduce 2 (src line 45)
 
 
 state 3
 	command:  set_property.    (3)
 
-	.  reduce 3 (src line 42)
+	.  reduce 3 (src line 47)
 
 
 state 4
 	command:  assign_to_var.    (4)
 
-	.  reduce 4 (src line 44)
+	.  reduce 4 (src line 48)
 
 
 state 5
@@ -55,476 +55,816 @@ state 6
 state 7
 	set_property:  T_IDENTIFIER T_COLON.expr 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
 	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
 	expr  goto 9
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 8
 	assign_to_var:  T_VARIABLE T_COLON.expr 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
 	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
-	expr  goto 20
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
+	expr  goto 24
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 9
 	set_property:  T_IDENTIFIER T_COLON expr.    (5)
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
 	property:  expr.T_DOT T_IDENTIFIER 
 
-	T_PLUS  shift 21
-	T_MINUS  shift 22
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	.  reduce 5 (src line 48)
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_OR  shift 32
+	T_AND  shift 31
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  reduce 5 (src line 51)
 
 
 state 10
 	expr:  T_OPEN_PARENS.expr T_CLOSE_PARENS 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
 	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
-	expr  goto 26
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
+	expr  goto 34
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 11
-	expr:  T_MINUS.expr 
+	expr:  T_NUMBER.    (8)
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
-	T_OPEN_PARENS  shift 10
-	.  error
+	.  reduce 8 (src line 65)
 
-	expr  goto 27
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
 
 state 12
-	expr:  T_PLUS.expr 
+	expr:  T_STRING.    (9)
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
-	T_OPEN_PARENS  shift 10
-	.  error
+	.  reduce 9 (src line 67)
 
-	expr  goto 28
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
 
 state 13
-	expr:  T_NUMBER.    (14)
+	expr:  T_VARIABLE.    (10)
 
-	.  reduce 14 (src line 76)
+	.  reduce 10 (src line 69)
 
 
 state 14
-	expr:  T_STRING.    (15)
+	expr:  T_TRUE.    (11)
 
-	.  reduce 15 (src line 78)
+	.  reduce 11 (src line 71)
 
 
 state 15
-	expr:  T_VARIABLE.    (16)
+	expr:  T_FALSE.    (12)
 
-	.  reduce 16 (src line 80)
+	.  reduce 12 (src line 73)
 
 
 state 16
-	expr:  function_call.    (17)
+	expr:  operation.    (13)
 
-	.  reduce 17 (src line 82)
+	.  reduce 13 (src line 75)
 
 
 state 17
-	expr:  property.    (18)
-	callable_expr:  property.    (21)
+	expr:  function_call.    (14)
 
-	T_OPEN_PARENS  reduce 21 (src line 94)
-	.  reduce 18 (src line 84)
+	.  reduce 14 (src line 77)
 
 
 state 18
-	function_call:  callable_expr.T_OPEN_PARENS expr_list T_CLOSE_PARENS 
+	expr:  property.    (15)
+	callable_expr:  property.    (29)
 
-	T_OPEN_PARENS  shift 29
-	.  error
+	T_OPEN_PARENS  reduce 29 (src line 113)
+	.  reduce 15 (src line 79)
 
 
 state 19
-	callable_expr:  T_IDENTIFIER.    (20)
+	operation:  T_MINUS.expr 
 
-	.  reduce 20 (src line 92)
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
 
+	expr  goto 35
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 20
-	assign_to_var:  T_VARIABLE T_COLON expr.    (6)
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	property:  expr.T_DOT T_IDENTIFIER 
+	operation:  T_PLUS.expr 
 
-	T_PLUS  shift 21
-	T_MINUS  shift 22
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	.  reduce 6 (src line 55)
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
 
+	expr  goto 36
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 21
-	expr:  expr T_PLUS.expr 
+	operation:  T_NEGATE.expr 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
 	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
-	expr  goto 30
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
+	expr  goto 37
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 22
-	expr:  expr T_MINUS.expr 
+	function_call:  callable_expr.T_OPEN_PARENS expr_list T_CLOSE_PARENS 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
-	T_OPEN_PARENS  shift 10
+	T_OPEN_PARENS  shift 38
 	.  error
 
-	expr  goto 31
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
 
 state 23
-	expr:  expr T_MULTIPLY.expr 
+	callable_expr:  T_IDENTIFIER.    (28)
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
-	T_OPEN_PARENS  shift 10
-	.  error
+	.  reduce 28 (src line 111)
 
-	expr  goto 32
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
 
 state 24
-	expr:  expr T_DIVIDE.expr 
+	assign_to_var:  T_VARIABLE T_COLON expr.    (6)
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
-	T_OPEN_PARENS  shift 10
-	.  error
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_OR  shift 32
+	T_AND  shift 31
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  reduce 6 (src line 57)
 
-	expr  goto 33
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
 
 state 25
-	property:  expr T_DOT.T_IDENTIFIER 
+	operation:  expr T_PLUS.expr 
 
-	T_IDENTIFIER  shift 34
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
+	expr  goto 39
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 26
-	expr:  T_OPEN_PARENS expr.T_CLOSE_PARENS 
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	property:  expr.T_DOT T_IDENTIFIER 
+	operation:  expr T_MINUS.expr 
 
-	T_PLUS  shift 21
-	T_MINUS  shift 22
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	T_CLOSE_PARENS  shift 35
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
+	expr  goto 40
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 27
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	expr:  T_MINUS expr.    (12)
-	property:  expr.T_DOT T_IDENTIFIER 
+	operation:  expr T_MULTIPLY.expr 
 
-	T_DOT  shift 25
-	.  reduce 12 (src line 72)
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
 
+	expr  goto 41
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 28
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	expr:  T_PLUS expr.    (13)
-	property:  expr.T_DOT T_IDENTIFIER 
+	operation:  expr T_DIVIDE.expr 
 
-	T_DOT  shift 25
-	.  reduce 13 (src line 74)
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
 
+	expr  goto 42
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 29
-	function_call:  callable_expr T_OPEN_PARENS.expr_list T_CLOSE_PARENS 
-	expr_list: .    (25)
+	operation:  expr T_EQUAL.expr 
 
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 38
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
 	T_OPEN_PARENS  shift 10
-	.  reduce 25 (src line 107)
+	T_NEGATE  shift 21
+	.  error
 
-	expr  goto 39
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
-	expr_list  goto 36
-	expr_item  goto 37
+	expr  goto 43
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
 
 state 30
-	expr:  expr.T_PLUS expr 
-	expr:  expr T_PLUS expr.    (8)
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	property:  expr.T_DOT T_IDENTIFIER 
+	operation:  expr T_NOT_EQUAL.expr 
 
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	.  reduce 8 (src line 64)
-
-
-state 31
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr T_MINUS expr.    (9)
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	property:  expr.T_DOT T_IDENTIFIER 
-
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	.  reduce 9 (src line 66)
-
-
-state 32
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr T_MULTIPLY expr.    (10)
-	expr:  expr.T_DIVIDE expr 
-	property:  expr.T_DOT T_IDENTIFIER 
-
-	T_DOT  shift 25
-	.  reduce 10 (src line 68)
-
-
-state 33
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	expr:  expr T_DIVIDE expr.    (11)
-	property:  expr.T_DOT T_IDENTIFIER 
-
-	T_DOT  shift 25
-	.  reduce 11 (src line 70)
-
-
-state 34
-	property:  expr T_DOT T_IDENTIFIER.    (22)
-
-	.  reduce 22 (src line 99)
-
-
-state 35
-	expr:  T_OPEN_PARENS expr T_CLOSE_PARENS.    (7)
-
-	.  reduce 7 (src line 62)
-
-
-state 36
-	function_call:  callable_expr T_OPEN_PARENS expr_list.T_CLOSE_PARENS 
-	expr_list:  expr_list.T_COMMA expr_item 
-
-	T_COMMA  shift 41
-	T_CLOSE_PARENS  shift 40
-	.  error
-
-
-state 37
-	expr_list:  expr_item.    (24)
-
-	.  reduce 24 (src line 105)
-
-
-state 38
-	callable_expr:  T_IDENTIFIER.    (20)
-	expr_item:  T_IDENTIFIER.T_COLON expr 
-
-	T_COLON  shift 42
-	.  reduce 20 (src line 92)
-
-
-state 39
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
-	property:  expr.T_DOT T_IDENTIFIER 
-	expr_item:  expr.    (27)
-
-	T_PLUS  shift 21
-	T_MINUS  shift 22
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	.  reduce 27 (src line 113)
-
-
-state 40
-	function_call:  callable_expr T_OPEN_PARENS expr_list T_CLOSE_PARENS.    (19)
-
-	.  reduce 19 (src line 88)
-
-
-state 41
-	expr_list:  expr_list T_COMMA.expr_item 
-
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 38
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
 	T_OPEN_PARENS  shift 10
-	.  error
-
-	expr  goto 39
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
-	expr_item  goto 43
-
-state 42
-	expr_item:  T_IDENTIFIER T_COLON.expr 
-
-	T_STRING  shift 14
-	T_NUMBER  shift 13
-	T_IDENTIFIER  shift 19
-	T_VARIABLE  shift 15
-	T_PLUS  shift 12
-	T_MINUS  shift 11
-	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
 	.  error
 
 	expr  goto 44
-	function_call  goto 16
-	callable_expr  goto 18
-	property  goto 17
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
+
+state 31
+	operation:  expr T_AND.expr 
+
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
+
+	expr  goto 45
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
+
+state 32
+	operation:  expr T_OR.expr 
+
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
+
+	expr  goto 46
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
+
+state 33
+	property:  expr T_DOT.T_IDENTIFIER 
+
+	T_IDENTIFIER  shift 47
+	.  error
+
+
+state 34
+	expr:  T_OPEN_PARENS expr.T_CLOSE_PARENS 
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_CLOSE_PARENS  shift 48
+	T_OR  shift 32
+	T_AND  shift 31
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  error
+
+
+state 35
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	operation:  T_MINUS expr.    (24)
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_DOT  shift 33
+	.  reduce 24 (src line 99)
+
+
+state 36
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	operation:  T_PLUS expr.    (25)
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_DOT  shift 33
+	.  reduce 25 (src line 101)
+
+
+state 37
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	operation:  T_NEGATE expr.    (26)
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_DOT  shift 33
+	.  reduce 26 (src line 103)
+
+
+state 38
+	function_call:  callable_expr T_OPEN_PARENS.expr_list T_CLOSE_PARENS 
+	expr_list: .    (33)
+
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 51
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  reduce 33 (src line 125)
+
+	expr  goto 52
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
+	expr_list  goto 49
+	expr_item  goto 50
+
+state 39
+	operation:  expr.T_PLUS expr 
+	operation:  expr T_PLUS expr.    (16)
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	.  reduce 16 (src line 83)
+
+
+state 40
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr T_MINUS expr.    (17)
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	.  reduce 17 (src line 85)
+
+
+state 41
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr T_MULTIPLY expr.    (18)
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_DOT  shift 33
+	.  reduce 18 (src line 87)
+
+
+state 42
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr T_DIVIDE expr.    (19)
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_DOT  shift 33
+	.  reduce 19 (src line 89)
+
 
 state 43
-	expr_list:  expr_list T_COMMA expr_item.    (23)
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr T_EQUAL expr.    (20)
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
 
-	.  reduce 23 (src line 103)
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_EQUAL  error
+	T_NOT_EQUAL  error
+	.  reduce 20 (src line 91)
 
 
 state 44
-	expr:  expr.T_PLUS expr 
-	expr:  expr.T_MINUS expr 
-	expr:  expr.T_MULTIPLY expr 
-	expr:  expr.T_DIVIDE expr 
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr T_NOT_EQUAL expr.    (21)
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
 	property:  expr.T_DOT T_IDENTIFIER 
-	expr_item:  T_IDENTIFIER T_COLON expr.    (26)
 
-	T_PLUS  shift 21
-	T_MINUS  shift 22
-	T_MULTIPLY  shift 23
-	T_DIVIDE  shift 24
-	T_DOT  shift 25
-	.  reduce 26 (src line 111)
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_EQUAL  error
+	T_NOT_EQUAL  error
+	.  reduce 21 (src line 93)
 
 
-21 terminals, 11 nonterminals
-28 grammar rules, 45/2000 states
+state 45
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr T_AND expr.    (22)
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  reduce 22 (src line 95)
+
+
+state 46
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	operation:  expr T_OR expr.    (23)
+	property:  expr.T_DOT T_IDENTIFIER 
+
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_AND  shift 31
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  reduce 23 (src line 97)
+
+
+state 47
+	property:  expr T_DOT T_IDENTIFIER.    (30)
+
+	.  reduce 30 (src line 117)
+
+
+state 48
+	expr:  T_OPEN_PARENS expr T_CLOSE_PARENS.    (7)
+
+	.  reduce 7 (src line 63)
+
+
+state 49
+	function_call:  callable_expr T_OPEN_PARENS expr_list.T_CLOSE_PARENS 
+	expr_list:  expr_list.T_COMMA expr_item 
+
+	T_COMMA  shift 54
+	T_CLOSE_PARENS  shift 53
+	.  error
+
+
+state 50
+	expr_list:  expr_item.    (32)
+
+	.  reduce 32 (src line 123)
+
+
+state 51
+	callable_expr:  T_IDENTIFIER.    (28)
+	expr_item:  T_IDENTIFIER.T_COLON expr 
+
+	T_COLON  shift 55
+	.  reduce 28 (src line 111)
+
+
+state 52
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+	expr_item:  expr.    (35)
+
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_OR  shift 32
+	T_AND  shift 31
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  reduce 35 (src line 131)
+
+
+state 53
+	function_call:  callable_expr T_OPEN_PARENS expr_list T_CLOSE_PARENS.    (27)
+
+	.  reduce 27 (src line 107)
+
+
+state 54
+	expr_list:  expr_list T_COMMA.expr_item 
+
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 51
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
+
+	expr  goto 52
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
+	expr_item  goto 56
+
+state 55
+	expr_item:  T_IDENTIFIER T_COLON.expr 
+
+	T_STRING  shift 12
+	T_NUMBER  shift 11
+	T_IDENTIFIER  shift 23
+	T_VARIABLE  shift 13
+	T_TRUE  shift 14
+	T_FALSE  shift 15
+	T_PLUS  shift 20
+	T_MINUS  shift 19
+	T_OPEN_PARENS  shift 10
+	T_NEGATE  shift 21
+	.  error
+
+	expr  goto 57
+	function_call  goto 17
+	callable_expr  goto 22
+	property  goto 18
+	operation  goto 16
+
+state 56
+	expr_list:  expr_list T_COMMA expr_item.    (31)
+
+	.  reduce 31 (src line 121)
+
+
+state 57
+	operation:  expr.T_PLUS expr 
+	operation:  expr.T_MINUS expr 
+	operation:  expr.T_MULTIPLY expr 
+	operation:  expr.T_DIVIDE expr 
+	operation:  expr.T_EQUAL expr 
+	operation:  expr.T_NOT_EQUAL expr 
+	operation:  expr.T_AND expr 
+	operation:  expr.T_OR expr 
+	property:  expr.T_DOT T_IDENTIFIER 
+	expr_item:  T_IDENTIFIER T_COLON expr.    (34)
+
+	T_PLUS  shift 25
+	T_MINUS  shift 26
+	T_MULTIPLY  shift 27
+	T_DIVIDE  shift 28
+	T_DOT  shift 33
+	T_OR  shift 32
+	T_AND  shift 31
+	T_EQUAL  shift 29
+	T_NOT_EQUAL  shift 30
+	.  reduce 34 (src line 129)
+
+
+28 terminals, 12 nonterminals
+36 grammar rules, 58/2000 states
 0 shift/reduce, 0 reduce/reduce conflicts reported
-60 working sets used
-memory: parser 55/30000
-26 extra closures
-129 shift entries, 2 exceptions
-21 goto entries
-34 entries saved by goto default
-Optimizer space used: output 59/30000
-59 table entries, 0 zero
-maximum spread: 16, maximum offset: 42
+61 working sets used
+memory: parser 92/30000
+39 extra closures
+261 shift entries, 6 exceptions
+27 goto entries
+65 entries saved by goto default
+Optimizer space used: output 123/30000
+123 table entries, 24 zero
+maximum spread: 25, maximum offset: 55

@@ -116,6 +116,10 @@ func (l *lexer) errorf(format string, args ...interface{}) {
 	l.start = l.pos
 }
 
+func (l *lexer) current() string {
+	return l.source[l.start:l.pos]
+}
+
 func (l *lexer) emit(v terminal) {
 	if l.pos > l.start {
 		l.out <- token{terminal: v, line: l.lineNumber(), start: l.start, source: l.source[l.start:l.pos]}

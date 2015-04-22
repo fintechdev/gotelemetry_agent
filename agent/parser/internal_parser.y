@@ -20,18 +20,23 @@
 }
 
 %type <cmd> command, set_property, assign_to_var
-%type <ex> expr, function_call, callable_expr, property
+%type <ex> expr, function_call, callable_expr, property, operation
 %type <exl> expr_list
 %type <exi> expr_item
-%token <t> T_STRING T_NUMBER T_IDENTIFIER T_VARIABLE
+%token <t> T_STRING T_NUMBER T_IDENTIFIER T_VARIABLE T_TRUE T_FALSE
 %token <t> T_PLUS T_MINUS T_MULTIPLY T_DIVIDE
 %token <t> T_COMMA T_DOT T_COLON
 %token <t> T_OPEN_PARENS T_CLOSE_PARENS T_OPEN_BRACKET T_CLOSE_BRACKET 
+%token <t> T_OR T_AND T_EQUAL T_NOT_EQUAL T_NEGATE
 
 %left T_FUNCTION_CALL
+%left T_OR
+%left T_AND
+%nonassoc T_EQUAL T_NOT_EQUAL
 %left T_PLUS T_MINUS
 %left T_MULTIPLY T_DIVIDE
-%left T_UMINUS T_UPLUS
+%right T_NEGATE 
+%right T_UMINUS T_UPLUS
 %left T_DOT
 
 %%
@@ -39,21 +44,17 @@
 commands				: /* empty */
 								| commands command
 
-command					:
-								set_property
-								|
-								assign_to_var
+command					: set_property
+								| assign_to_var
 								;
 
-set_property    :
-								T_IDENTIFIER T_COLON expr
+set_property    : T_IDENTIFIER T_COLON expr
 									{
 										parserlex.(*aslLexer).AddCommand(newOutputCommand($1, $3))
 									}
 								;
 
-assign_to_var		:
-								T_VARIABLE T_COLON expr
+assign_to_var		: T_VARIABLE T_COLON expr
 									{
 										parserlex.(*aslLexer).AddCommand(newAssignCommand($1, $3))
 									}
@@ -61,29 +62,47 @@ assign_to_var		:
 
 expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
 										{ $$ = $2 }
-								|	expr T_PLUS expr
-										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
-								|	expr T_MINUS expr
-										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
-								|	expr T_MULTIPLY expr
-										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
-								|	expr T_DIVIDE expr
-										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
-								|	T_MINUS expr 			%prec T_UMINUS
-										{ $$ = newArithmeticExpression(numericExpressionZero, $2, $1, $1.line, $1.start) }
-								|	T_PLUS expr 			%prec T_UPLUS
-										{ $$ = newArithmeticExpression(numericExpressionZero, $2, $1, $1.line, $1.start) }
 								| T_NUMBER
 										{ $$ = newNumericExpression($1.source, $1.line, $1.start) }
 								| T_STRING
 										{ $$ = newStringExpression($1.source, $1.line, $1.start) }
 								| T_VARIABLE
 										{ $$ = newVariableExpression($1.source, $1.line, $1.start) }
+								|	T_TRUE
+										{ $$ = newBooleanExpression(true, $1.line, $1.start) }
+								|	T_FALSE
+										{ $$ = newBooleanExpression(false, $1.line, $1.start) }
+								| operation
+										{ $$ = $1 }
 								| function_call
 										{ $$ = $1 }
 								| property
 										{ $$ = $1 }
 								; 
+
+operation 		  : expr T_PLUS expr
+										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_MINUS expr
+										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_MULTIPLY expr
+										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_DIVIDE expr
+										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_EQUAL expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_NOT_EQUAL expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_AND expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_OR expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								|	T_MINUS expr 			%prec T_UMINUS
+										{ $$ = newArithmeticExpression(numericExpressionZero, $2, $1, $1.line, $1.start) }
+								|	T_PLUS expr 			%prec T_UPLUS
+										{ $$ = newArithmeticExpression(numericExpressionZero, $2, $1, $1.line, $1.start) }
+								|	T_NEGATE expr 			%prec T_UPLUS
+										{ $$ = newLogicalExpression($2, booleanExpressionZero, $1, $1.line, $1.start) }
+								;
 
 function_call 	: callable_expr T_OPEN_PARENS expr_list T_CLOSE_PARENS		%prec T_FUNCTION_CALL
 										{ $$ = newFunctionCallExpression($1, $3, $1.line(), $1.position()) }
@@ -91,8 +110,7 @@ function_call 	: callable_expr T_OPEN_PARENS expr_list T_CLOSE_PARENS		%prec T_F
 
 callable_expr		: T_IDENTIFIER
 										{ $$ = newPropertyExpression(newGlobalExpression($1.line, $1.start), $1.source, $1.line, $1.start) }
-								|
-									property
+								| property
 										{ $$ = $1 }
 								;
 
@@ -110,8 +128,7 @@ expr_list				: expr_list T_COMMA expr_item
 
 expr_item				: T_IDENTIFIER T_COLON expr
 										{ $$ = parseArgument{$1.source, $3} }
-								|
-									expr
+								| expr
 										{ $$ = parseArgument{singleUnnamedArgument, $1} }
 								;
 
