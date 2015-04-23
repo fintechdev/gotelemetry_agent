@@ -99,6 +99,42 @@ func (x *logicalExpression) evaluate(c *executionContext) (interface{}, error) {
 
 		return newBooleanExpression(l != r, x.l, x.p), nil
 
+	case T_GREATER_THAN:
+		l, r, err := forceNumeric(c, x.left, x.right, x.l, x.p)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return newBooleanExpression(l > r, x.l, x.p), nil
+
+	case T_GREATER_THAN_OR_EQUAL:
+		l, r, err := forceNumeric(c, x.left, x.right, x.l, x.p)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return newBooleanExpression(l >= r, x.l, x.p), nil
+
+	case T_LESS_THAN:
+		l, r, err := forceNumeric(c, x.left, x.right, x.l, x.p)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return newBooleanExpression(l < r, x.l, x.p), nil
+
+	case T_LESS_THAN_OR_EQUAL:
+		l, r, err := forceNumeric(c, x.left, x.right, x.l, x.p)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return newBooleanExpression(l <= r, x.l, x.p), nil
+
 	case T_AND:
 		l, r, err := forceBoolean(c, x.left, x.right, x.l, x.p)
 

@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	symbol        = "+-/*:.,()[]=&|!{}\n;"
+	symbol        = "+-/*:.,()[]=&|!{}\n;<>"
 	numeric       = "0123456789."
 	whitespace    = " \t"
 	openParens    = "("
@@ -38,6 +38,10 @@ var symbolMap = map[string]terminal{
 	"}":  T_CLOSE_BRACE,
 	"\n": T_TERMINATOR,
 	";":  T_TERMINATOR,
+	">":  T_GREATER_THAN,
+	"<":  T_LESS_THAN,
+	">=": T_GREATER_THAN_OR_EQUAL,
+	"<=": T_LESS_THAN_OR_EQUAL,
 }
 
 var identifierMap = map[string]terminal{
@@ -108,16 +112,19 @@ func aslInitial(l *lexer) stateFn {
 
 func aslSymbol(l *lexer) stateFn {
 	for {
-		s := l.current()
+		r := l.accept(symbol, false)
 
-		if s == "!" {
-			// Hardcoded for now.
-			if l.peek() == '=' {
-				l.next() // Special case for !=
+		if r != utf8.RuneError && r != eofRune {
+			s := l.current()
+
+			if _, ok := symbolMap[s]; ok {
+				continue
 			}
 
-			s = l.current()
+			l.backup()
 		}
+
+		s := l.current()
 
 		if t, ok := symbolMap[s]; ok {
 			if t == T_CLOSE_BRACE {

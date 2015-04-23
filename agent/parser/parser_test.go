@@ -231,6 +231,18 @@ func TestBooleanAndLogicOperations(t *testing.T) {
 		"Inequality 6.1":           {`a:10!="11"`, checkBool(true)},
 		"Inequality 7":             {`a:"test"!="test"`, checkBool(false)},
 		"Inequality 7.1":           {`a:"test"!="test1"`, checkBool(true)},
+		"Greater than 1":           {`a:10>11`, checkBool(false)},
+		"Greater than 2":           {`a:12>11`, checkBool(true)},
+		"Greater than 3":           {`a:12>12`, checkBool(false)},
+		"Greater than or equal 1":  {`a:10>=11`, checkBool(false)},
+		"Greater than or equal 2":  {`a:12>=11`, checkBool(true)},
+		"Greater than or equal 3":  {`a:12>=12`, checkBool(true)},
+		"Less than 1":              {`a:10<11`, checkBool(true)},
+		"Less than 2":              {`a:12<11`, checkBool(false)},
+		"Less than 3":              {`a:12<12`, checkBool(false)},
+		"Less than or equal 1":     {`a:10<=11`, checkBool(true)},
+		"Less than or equal 2":     {`a:12<=11`, checkBool(false)},
+		"Less than or equal 3":     {`a:12<=12`, checkBool(true)},
 	}
 
 	runParserTests(tests, t)

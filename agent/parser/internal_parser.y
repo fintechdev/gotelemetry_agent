@@ -29,13 +29,14 @@
 %token <t> T_PLUS T_MINUS T_MULTIPLY T_DIVIDE
 %token <t> T_COMMA T_DOT T_COLON
 %token <t> T_OPEN_PARENS T_CLOSE_PARENS T_OPEN_BRACKET T_CLOSE_BRACKET T_OPEN_BRACE T_CLOSE_BRACE
-%token <t> T_OR T_AND T_EQUAL T_NOT_EQUAL T_NEGATE
+%token <t> T_OR T_AND T_EQUAL T_NOT_EQUAL T_NEGATE T_GREATER_THAN T_LESS_THAN T_GREATER_THAN_OR_EQUAL T_LESS_THAN_OR_EQUAL
 %token <t> T_IF T_ELSE
 %token <t> T_TERMINATOR
 
 %left T_FUNCTION_CALL
 %left T_OR
 %left T_AND
+%left T_GREATER_THAN T_LESS_THAN T_GREATER_THAN_OR_EQUAL T_LESS_THAN_OR_EQUAL
 %nonassoc T_EQUAL T_NOT_EQUAL
 %left T_PLUS T_MINUS
 %left T_MULTIPLY T_DIVIDE
@@ -124,6 +125,14 @@ operation 		  : expr T_PLUS expr
 								| expr T_AND expr
 										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
 								| expr T_OR expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_GREATER_THAN expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_GREATER_THAN_OR_EQUAL expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_LESS_THAN expr
+										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
+								| expr T_LESS_THAN_OR_EQUAL expr
 										{ $$ = newLogicalExpression($1, $3, $2, $1.line(), $1.position()) }
 								|	T_MINUS expr 			%prec T_UMINUS
 										{ $$ = newArithmeticExpression(numericExpressionZero, $2, $1, $1.line, $1.start) }
