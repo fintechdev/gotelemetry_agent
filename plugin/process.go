@@ -360,7 +360,7 @@ func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 		return "", errs[0]
 	}
 
-	output, err := parser.Run(commands)
+	output, err := parser.Run(j, commands)
 
 	if err != nil {
 		return "", err

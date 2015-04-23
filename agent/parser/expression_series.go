@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"io"
 	"time"
 )
 
@@ -51,6 +52,9 @@ var seriesProperties = map[string]seriesProperty{
 	"aggregate": func(s *seriesExpression) expression {
 		return s.aggregate()
 	},
+	"trim": func(s *seriesExpression) expression {
+		return s.trim()
+	},
 }
 
 func (s *seriesExpression) compute(name string, functionType aggregations.FunctionType) expression {
@@ -88,13 +92,52 @@ func (s *seriesExpression) last() expression {
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			l, err := s.series.Last()
 
-			if err != nil {
+			if err != nil && err != io.EOF {
 				return nil, err
 			}
 
-			return newSeriesResultExpression(l["value"].(float64), l["ts"].(int64), s.l, s.p), nil
+			v, _ := l["value"].(float64)
+			ts, _ := l["ts"].(int64)
+
+			return newSeriesResultExpression(v, ts, s.l, s.p), nil
 		},
 		map[string]callableArgument{},
+		s.l,
+		s.p,
+	)
+}
+
+func (s *seriesExpression) trim() expression {
+	return newCallableExpression(
+		"trim",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			since, ok1 := args["since"].(string)
+			count, ok2 := args["count"].(float64)
+
+			if ok1 && ok2 {
+				return nil, errors.New("A call to trim() cannot contain both `since` and `count` arguments")
+			}
+
+			if ok1 {
+				d, err := time.ParseDuration(since)
+
+				if err != nil {
+					return nil, err
+				}
+
+				return nil, s.series.TrimSince(time.Now().Add(d))
+			}
+
+			if ok2 {
+				return nil, s.series.TrimCount(int(count))
+			}
+
+			return nil, errors.New("Either a `since` or `count` argument is required when calling trim()")
+		},
+		map[string]callableArgument{
+			"since": callableArgumentOptionalString,
+			"count": callableArgumentOptionalNumeric,
+		},
 		s.l,
 		s.p,
 	)

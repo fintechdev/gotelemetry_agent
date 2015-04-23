@@ -67,6 +67,10 @@ func (e *callableExpression) call(c *executionContext, arguments map[string]inte
 				delete(arguments, singleUnnamedArgument)
 			}
 		}
+	} else {
+		if _, ok := arguments[singleUnnamedArgument]; ok {
+			return nil, errors.New("Unnamed arguments are not allowed in calls to functions or methods that support multiple arguments")
+		}
 	}
 
 	args := map[string]interface{}{}

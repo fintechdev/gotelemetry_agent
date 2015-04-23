@@ -170,6 +170,8 @@ func TestSeries(t *testing.T) {
 		"Series.count()":     {`a:series("cpu_load").count("10m")+10`, checkFloat},
 		"Series.min()":       {`a:series("cpu_load").min("10m")+10`, checkFloat},
 		"Series.max()":       {`a:series("cpu_load").max("10m")+10`, checkFloat},
+		"Series.trim(since)": {`a:series("cpu_load").trim(since:"10m")`, nil},
+		"Series.trim(count)": {`a:series("cpu_load").trim(count:100)`, nil},
 	}
 
 	runParserTests(tests, t)
