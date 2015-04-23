@@ -21,6 +21,10 @@ func newASLLexer(out chan token) *aslLexer {
 }
 
 func (a *aslLexer) AddCommand(cmd command) {
+	if cmd == nil {
+		return
+	}
+
 	a.commands = append(a.commands, cmd)
 }
 

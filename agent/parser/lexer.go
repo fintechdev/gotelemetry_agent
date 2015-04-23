@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	symbol        = "+-/*:.,()[]=&|!{}"
+	symbol        = "+-/*:.,()[]=&|!{}\n;"
 	numeric       = "0123456789."
-	whitespace    = " \n\t"
+	whitespace    = " \t"
 	openParens    = "("
 	closeParens   = ")"
 	stringStart   = `"`
@@ -36,6 +36,8 @@ var symbolMap = map[string]terminal{
 	"!=": T_NOT_EQUAL,
 	"{":  T_OPEN_BRACE,
 	"}":  T_CLOSE_BRACE,
+	"\n": T_TERMINATOR,
+	";":  T_TERMINATOR,
 }
 
 var identifierMap = map[string]terminal{
@@ -118,6 +120,10 @@ func aslSymbol(l *lexer) stateFn {
 		}
 
 		if t, ok := symbolMap[s]; ok {
+			if t == T_CLOSE_BRACE {
+				l.emitGhost(T_TERMINATOR)
+			}
+
 			l.emit(t)
 			return aslInitial
 		}

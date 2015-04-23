@@ -31,6 +31,7 @@
 %token <t> T_OPEN_PARENS T_CLOSE_PARENS T_OPEN_BRACKET T_CLOSE_BRACKET T_OPEN_BRACE T_CLOSE_BRACE
 %token <t> T_OR T_AND T_EQUAL T_NOT_EQUAL T_NEGATE
 %token <t> T_IF T_ELSE
+%token <t> T_TERMINATOR
 
 %left T_FUNCTION_CALL
 %left T_OR
@@ -56,26 +57,28 @@ command_list		:
 									}
 								;
 
-commands				: commands command
+commands				: commands command 
 									{ $$ = append($$, $2) }
 								| command
 									{ $$ = []command{$1} }
 								| command_block
 									{ $$ = $1 }
-								| expr
-									{ $$ = []command{newEvaluateCommand($1)} }
 								;
 
 command_block		: T_OPEN_BRACE commands T_CLOSE_BRACE
 									{ $$ = $2 }
 
 
-command					: set_property
+command					: set_property T_TERMINATOR
 									{ $$ = $1 }
-								| assign_to_var
+								| assign_to_var T_TERMINATOR
 									{ $$ = $1 }
 								| if_then_else
 									{ $$ = $1 }
+								| expr T_TERMINATOR
+									{ $$ = newEvaluateCommand($1) }
+								| T_TERMINATOR
+									{ $$ = $$ }
 								;
 
 set_property    : T_IDENTIFIER T_COLON expr

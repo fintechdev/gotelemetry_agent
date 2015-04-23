@@ -30,14 +30,17 @@ func (g *globalExpression) evaluate(c *executionContext) (interface{}, error) {
 type globalProperty func(g *globalExpression) expression
 
 var globalProperties = map[string]globalProperty{
+	"counter": func(g *globalExpression) expression {
+		return g.counter()
+	},
 	"now": func(g *globalExpression) expression {
 		return g.now()
 	},
-	"series": func(g *globalExpression) expression {
-		return g.series()
-	},
 	"notify": func(g *globalExpression) expression {
 		return g.notify()
+	},
+	"series": func(g *globalExpression) expression {
+		return g.series()
 	},
 }
 
@@ -48,6 +51,25 @@ func (g *globalExpression) now() expression {
 			return newNumericExpression(time.Now().Unix(), g.l, g.p), nil
 		},
 		map[string]callableArgument{},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) counter() expression {
+	return newCallableExpression(
+		"counter",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			n := args["name"].(string)
+			res, err := aggregations.GetCounter(c.aggregationContext, n)
+
+			if err != nil {
+				return nil, err
+			}
+
+			return newCounterExpression(n, res, g.p, g.p), nil
+		},
+		map[string]callableArgument{"name": callableArgumentString},
 		g.l,
 		g.p,
 	)

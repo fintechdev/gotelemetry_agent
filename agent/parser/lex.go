@@ -120,6 +120,10 @@ func (l *lexer) current() string {
 	return l.source[l.start:l.pos]
 }
 
+func (l *lexer) emitGhost(v terminal) {
+	l.out <- token{terminal: v, line: l.lineNumber(), start: l.start, source: ""}
+}
+
 func (l *lexer) emit(v terminal) {
 	if l.pos > l.start {
 		l.out <- token{terminal: v, line: l.lineNumber(), start: l.start, source: l.source[l.start:l.pos]}
@@ -132,6 +136,7 @@ func (l *lexer) run(initial stateFn) {
 		state = state(l)
 	}
 
+	l.out <- token{terminal: T_TERMINATOR, line: l.lineNumber(), start: l.start, source: ""}
 	l.out <- token{terminal: eofTerminal, line: l.lineNumber(), start: l.start, source: ""}
 	close(l.out)
 }

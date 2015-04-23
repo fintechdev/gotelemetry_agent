@@ -104,9 +104,9 @@ func TestBasicExpressions(t *testing.T) {
 		"Parentheses":              {"a:(123+10)*10", 1330.0},
 		"Unary Minus":              {"a:123+-10", 113.0},
 		"Unary Minus + precedence": {"a:-(123+10)*10", -1330.0},
-		"Variable assignment":      {"$a:10 a:$a+10", 20.0},
+		"Variable assignment":      {"$a:10; a:$a+10", 20.0},
 		"Arithmetic deviance":      {`a:"test"+10`, func(res testR, errs testE) bool { return len(errs) == 1 }},
-		"Variable transassignment": {`$a: series("cpu_load") a: $a.last()`, func(res testR, errs testE) bool { _, ok := res["a"].(float64); return ok }},
+		"Variable transassignment": {`$a: series("cpu_load"); a: $a.last()`, func(res testR, errs testE) bool { _, ok := res["a"].(float64); return ok }},
 	}
 
 	runParserTests(tests, t)
@@ -127,7 +127,7 @@ func TestGlobalMethods(t *testing.T) {
 
 	tests := map[string]parserTest{
 		"Global.now()":            {"a:now()", checkFloat},
-		"Global.now() assignment": {"$a:now() a:$a", checkFloat},
+		"Global.now() assignment": {"$a:now(); a:$a", checkFloat},
 		"Global.notify()":         {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
 	}
 
@@ -170,6 +170,16 @@ func TestSeries(t *testing.T) {
 		"Series.count()":     {`a:series("cpu_load").count("10m")+10`, checkFloat},
 		"Series.min()":       {`a:series("cpu_load").min("10m")+10`, checkFloat},
 		"Series.max()":       {`a:series("cpu_load").max("10m")+10`, checkFloat},
+	}
+
+	runParserTests(tests, t)
+}
+
+func TestCounter(t *testing.T) {
+	tests := map[string]parserTest{
+		"Counter.set":       {`$a:counter("test123"); $a.set(100); a:counter("test123")`, 100.0},
+		"Counter.increment": {`$a:counter("test123"); $a.set(100); $a.increment(100); a:counter("test123")`, 200.0},
+		"Counter.reset":     {`$a:counter("test123"); $a.reset(); a:counter("test123")`, 0.0},
 	}
 
 	runParserTests(tests, t)
