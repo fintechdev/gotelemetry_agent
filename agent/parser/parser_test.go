@@ -128,7 +128,7 @@ func TestGlobalMethods(t *testing.T) {
 	tests := map[string]parserTest{
 		"Global.now()":            {"a:now()", checkFloat},
 		"Global.now() assignment": {"$a:now() a:$a", checkFloat},
-		"Global.notify()":         {`$r:notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
+		"Global.notify()":         {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
 	}
 
 	runParserTests(tests, t)

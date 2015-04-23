@@ -62,6 +62,8 @@ commands				: commands command
 									{ $$ = []command{$1} }
 								| command_block
 									{ $$ = $1 }
+								| expr
+									{ $$ = []command{newEvaluateCommand($1)} }
 								;
 
 command_block		: T_OPEN_BRACE commands T_CLOSE_BRACE
