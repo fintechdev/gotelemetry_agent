@@ -102,7 +102,7 @@ func TestLexer(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !compareTokens(tokes, []token{token{terminal: 0, line: 1, start: 0, source: "123"}, token{terminal: 1, line: 1, start: 4, source: "+"}, token{terminal: 0, line: 1, start: 6, source: "192"}, token{terminal: 1, line: 1, start: 10, source: "/"}, token{terminal: 0, line: 1, start: 12, source: "-21"}, token{terminal: 57376, line: 1, start: 15, source: ""}}) {
+	if !compareTokens(tokes, []token{token{terminal: 0, line: 1, start: 0, source: "123"}, token{terminal: 1, line: 1, start: 4, source: "+"}, token{terminal: 0, line: 1, start: 6, source: "192"}, token{terminal: 1, line: 1, start: 10, source: "/"}, token{terminal: 0, line: 1, start: 12, source: "-21"}, token{terminal: 57377, line: 1, start: 15, source: ""}}) {
 		t.Errorf("Unexpected lexer output: %#v", tokes)
 	}
 
@@ -112,7 +112,7 @@ func TestLexer(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !compareTokens(tokes, []token{token{terminal: 0, line: 1, start: 0, source: "123"}, token{terminal: 1, line: 1, start: 4, source: "+"}, token{terminal: 0, line: 1, start: 5, source: "+192"}, token{terminal: 1, line: 1, start: 10, source: "/"}, token{terminal: 0, line: 1, start: 12, source: "-21"}, token{terminal: 57376, line: 1, start: 15, source: ""}}) {
+	if !compareTokens(tokes, []token{token{terminal: 0, line: 1, start: 0, source: "123"}, token{terminal: 1, line: 1, start: 4, source: "+"}, token{terminal: 0, line: 1, start: 5, source: "+192"}, token{terminal: 1, line: 1, start: 10, source: "/"}, token{terminal: 0, line: 1, start: 12, source: "-21"}, token{terminal: 57377, line: 1, start: 15, source: ""}}) {
 		t.Errorf("Unexpected lexer output: %#v", tokes)
 	}
 

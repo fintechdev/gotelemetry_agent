@@ -31,7 +31,9 @@ func (a *aslLexer) AddCommand(cmd command) {
 func (a *aslLexer) Lex(lval *parserSymType) int {
 	a.current = <-a.out
 
-	// log.Printf("%#v", a.current)
+	if a.current.terminal == errorTerminal {
+		a.Error(a.current.source)
+	}
 
 	lval.t = a.current
 

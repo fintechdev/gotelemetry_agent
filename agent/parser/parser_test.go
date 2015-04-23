@@ -95,18 +95,19 @@ func runParserTests(tests map[string]parserTest, t *testing.T) {
 
 func TestBasicExpressions(t *testing.T) {
 	tests := map[string]parserTest{
-		"Numeric expression":       {"a:123", 123.0},
-		"Addition":                 {"a:123+10", 133.0},
-		"Multiplication":           {"a:10*10", 100.0},
-		"Division":                 {"a:100/5", 20.0},
-		"Subtraction":              {"a:132-10", 122.0},
-		"Arithmetic precedence":    {"a:123+10*10", 223.0},
-		"Parentheses":              {"a:(123+10)*10", 1330.0},
-		"Unary Minus":              {"a:123+-10", 113.0},
-		"Unary Minus + precedence": {"a:-(123+10)*10", -1330.0},
-		"Variable assignment":      {"$a:10; a:$a+10", 20.0},
-		"Arithmetic deviance":      {`a:"test"+10`, func(res testR, errs testE) bool { return len(errs) == 1 }},
-		"Variable transassignment": {`$a: series("cpu_load"); a: $a.last()`, func(res testR, errs testE) bool { _, ok := res["a"].(float64); return ok }},
+		"Comment":                  {`/* Test 1 2 3 * 3 */ a=123`, 123.0},
+		"Numeric expression":       {"a=123", 123.0},
+		"Addition":                 {"a=123+10", 133.0},
+		"Multiplication":           {"a=10*10", 100.0},
+		"Division":                 {"a=100/5", 20.0},
+		"Subtraction":              {"a=132-10", 122.0},
+		"Arithmetic precedence":    {"a=123+10*10", 223.0},
+		"Parentheses":              {"a=(123+10)*10", 1330.0},
+		"Unary Minus":              {"a=123+-10", 113.0},
+		"Unary Minus + precedence": {"a=-(123+10)*10", -1330.0},
+		"Variable assignment":      {"$a=10; a=$a+10", 20.0},
+		"Arithmetic deviance":      {`a="test"+10`, func(res testR, errs testE) bool { return len(errs) == 1 }},
+		"Variable transassignment": {`$a= series("cpu_load"); a= $a.last()`, func(res testR, errs testE) bool { _, ok := res["a"].(float64); return ok }},
 	}
 
 	runParserTests(tests, t)
@@ -126,8 +127,8 @@ func TestGlobalMethods(t *testing.T) {
 	}
 
 	tests := map[string]parserTest{
-		"Global.now()":            {"a:now()", checkFloat},
-		"Global.now() assignment": {"$a:now(); a:$a", checkFloat},
+		"Global.now()":            {"a=now()", checkFloat},
+		"Global.now() assignment": {"$a=now(); a=$a", checkFloat},
 		"Global.notify()":         {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
 	}
 
@@ -163,15 +164,15 @@ func TestSeries(t *testing.T) {
 	}
 
 	tests := map[string]parserTest{
-		"Series.last()":      {`a:series("cpu_load").last()+10`, checkFloat},
-		"Series.aggregate()": {`a:series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
-		"Series.avg()":       {`a:series("cpu_load").avg("10m")+10`, checkFloat},
-		"Series.sum()":       {`a:series("cpu_load").avg("10m")+10`, checkFloat},
-		"Series.count()":     {`a:series("cpu_load").count("10m")+10`, checkFloat},
-		"Series.min()":       {`a:series("cpu_load").min("10m")+10`, checkFloat},
-		"Series.max()":       {`a:series("cpu_load").max("10m")+10`, checkFloat},
-		"Series.trim(since)": {`a:series("cpu_load").trim(since:"10m")`, nil},
-		"Series.trim(count)": {`a:series("cpu_load").trim(count:100)`, nil},
+		"Series.last()":      {`a=series("cpu_load").last()+10`, checkFloat},
+		"Series.aggregate()": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
+		"Series.avg()":       {`a=series("cpu_load").avg("10m")+10`, checkFloat},
+		"Series.sum()":       {`a=series("cpu_load").avg("10m")+10`, checkFloat},
+		"Series.count()":     {`a=series("cpu_load").count("10m")+10`, checkFloat},
+		"Series.min()":       {`a=series("cpu_load").min("10m")+10`, checkFloat},
+		"Series.max()":       {`a=series("cpu_load").max("10m")+10`, checkFloat},
+		"Series.trim(since)": {`a=series("cpu_load").trim(since:"10m")`, nil},
+		"Series.trim(count)": {`a=series("cpu_load").trim(count:100)`, nil},
 	}
 
 	runParserTests(tests, t)
@@ -179,9 +180,9 @@ func TestSeries(t *testing.T) {
 
 func TestCounter(t *testing.T) {
 	tests := map[string]parserTest{
-		"Counter.set":       {`$a:counter("test123"); $a.set(100); a:counter("test123")`, 100.0},
-		"Counter.increment": {`$a:counter("test123"); $a.set(100); $a.increment(100); a:counter("test123")`, 200.0},
-		"Counter.reset":     {`$a:counter("test123"); $a.reset(); a:counter("test123")`, 0.0},
+		"Counter.set":       {`$a=counter("test123"); $a.set(100); a=counter("test123")`, 100.0},
+		"Counter.increment": {`$a=counter("test123"); $a.set(100); $a.increment(100); a=counter("test123")`, 200.0},
+		"Counter.reset":     {`$a=counter("test123"); $a.reset(); a=counter("test123")`, 0.0},
 	}
 
 	runParserTests(tests, t)
@@ -201,48 +202,48 @@ func TestBooleanAndLogicOperations(t *testing.T) {
 	}
 
 	tests := map[string]parserTest{
-		"Boolean false assignment": {"a:false", checkBool(false)},
-		"Boolean true assignment":  {"a:true", checkBool(true)},
-		"Boolean or 1":             {"a:true||true", checkBool(true)},
-		"Boolean or 2":             {"a:true||false", checkBool(true)},
-		"Boolean or 3":             {"a:false||true", checkBool(true)},
-		"Boolean or 4":             {"a:false||false", checkBool(false)},
-		"Boolean and 1":            {"a:true&&true", checkBool(true)},
-		"Boolean and 2":            {"a:true&&false", checkBool(false)},
-		"Boolean and 3":            {"a:false&&true", checkBool(false)},
-		"Boolean and 4":            {"a:false&&false", checkBool(false)},
-		"Equality 1":               {"a:true==true", checkBool(true)},
-		"Equality 2":               {"a:true==false", checkBool(false)},
-		"Equality 3":               {"a:false==true", checkBool(false)},
-		"Equality 4":               {"a:false==false", checkBool(true)},
-		"Equality 5":               {"a:10==10", checkBool(true)},
-		"Equality 5.1":             {"a:10==11", checkBool(false)},
-		"Equality 6":               {`a:10=="10"`, checkBool(true)},
-		"Equality 6.1":             {`a:10=="11"`, checkBool(false)},
-		"Equality 7":               {`a:"test"=="test"`, checkBool(true)},
-		"Equality 7.1":             {`a:"test"=="test1"`, checkBool(false)},
-		"Inequality 1":             {"a:true!=true", checkBool(false)},
-		"Inequality 2":             {"a:true!=false", checkBool(true)},
-		"Inequality 3":             {"a:false!=true", checkBool(true)},
-		"Inequality 4":             {"a:false!=false", checkBool(false)},
-		"Inequality 5":             {"a:10!=10", checkBool(false)},
-		"Inequality 5.1":           {"a:10!=11", checkBool(true)},
-		"Inequality 6":             {`a:10!="10"`, checkBool(false)},
-		"Inequality 6.1":           {`a:10!="11"`, checkBool(true)},
-		"Inequality 7":             {`a:"test"!="test"`, checkBool(false)},
-		"Inequality 7.1":           {`a:"test"!="test1"`, checkBool(true)},
-		"Greater than 1":           {`a:10>11`, checkBool(false)},
-		"Greater than 2":           {`a:12>11`, checkBool(true)},
-		"Greater than 3":           {`a:12>12`, checkBool(false)},
-		"Greater than or equal 1":  {`a:10>=11`, checkBool(false)},
-		"Greater than or equal 2":  {`a:12>=11`, checkBool(true)},
-		"Greater than or equal 3":  {`a:12>=12`, checkBool(true)},
-		"Less than 1":              {`a:10<11`, checkBool(true)},
-		"Less than 2":              {`a:12<11`, checkBool(false)},
-		"Less than 3":              {`a:12<12`, checkBool(false)},
-		"Less than or equal 1":     {`a:10<=11`, checkBool(true)},
-		"Less than or equal 2":     {`a:12<=11`, checkBool(false)},
-		"Less than or equal 3":     {`a:12<=12`, checkBool(true)},
+		"Boolean false assignment": {"a=false", checkBool(false)},
+		"Boolean true assignment":  {"a=true", checkBool(true)},
+		"Boolean or 1":             {"a=true||true", checkBool(true)},
+		"Boolean or 2":             {"a=true||false", checkBool(true)},
+		"Boolean or 3":             {"a=false||true", checkBool(true)},
+		"Boolean or 4":             {"a=false||false", checkBool(false)},
+		"Boolean and 1":            {"a=true&&true", checkBool(true)},
+		"Boolean and 2":            {"a=true&&false", checkBool(false)},
+		"Boolean and 3":            {"a=false&&true", checkBool(false)},
+		"Boolean and 4":            {"a=false&&false", checkBool(false)},
+		"Equality 1":               {"a=true==true", checkBool(true)},
+		"Equality 2":               {"a=true==false", checkBool(false)},
+		"Equality 3":               {"a=false==true", checkBool(false)},
+		"Equality 4":               {"a=false==false", checkBool(true)},
+		"Equality 5":               {"a=10==10", checkBool(true)},
+		"Equality 5.1":             {"a=10==11", checkBool(false)},
+		"Equality 6":               {`a=10=="10"`, checkBool(true)},
+		"Equality 6.1":             {`a=10=="11"`, checkBool(false)},
+		"Equality 7":               {`a="test"=="test"`, checkBool(true)},
+		"Equality 7.1":             {`a="test"=="test1"`, checkBool(false)},
+		"Inequality 1":             {"a=true!=true", checkBool(false)},
+		"Inequality 2":             {"a=true!=false", checkBool(true)},
+		"Inequality 3":             {"a=false!=true", checkBool(true)},
+		"Inequality 4":             {"a=false!=false", checkBool(false)},
+		"Inequality 5":             {"a=10!=10", checkBool(false)},
+		"Inequality 5.1":           {"a=10!=11", checkBool(true)},
+		"Inequality 6":             {`a=10!="10"`, checkBool(false)},
+		"Inequality 6.1":           {`a=10!="11"`, checkBool(true)},
+		"Inequality 7":             {`a="test"!="test"`, checkBool(false)},
+		"Inequality 7.1":           {`a="test"!="test1"`, checkBool(true)},
+		"Greater than 1":           {`a=10>11`, checkBool(false)},
+		"Greater than 2":           {`a=12>11`, checkBool(true)},
+		"Greater than 3":           {`a=12>12`, checkBool(false)},
+		"Greater than or equal 1":  {`a=10>=11`, checkBool(false)},
+		"Greater than or equal 2":  {`a=12>=11`, checkBool(true)},
+		"Greater than or equal 3":  {`a=12>=12`, checkBool(true)},
+		"Less than 1":              {`a=10<11`, checkBool(true)},
+		"Less than 2":              {`a=12<11`, checkBool(false)},
+		"Less than 3":              {`a=12<12`, checkBool(false)},
+		"Less than or equal 1":     {`a=10<=11`, checkBool(true)},
+		"Less than or equal 2":     {`a=12<=11`, checkBool(false)},
+		"Less than or equal 3":     {`a=12<=12`, checkBool(true)},
 	}
 
 	runParserTests(tests, t)
@@ -250,8 +251,8 @@ func TestBooleanAndLogicOperations(t *testing.T) {
 
 func TestIfThenElse(t *testing.T) {
 	tests := map[string]parserTest{
-		"If then":      {"if true==true{a:10}", 10.0},
-		"If then else": {"if false==true{a:10}else{a:20}", 20.0},
+		"If then":      {"if true==true{a=10}", 10.0},
+		"If then else": {"if false==true{a=10}else{a=20}", 20.0},
 	}
 
 	runParserTests(tests, t)

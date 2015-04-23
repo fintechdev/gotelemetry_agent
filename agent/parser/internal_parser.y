@@ -27,11 +27,12 @@
 %type <exi> expr_item
 %token <t> T_STRING T_NUMBER T_IDENTIFIER T_VARIABLE T_TRUE T_FALSE
 %token <t> T_PLUS T_MINUS T_MULTIPLY T_DIVIDE
-%token <t> T_COMMA T_DOT T_COLON
+%token <t> T_COMMA T_DOT T_ASSIGN T_COLON
 %token <t> T_OPEN_PARENS T_CLOSE_PARENS T_OPEN_BRACKET T_CLOSE_BRACKET T_OPEN_BRACE T_CLOSE_BRACE
 %token <t> T_OR T_AND T_EQUAL T_NOT_EQUAL T_NEGATE T_GREATER_THAN T_LESS_THAN T_GREATER_THAN_OR_EQUAL T_LESS_THAN_OR_EQUAL
 %token <t> T_IF T_ELSE
 %token <t> T_TERMINATOR
+%token <t> T_COMMENT
 
 %left T_FUNCTION_CALL
 %left T_OR
@@ -80,13 +81,15 @@ command					: set_property T_TERMINATOR
 									{ $$ = newEvaluateCommand($1) }
 								| T_TERMINATOR
 									{ $$ = $$ }
+								| T_COMMENT
+									{ $$ = $$ }
 								;
 
-set_property    : T_IDENTIFIER T_COLON expr
+set_property    : T_IDENTIFIER T_ASSIGN expr
 									{ $$ = newOutputCommand($1, $3) }
 								;
 
-assign_to_var		: T_VARIABLE T_COLON expr
+assign_to_var		: T_VARIABLE T_ASSIGN expr
 									{	$$ = newAssignCommand($1, $3) }
 								;
 

@@ -23,6 +23,7 @@ var symbolMap = map[string]terminal{
 	"/":  T_DIVIDE,
 	"*":  T_MULTIPLY,
 	":":  T_COLON,
+	"=":  T_ASSIGN,
 	".":  T_DOT,
 	",":  T_COMMA,
 	"(":  T_OPEN_PARENS,
@@ -42,6 +43,7 @@ var symbolMap = map[string]terminal{
 	"<":  T_LESS_THAN,
 	">=": T_GREATER_THAN_OR_EQUAL,
 	"<=": T_LESS_THAN_OR_EQUAL,
+	"/*": T_COMMENT,
 }
 
 var identifierMap = map[string]terminal{
@@ -110,6 +112,23 @@ func aslInitial(l *lexer) stateFn {
 	return aslInitial
 }
 
+func aslComment(l *lexer) stateFn {
+	for {
+		l.acceptRun("*", true)
+		l.next()
+
+		switch l.next() {
+		case '/':
+			l.emit(T_COMMENT)
+			return aslInitial
+
+		case eofRune:
+			l.errorf("Unterminated comment")
+			return nil
+		}
+	}
+}
+
 func aslSymbol(l *lexer) stateFn {
 	for {
 		r := l.accept(symbol, false)
@@ -127,6 +146,10 @@ func aslSymbol(l *lexer) stateFn {
 		s := l.current()
 
 		if t, ok := symbolMap[s]; ok {
+			if t == T_COMMENT {
+				return aslComment
+			}
+
 			if t == T_CLOSE_BRACE {
 				l.emitGhost(T_TERMINATOR)
 			}

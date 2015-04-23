@@ -55,6 +55,12 @@ var seriesProperties = map[string]seriesProperty{
 	"trim": func(s *seriesExpression) expression {
 		return s.trim()
 	},
+	"push": func(s *seriesExpression) expression {
+		return s.push()
+	},
+	"pop": func(s *seriesExpression) expression {
+		return s.pop()
+	},
 }
 
 func (s *seriesExpression) compute(name string, functionType aggregations.FunctionType) expression {
@@ -91,6 +97,52 @@ func (s *seriesExpression) last() expression {
 		"last",
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			l, err := s.series.Last()
+
+			if err != nil && err != io.EOF {
+				return nil, err
+			}
+
+			v, _ := l["value"].(float64)
+			ts, _ := l["ts"].(int64)
+
+			return newSeriesResultExpression(v, ts, s.l, s.p), nil
+		},
+		map[string]callableArgument{},
+		s.l,
+		s.p,
+	)
+}
+
+func (s *seriesExpression) push() expression {
+	return newCallableExpression(
+		"push",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			var timestamp time.Time
+
+			if ts, ok := args["timestamp"].(float64); ok {
+				timestamp = time.Unix(int64(ts), 0)
+			} else {
+				timestamp = time.Now()
+			}
+
+			value := args["value"].(float64)
+
+			return nil, s.series.Push(&timestamp, value)
+		},
+		map[string]callableArgument{
+			"timestamp": callableArgumentOptionalNumeric,
+			"value":     callableArgumentNumeric,
+		},
+		s.l,
+		s.p,
+	)
+}
+
+func (s *seriesExpression) pop() expression {
+	return newCallableExpression(
+		"pop",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			l, err := s.series.Pop(false)
 
 			if err != nil && err != io.EOF {
 				return nil, err
