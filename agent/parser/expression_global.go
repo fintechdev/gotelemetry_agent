@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"time"
 )
@@ -34,6 +35,9 @@ var globalProperties = map[string]globalProperty{
 	},
 	"series": func(g *globalExpression) expression {
 		return g.series()
+	},
+	"notify": func(g *globalExpression) expression {
+		return g.notify()
 	},
 }
 
@@ -68,6 +72,54 @@ func (g *globalExpression) series() expression {
 	)
 }
 
+func (g *globalExpression) notify() expression {
+	return newCallableExpression(
+		"notify",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			title := args["title"].(string)
+			message := args["message"].(string)
+
+			d, err := time.ParseDuration(args["duration"].(string))
+
+			if err != nil {
+				return nil, err
+			}
+
+			duration := int(d.Seconds())
+
+			if duration < 1 {
+				duration = 1
+			}
+
+			tag, _ := args["tag"].(string)
+			icon, _ := args["icon"].(string)
+			sound, ok := args["sound"].(string)
+
+			if !ok {
+				sound = "default"
+			}
+
+			channelTag := args["channel"].(string)
+
+			notification := gotelemetry.NewNotification(title, message, icon, duration, sound, tag)
+
+			result := c.notificationProvider.SendNotification(notification, channelTag)
+
+			return newBooleanExpression(result, g.l, g.p), nil
+		},
+		map[string]callableArgument{
+			"channel":  callableArgumentString,
+			"title":    callableArgumentString,
+			"message":  callableArgumentString,
+			"duration": callableArgumentString,
+			"tag":      callableArgumentOptionalBoolean,
+			"icon":     callableArgumentOptionalString,
+			"sound":    callableArgumentOptionalString,
+		},
+		g.l,
+		g.p,
+	)
+}
 func (g *globalExpression) extract(c *executionContext, property string) (expression, error) {
 	if f, ok := globalProperties[property]; ok {
 		return f(g), nil

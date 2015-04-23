@@ -6,14 +6,14 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 )
 
-func Run(commands []command) (map[string]interface{}, error) {
+func Run(notificationProvider executionContextNotificationProvider, commands []command) (map[string]interface{}, error) {
 	ac, err := aggregations.GetContext()
 
 	if err != nil {
 		return nil, err
 	}
 
-	ec := newExecutionContext(ac)
+	ec := newExecutionContext(ac, notificationProvider)
 
 	for _, cmd := range commands {
 		if err := cmd.execute(ec); err != nil {

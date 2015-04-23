@@ -12,6 +12,7 @@
 %}
 
 %union {
+	cmds []command
 	cmd command
 	ex expression
 	exl map[string]expression
@@ -19,15 +20,17 @@
 	t token
 }
 
-%type <cmd> command, set_property, assign_to_var
+%type <cmds> commands, command_list, command_block
+%type <cmd> command, set_property, assign_to_var, if_then_else
 %type <ex> expr, function_call, callable_expr, property, operation
 %type <exl> expr_list
 %type <exi> expr_item
 %token <t> T_STRING T_NUMBER T_IDENTIFIER T_VARIABLE T_TRUE T_FALSE
 %token <t> T_PLUS T_MINUS T_MULTIPLY T_DIVIDE
 %token <t> T_COMMA T_DOT T_COLON
-%token <t> T_OPEN_PARENS T_CLOSE_PARENS T_OPEN_BRACKET T_CLOSE_BRACKET 
+%token <t> T_OPEN_PARENS T_CLOSE_PARENS T_OPEN_BRACKET T_CLOSE_BRACKET T_OPEN_BRACE T_CLOSE_BRACE
 %token <t> T_OR T_AND T_EQUAL T_NOT_EQUAL T_NEGATE
+%token <t> T_IF T_ELSE
 
 %left T_FUNCTION_CALL
 %left T_OR
@@ -41,23 +44,44 @@
 
 %%
 
-commands				: /* empty */
-								| commands command
+command_list		: 
+									{ $$ = []command{} }
+								|	commands
+									{ 
+										for _, cmd := range $$ {
+											parserlex.(*aslLexer).AddCommand(cmd)
+										}
+
+										$$ = $1
+									}
+								;
+
+commands				: commands command
+									{ $$ = append($$, $2) }
+								| command
+									{ $$ = []command{$1} }
+								| command_block
+									{ $$ = $1 }
+								;
+
+command_block		: T_OPEN_BRACE commands T_CLOSE_BRACE
+									{ $$ = $2 }
+
 
 command					: set_property
+									{ $$ = $1 }
 								| assign_to_var
+									{ $$ = $1 }
+								| if_then_else
+									{ $$ = $1 }
 								;
 
 set_property    : T_IDENTIFIER T_COLON expr
-									{
-										parserlex.(*aslLexer).AddCommand(newOutputCommand($1, $3))
-									}
+									{ $$ = newOutputCommand($1, $3) }
 								;
 
 assign_to_var		: T_VARIABLE T_COLON expr
-									{
-										parserlex.(*aslLexer).AddCommand(newAssignCommand($1, $3))
-									}
+									{	$$ = newAssignCommand($1, $3) }
 								;
 
 expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
@@ -132,5 +156,8 @@ expr_item				: T_IDENTIFIER T_COLON expr
 										{ $$ = parseArgument{singleUnnamedArgument, $1} }
 								;
 
-
-
+if_then_else		: T_IF expr command_block
+										{ $$ = newIfThenElseCommand($2, $3, []command{}) }
+								| T_IF expr command_block T_ELSE command_block
+										{ $$ = newIfThenElseCommand($2, $3, $5) }
+								;

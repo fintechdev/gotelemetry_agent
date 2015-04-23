@@ -27,6 +27,8 @@ func (a *aslLexer) AddCommand(cmd command) {
 func (a *aslLexer) Lex(lval *parserSymType) int {
 	a.current = <-a.out
 
+	// log.Printf("%#v", a.current)
+
 	lval.t = a.current
 
 	return int(a.current.terminal)

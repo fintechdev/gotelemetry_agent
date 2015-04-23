@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	symbol        = "+-/*:.,()[]=&|!"
+	symbol        = "+-/*:.,()[]=&|!{}"
 	numeric       = "0123456789."
 	whitespace    = " \n\t"
 	openParens    = "("
@@ -34,11 +34,15 @@ var symbolMap = map[string]terminal{
 	"||": T_OR,
 	"!":  T_NEGATE,
 	"!=": T_NOT_EQUAL,
+	"{":  T_OPEN_BRACE,
+	"}":  T_CLOSE_BRACE,
 }
 
 var identifierMap = map[string]terminal{
 	"false": T_FALSE,
 	"true":  T_TRUE,
+	"if":    T_IF,
+	"else":  T_ELSE,
 }
 
 func lexASL(name string, source string) chan token {
@@ -103,6 +107,15 @@ func aslInitial(l *lexer) stateFn {
 func aslSymbol(l *lexer) stateFn {
 	for {
 		s := l.current()
+
+		if s == "!" {
+			// Hardcoded for now.
+			if l.peek() == '=' {
+				l.next() // Special case for !=
+			}
+
+			s = l.current()
+		}
 
 		if t, ok := symbolMap[s]; ok {
 			l.emit(t)

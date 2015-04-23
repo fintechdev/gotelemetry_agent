@@ -186,6 +186,17 @@ func (j *Job) SetFlowError(tag string, body interface{}) {
 	}
 }
 
+func (j *Job) SendNotification(notification gotelemetry.Notification, channelTag string) bool {
+	channel := gotelemetry.NewChannel(channelTag)
+
+	if err := channel.SendNotification(j.credentials, notification); err != nil {
+		j.ReportError(err)
+		return true
+	}
+
+	return false
+}
+
 // Function PerformSubtasks runs any tasks that have been associated with the
 // `then` entry to the current task.
 func (j *Job) PerformSubtasks() {

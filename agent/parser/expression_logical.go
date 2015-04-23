@@ -64,7 +64,7 @@ func forceComparable(c *executionContext, left, right expression, line, position
 		return lll, rrr, nil
 	}
 
-	return ll, rr, nil
+	return l, r, nil
 }
 
 type logicalExpression struct {
