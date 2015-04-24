@@ -46,6 +46,9 @@ var seriesProperties = map[string]seriesProperty{
 	"count": func(s *seriesExpression) expression {
 		return s.compute("count", aggregations.Count)
 	},
+	"stddev": func(s *seriesExpression) expression {
+		return s.compute("stddev", aggregations.StdDev)
+	},
 	"last": func(s *seriesExpression) expression {
 		return s.last()
 	},
