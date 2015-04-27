@@ -62,9 +62,9 @@ command_list		:
 								;
 
 commands				: commands command 
-									{ $$ = append($$, $2) }
+									{ if $2 != nil { $$ = append($$, $2) } }
 								| command
-									{ $$ = []command{$1} }
+									{ if $1 != nil { $$ = []command{$1} } else { $$ = []command{} } }
 								| command_block
 									{ $$ = $1 }
 								;

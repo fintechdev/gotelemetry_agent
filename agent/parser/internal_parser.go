@@ -479,12 +479,18 @@ parserdefault:
 	case 3:
 		//line internal_parser.y:65
 		{
-			parserVAL.cmds = append(parserVAL.cmds, parserS[parserpt-0].cmd)
+			if parserS[parserpt-0].cmd != nil {
+				parserVAL.cmds = append(parserVAL.cmds, parserS[parserpt-0].cmd)
+			}
 		}
 	case 4:
 		//line internal_parser.y:67
 		{
-			parserVAL.cmds = []command{parserS[parserpt-0].cmd}
+			if parserS[parserpt-0].cmd != nil {
+				parserVAL.cmds = []command{parserS[parserpt-0].cmd}
+			} else {
+				parserVAL.cmds = []command{}
+			}
 		}
 	case 5:
 		//line internal_parser.y:69

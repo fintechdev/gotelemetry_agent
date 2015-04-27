@@ -24,6 +24,12 @@ func newNumericExpression(value interface{}, line, position int) expression {
 	}
 
 	switch value.(type) {
+	case *numericExpression:
+		v := value.(*numericExpression)
+
+		result.value = v.value
+		result.err = v.err
+
 	case float64:
 		result.value = value.(float64)
 
