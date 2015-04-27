@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -17,6 +18,29 @@ type expression interface {
 	evaluate(c *executionContext) (interface{}, error)
 	line() int
 	position() int
+}
+
+func expressionFromInterface(v interface{}, line, position int) (expression, error) {
+	if _, ok := v.(expression); ok {
+		return v.(expression), nil
+	}
+
+	switch v.(type) {
+	case []interface{}:
+		return newArrayExpression(v.([]interface{}), line, position), nil
+
+	case int, int64, float64:
+		return newNumericExpression(v, line, position), nil
+
+	case string:
+		return newStringExpression(v, line, position), nil
+
+	case bool:
+		return newBooleanExpression(v, line, position), nil
+
+	default:
+		return nil, errors.New(fmt.Sprintf("Unable to create an expression with a value of type %T", v))
+	}
 }
 
 func resolveExpression(c *executionContext, e expression) (interface{}, error) {

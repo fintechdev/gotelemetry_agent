@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"math"
 	"time"
 )
 
@@ -41,6 +42,9 @@ var globalProperties = map[string]globalProperty{
 	},
 	"series": func(g *globalExpression) expression {
 		return g.series()
+	},
+	"anomaly": func(g *globalExpression) expression {
+		return g.anomaly()
 	},
 }
 
@@ -142,6 +146,28 @@ func (g *globalExpression) notify() expression {
 		g.p,
 	)
 }
+
+func (g *globalExpression) anomaly() expression {
+	return newCallableExpression(
+		"anomaly",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			data := args["data"].(numericArray)
+			value := args["data"].(float64)
+
+			mean := data.avg()
+			stddev := data.stddev()
+
+			return newBooleanExpression(math.Abs(value-mean) > 3*stddev, g.l, g.p), nil
+		},
+		map[string]callableArgument{
+			"data":  callableArgumentNumericArray,
+			"value": callableArgumentNumeric,
+		},
+		g.l,
+		g.p,
+	)
+}
+
 func (g *globalExpression) extract(c *executionContext, property string) (expression, error) {
 	if f, ok := globalProperties[property]; ok {
 		return f(g), nil
