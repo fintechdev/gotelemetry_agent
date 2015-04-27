@@ -292,3 +292,13 @@ func TestArrays(t *testing.T) {
 
 	runParserTests(tests, t)
 }
+
+func TestAnomaly(t *testing.T) {
+	tests := map[string]parserTest{
+		"Anomaly (true)":  {"$a = [10, 20, 30]; a = anomaly(data:$a, value:10000)", true},
+		"Anomaly (false)": {"$a = [10, 20, 30]; a = anomaly(data:$a, value:10)", false},
+	}
+
+	runParserTests(tests, t)
+
+}

@@ -152,7 +152,7 @@ func (g *globalExpression) anomaly() expression {
 		"anomaly",
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			data := args["data"].(numericArray)
-			value := args["data"].(float64)
+			value := args["value"].(float64)
 
 			mean := data.avg()
 			stddev := data.stddev()

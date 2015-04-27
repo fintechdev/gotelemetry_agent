@@ -17,6 +17,9 @@ func newArrayExpression(value interface{}, line, position int) expression {
 	var values []interface{}
 
 	switch value.(type) {
+	case *arrayExpression:
+		values = value.(*arrayExpression).values
+
 	case []interface{}:
 		values = value.([]interface{})
 
