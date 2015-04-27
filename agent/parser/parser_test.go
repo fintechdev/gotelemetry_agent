@@ -164,16 +164,17 @@ func TestSeries(t *testing.T) {
 	}
 
 	tests := map[string]parserTest{
-		"Series.last()":      {`a=series("cpu_load").last()+10`, checkFloat},
-		"Series.aggregate()": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
-		"Series.avg()":       {`a=series("cpu_load").avg("10m")+10`, checkFloat},
-		"Series.sum()":       {`a=series("cpu_load").avg("10m")+10`, checkFloat},
-		"Series.count()":     {`a=series("cpu_load").count("10m")+10`, checkFloat},
-		"Series.min()":       {`a=series("cpu_load").min("10m")+10`, checkFloat},
-		"Series.max()":       {`a=series("cpu_load").max("10m")+10`, checkFloat},
-		"Series.stddev()":    {`a=series("cpu_load").stddev("10m")+10`, checkFloat},
-		"Series.trim(since)": {`a=series("cpu_load").trim(since:"10m")`, nil},
-		"Series.trim(count)": {`a=series("cpu_load").trim(count:100)`, nil},
+		"Series.last()":        {`a=series("cpu_load").last()+10`, checkFloat},
+		"Series.aggregate()":   {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
+		"Series.aggregate() 2": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50).values.count()`, 50.0},
+		"Series.avg()":         {`a=series("cpu_load").avg("10m")+10`, checkFloat},
+		"Series.sum()":         {`a=series("cpu_load").avg("10m")+10`, checkFloat},
+		"Series.count()":       {`a=series("cpu_load").count("10m")+10`, checkFloat},
+		"Series.min()":         {`a=series("cpu_load").min("10m")+10`, checkFloat},
+		"Series.max()":         {`a=series("cpu_load").max("10m")+10`, checkFloat},
+		"Series.stddev()":      {`a=series("cpu_load").stddev("10m")+10`, checkFloat},
+		"Series.trim(since)":   {`a=series("cpu_load").trim(since:"10m")`, nil},
+		"Series.trim(count)":   {`a=series("cpu_load").trim(count:100)`, nil},
 	}
 
 	runParserTests(tests, t)
@@ -254,6 +255,39 @@ func TestIfThenElse(t *testing.T) {
 	tests := map[string]parserTest{
 		"If then":      {"if true==true{a=10}", 10.0},
 		"If then else": {"if false==true{a=10}else{a=20}", 20.0},
+	}
+
+	runParserTests(tests, t)
+}
+
+func TestArrays(t *testing.T) {
+	checkArray := func(expect []interface{}) func(res testR, errs testE) bool {
+		return func(res testR, errs testE) bool {
+			r := res["a"].([]interface{})
+
+			if len(r) != len(expect) {
+				return false
+			}
+
+			for index, value := range expect {
+				if r[index] != value {
+					return false
+				}
+			}
+
+			return true
+		}
+	}
+
+	tests := map[string]parserTest{
+		"Immediate array": {"a = [10, 20, 30]", checkArray([]interface{}{10.0, 20.0, 30.0})},
+		"Array element":   {"$a = [10, 20, 30]; a = $a.item(1)", 20.0},
+		"Array sum":       {"$a = [10, 20, 30]; a = $a.sum()", 60.0},
+		"Array min":       {"$a = [10, 20, 30]; a = $a.min()", 10.0},
+		"Array max":       {"$a = [10, 20, 30]; a = $a.max()", 30.0},
+		"Array avg":       {"$a = [10, 20, 30]; a = $a.avg()", 20.0},
+		"Array count":     {"$a = [10, 20, 30]; a = $a.count()", 3.0},
+		"Array stddev":    {"$a = [10, 20, 30]; a = $a.stddev()", 8.16496580927726},
 	}
 
 	runParserTests(tests, t)

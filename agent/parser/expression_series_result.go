@@ -27,8 +27,12 @@ func newSeriesResultExpression(value float64, timestamp int64, line, position in
 }
 
 func (s *seriesResultExpression) extract(c *executionContext, property string) (expression, error) {
-	if property == "timestamp" {
+	switch property {
+	case "timestamp":
 		return newNumericExpression(float64(s.timestamp), s.l, s.p), nil
+
+	case "value":
+		return newNumericExpression(float64(s.value), s.l, s.p), nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", s, property))

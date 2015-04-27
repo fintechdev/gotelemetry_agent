@@ -43,19 +43,29 @@ func expressionFromInterface(v interface{}, line, position int) (expression, err
 	}
 }
 
+type resolvable interface {
+	resolve(*executionContext) (interface{}, error)
+}
+
 func resolveExpression(c *executionContext, e expression) (interface{}, error) {
 	var v interface{} = e
 	var err error
 
 	for {
-		if vv, ok := v.(expression); ok {
-			v, err = vv.evaluate(c)
+		switch v.(type) {
+		case resolvable:
+			v, err = v.(resolvable).resolve(c)
+			break
 
-			if err != nil {
-				return nil, err
-			}
-		} else {
+		case expression:
+			v, err = v.(expression).evaluate(c)
+
+		default:
 			return v, nil
+		}
+
+		if err != nil {
+			return nil, err
 		}
 	}
 }

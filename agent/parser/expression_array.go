@@ -15,9 +15,21 @@ type arrayExpression struct {
 
 func newArrayExpression(value interface{}, line, position int) expression {
 	var values []interface{}
-	var ok bool
 
-	if values, ok = value.([]interface{}); !ok {
+	switch value.(type) {
+	case []interface{}:
+		values = value.([]interface{})
+
+	case []expression:
+		expressions := value.([]expression)
+
+		values = make([]interface{}, len(expressions))
+
+		for index, value := range expressions {
+			values[index] = value
+		}
+
+	default:
 		values = []interface{}{value}
 	}
 
@@ -31,6 +43,10 @@ func newArrayExpression(value interface{}, line, position int) expression {
 }
 
 func (a *arrayExpression) evaluate(c *executionContext) (interface{}, error) {
+	return a.values, nil
+}
+
+func (a *arrayExpression) resolve(c *executionContext) (interface{}, error) {
 	res := make([]interface{}, len(a.values))
 
 	for index, e := range a.values {
@@ -87,7 +103,7 @@ func (a *arrayExpression) count() expression {
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			return newNumericExpression(len(a.values), a.p, a.p), nil
 		},
-		map[string]callableArgument{"name": callableArgumentString},
+		map[string]callableArgument{},
 		a.l,
 		a.p,
 	)

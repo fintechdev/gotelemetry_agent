@@ -24,7 +24,8 @@ func newSeriesResultAggregateExpression(values []interface{}, line, position int
 }
 
 func (s *seriesResultAggregateExpression) extract(c *executionContext, property string) (expression, error) {
-	if property == "timestamps" {
+	switch property {
+	case "timestamps":
 		ts := make([]interface{}, len(s.values))
 
 		for index, dp := range s.values {
@@ -34,6 +35,17 @@ func (s *seriesResultAggregateExpression) extract(c *executionContext, property 
 		}
 
 		return newArrayExpression(ts, s.l, s.p), nil
+
+	case "values":
+		res := make([]interface{}, len(s.values))
+
+		for index, dp := range s.values {
+			dataPoint := dp.(map[string]interface{})
+
+			res[index] = dataPoint["value"].(float64)
+		}
+
+		return newArrayExpression(res, s.l, s.p), nil
 	}
 
 	return nil, errors.New(fmt.Sprintf("%s does not contain a property with the key `%s`", s, property))

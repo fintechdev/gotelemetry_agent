@@ -15,6 +15,7 @@
 	cmds []command
 	cmd command
 	ex expression
+	exa []expression
 	exl map[string]expression
 	exi parseArgument
 	t token
@@ -23,8 +24,9 @@
 %type <cmds> commands, command_list, command_block
 %type <cmd> command, set_property, assign_to_var, if_then_else
 %type <ex> expr, function_call, callable_expr, property, operation
-%type <exl> expr_list
-%type <exi> expr_item
+%type <exl> named_params
+%type <exi> named_param
+%type <exa> expr_list
 %token <t> T_STRING T_NUMBER T_IDENTIFIER T_VARIABLE T_TRUE T_FALSE
 %token <t> T_PLUS T_MINUS T_MULTIPLY T_DIVIDE
 %token <t> T_COMMA T_DOT T_ASSIGN T_COLON
@@ -95,6 +97,8 @@ assign_to_var		: T_VARIABLE T_ASSIGN expr
 
 expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
 										{ $$ = $2 }
+								| T_OPEN_BRACKET expr_list T_CLOSE_BRACKET
+										{ $$ = newArrayExpression($2, $1.line, $1.start) }
 								| T_NUMBER
 										{ $$ = newNumericExpression($1.source, $1.line, $1.start) }
 								| T_STRING
@@ -112,6 +116,12 @@ expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
 								| property
 										{ $$ = $1 }
 								; 
+
+expr_list				: expr_list T_COMMA expr
+									{ $$ = append($$, $3) }
+								| expr
+									{ $$ = []expression{$1} }
+								;
 
 operation 		  : expr T_PLUS expr
 										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
@@ -145,7 +155,7 @@ operation 		  : expr T_PLUS expr
 										{ $$ = newLogicalExpression($2, booleanExpressionZero, $1, $1.line, $1.start) }
 								;
 
-function_call 	: callable_expr T_OPEN_PARENS expr_list T_CLOSE_PARENS		%prec T_FUNCTION_CALL
+function_call 	: callable_expr T_OPEN_PARENS named_params T_CLOSE_PARENS		%prec T_FUNCTION_CALL
 										{ $$ = newFunctionCallExpression($1, $3, $1.line(), $1.position()) }
 								;
 
@@ -159,15 +169,15 @@ property 				: expr T_DOT T_IDENTIFIER
 										{ $$ = newPropertyExpression($1, $3.source, $1.line(), $1.position()) }
 								;
 
-expr_list				: expr_list T_COMMA expr_item
+named_params	 	: named_params T_COMMA named_param
 										{ $$[$3.key] = $3.value }
-								| expr_item
+								| named_param
 										{ $$ = map[string]expression{$1.key: $1.value }}
 								| /* empty */
 										{ $$ = map[string]expression{} }
 								;
 
-expr_item				: T_IDENTIFIER T_COLON expr
+named_param			: T_IDENTIFIER T_COLON expr
 										{ $$ = parseArgument{$1.source, $3} }
 								| expr
 										{ $$ = parseArgument{singleUnnamedArgument, $1} }
