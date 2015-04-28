@@ -1,5 +1,4 @@
 jobs:
-  - config:
-      flow_tag: test_flow
-      refresh: 10
-      url: http://localhost:8000/test
+  - flow_tag: test_flow
+    refresh: 10
+    url: http://localhost:8000/test

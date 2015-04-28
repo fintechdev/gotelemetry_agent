@@ -1,6 +1,5 @@
 jobs:
-  - config:
-      flow_tag: test_flow
-      path: ./demo.js
-      args:
-        - 1320
+  - flow_tag: test_flow
+    path: ./demo.js
+    args:
+      - 1320

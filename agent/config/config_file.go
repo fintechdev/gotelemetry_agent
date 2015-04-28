@@ -32,6 +32,30 @@ func NewConfigFile() (*ConfigFile, error) {
 
 	err = yaml.Unmarshal(source, result)
 
+	if err != nil {
+		return nil, err
+	}
+
+	result.Jobs = make([]Job, len(result.RawJobs))
+
+	for index, rawJob := range result.RawJobs {
+		if _, ok := rawJob["config"].(map[interface{}]interface{}); ok {
+			if b, err := yaml.Marshal(rawJob); err == nil {
+				j := Job{}
+
+				if err := yaml.Unmarshal(b, &j); err == nil {
+					result.Jobs[index] = j
+				} else {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
+		} else {
+			result.Jobs[index] = Job{Config: rawJob}
+		}
+	}
+
 	return &ConfigFile{
 		Data:        result.Data,
 		Graphite:    result.Graphite,
