@@ -293,6 +293,76 @@ func TestArrays(t *testing.T) {
 	runParserTests(tests, t)
 }
 
+func TestMaps(t *testing.T) {
+	compareArray := func(expect []interface{}, r []interface{}) bool {
+		if len(r) != len(expect) {
+			return false
+		}
+
+		for index, value := range expect {
+			if r[index] != value {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	compareMaps := func(expect map[string]interface{}) func(res testR, errs testE) bool {
+		return func(res testR, errs testE) bool {
+			r := res["a"].(map[string]interface{})
+
+			for i, v := range expect {
+				if vv, ok := r[i]; ok {
+					if vvv, ok := v.([]interface{}); ok {
+						if !compareArray(vvv, vv.([]interface{})) {
+							return false
+						} else {
+
+						}
+					} else {
+						if v != vv {
+							return false
+						}
+					}
+				} else {
+					return false
+				}
+			}
+
+			for i, v := range r {
+				if vv, ok := expect[i]; ok {
+					if vvv, ok := vv.([]interface{}); ok {
+						if !compareArray(vvv, v.([]interface{})) {
+							return false
+						} else {
+
+						}
+					} else {
+						if v != vv {
+							return false
+						}
+					}
+				} else {
+					return false
+				}
+			}
+
+			return true
+		}
+	}
+
+	tests := map[string]parserTest{
+		"Immediate map":  {`a = {a:10, b:"test", c:[10, 20, 30]}`, compareMaps(map[string]interface{}{"a": 10.0, "b": "test", "c": []interface{}{10.0, 20.0, 30.0}})},
+		"Map assignment": {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a`, compareMaps(map[string]interface{}{"a": 10.0, "b": "test", "c": []interface{}{10.0, 20.0, 30.0}})},
+		"Map item":       {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.item("a")`, 10.0},
+		"Map count":      {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.count()`, 3.0},
+		"Map set":        {`$a = {a:10, b:"test", c:[10, 20, 30]}; $a.set(index:"a", value:10+10); a = $a.item("a")`, 20.0},
+	}
+
+	runParserTests(tests, t)
+}
+
 func TestAnomaly(t *testing.T) {
 	tests := map[string]parserTest{
 		"Anomaly (true)":  {"$a = [10, 20, 30]; a = anomaly(data:$a, value:10000)", true},

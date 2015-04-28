@@ -17,7 +17,8 @@ func (c callableArgument) isOptional() bool {
 		callableArgumentOptionalArray,
 		callableArgumentOptionalNumericArray,
 		callableArgumentOptionalNumeric,
-		callableArgumentOptionalString:
+		callableArgumentOptionalString,
+		callableArgumentOptionalInterface:
 
 		return true
 	}
@@ -36,6 +37,8 @@ const (
 	callableArgumentOptionalArray
 	callableArgumentNumericArray
 	callableArgumentOptionalNumericArray
+	callableArgumentInterface
+	callableArgumentOptionalInterface
 )
 
 type callableExpression struct {
@@ -115,6 +118,17 @@ func (e *callableExpression) call(c *executionContext, arguments map[string]inte
 			case callableArgumentNumericArray, callableArgumentOptionalNumericArray:
 				if s, err := newArrayExpression(arg, e.l, e.p).(*arrayExpression).numericArray(c); err == nil {
 					args[index] = s
+				} else {
+					return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s on line %d:%d", e, index, err, e.l, e.p))
+				}
+
+			case callableArgumentInterface, callableArgumentOptionalInterface:
+				if s, err := expressionFromInterface(arg, e.l, e.p); err == nil {
+					args[index], err = s.evaluate(c)
+
+					if err != nil {
+						return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s on line %d:%d", e, index, err, e.l, e.p))
+					}
 				} else {
 					return nil, errors.New(fmt.Sprintf("%s: cannot evaluate argument `%s`: %s on line %d:%d", e, index, err, e.l, e.p))
 				}

@@ -26,6 +26,9 @@ func expressionFromInterface(v interface{}, line, position int) (expression, err
 	}
 
 	switch v.(type) {
+	case map[string]interface{}:
+		return newMapExpression(v.(map[string]interface{}), line, position), nil
+
 	case []interface{}:
 		return newArrayExpression(v.([]interface{}), line, position), nil
 

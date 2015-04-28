@@ -24,8 +24,8 @@
 %type <cmds> commands, command_list, command_block
 %type <cmd> command, set_property, assign_to_var, if_then_else
 %type <ex> expr, function_call, callable_expr, property, operation
-%type <exl> named_params
-%type <exi> named_param
+%type <exl> named_params map_properties
+%type <exi> named_param map_property
 %type <exa> expr_list
 %token <t> T_STRING T_NUMBER T_IDENTIFIER T_VARIABLE T_TRUE T_FALSE
 %token <t> T_PLUS T_MINUS T_MULTIPLY T_DIVIDE
@@ -99,6 +99,8 @@ expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
 										{ $$ = $2 }
 								| T_OPEN_BRACKET expr_list T_CLOSE_BRACKET
 										{ $$ = newArrayExpression($2, $1.line, $1.start) }
+								| T_OPEN_BRACE map_properties T_TERMINATOR T_CLOSE_BRACE
+										{ $$ = newMapExpression($2, $1.line, $1.start) }
 								| T_NUMBER
 										{ $$ = newNumericExpression($1.source, $1.line, $1.start) }
 								| T_STRING
@@ -122,6 +124,19 @@ expr_list				: expr_list T_COMMA expr
 								| expr
 									{ $$ = []expression{$1} }
 								;
+
+map_properties	: map_properties T_COMMA map_property
+										{ $$[$3.key] = $3.value }
+								| map_property
+										{ $$ = map[string]expression{$1.key: $1.value }}
+								| /* empty */
+										{ $$ = map[string]expression{} }
+								;
+
+map_property		: T_IDENTIFIER T_COLON expr
+										{ $$ = parseArgument{$1.source, $3} }
+								;
+
 
 operation 		  : expr T_PLUS expr
 										{ $$ = newArithmeticExpression($1, $3, $2, $1.line(), $1.position()) }
