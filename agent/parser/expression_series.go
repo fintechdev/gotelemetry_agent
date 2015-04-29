@@ -64,6 +64,9 @@ var seriesProperties = map[string]seriesProperty{
 	"pop": func(s *seriesExpression) expression {
 		return s.pop()
 	},
+	"items": func(s *seriesExpression) expression {
+		return s.items()
+	},
 }
 
 func (s *seriesExpression) compute(name string, functionType aggregations.FunctionType) expression {
@@ -111,6 +114,28 @@ func (s *seriesExpression) last() expression {
 			return newSeriesResultExpression(v, ts, s.l, s.p), nil
 		},
 		map[string]callableArgument{},
+		s.l,
+		s.p,
+	)
+}
+
+func (s *seriesExpression) items() expression {
+	return newCallableExpression(
+		"items",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			count := int(args["max"].(float64))
+
+			l, err := s.series.Items(count)
+
+			if err != nil && err != io.EOF {
+				return nil, err
+			}
+
+			return newSeriesResultAggregateExpression(l.([]interface{}), s.l, s.p), nil
+		},
+		map[string]callableArgument{
+			"max": callableArgumentNumeric,
+		},
 		s.l,
 		s.p,
 	)

@@ -51,7 +51,9 @@ func (s *Series) fetchRow(query string, values ...interface{}) (sqlite3.RowMap, 
 		return result, err
 	}
 
-	defer rs.Close()
+	if rs != nil {
+		defer rs.Close()
+	}
 
 	rs.Scan(result)
 

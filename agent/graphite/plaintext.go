@@ -204,6 +204,10 @@ func parseRequest(context *aggregations.Context, remoteAddress, request string, 
 
 	line := splitter.Split(request, -1)
 
+	context.Begin()
+
+	defer context.Commit()
+
 	switch len(line) {
 	case 2:
 		return parseCounterRequest(context, remoteAddress, line, errorChannel)

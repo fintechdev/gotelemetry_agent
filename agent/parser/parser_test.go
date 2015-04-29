@@ -175,6 +175,7 @@ func TestSeries(t *testing.T) {
 		"Series.stddev()":      {`a=series("cpu_load").stddev("10m")+10`, checkFloat},
 		"Series.trim(since)":   {`a=series("cpu_load").trim(since:"10m")`, nil},
 		"Series.trim(count)":   {`a=series("cpu_load").trim(count:100)`, nil},
+		"Series.items(count)":  {`a=series("nonexistent").items(100).values.count()`, 0.0},
 	}
 
 	runParserTests(tests, t)
@@ -358,6 +359,7 @@ func TestMaps(t *testing.T) {
 		"Map item":       {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.item("a")`, 10.0},
 		"Map count":      {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.count()`, 3.0},
 		"Map set":        {`$a = {a:10, b:"test", c:[10, 20, 30]}; $a.set(index:"a", value:10+10); a = $a.item("a")`, 20.0},
+		"Map and array":  {`$a = [ { color: "red", values: series("sampleseries").sum("10s") } ]; a = $a.item(0)`, compareMaps(map[string]interface{}{"values": 0.0, "color": "red"})},
 	}
 
 	runParserTests(tests, t)

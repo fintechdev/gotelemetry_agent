@@ -25,7 +25,8 @@ func GetContext() (*Context, error) {
 	}
 
 	conn.Exec("PRAGMA journal_mode = WAL")
-	conn.Exec("PRAGMA cache_size = 100")
+	conn.Exec("PRAGMA cache_size = 1000000")
+	conn.Exec("PRAGMA busy_timeout = 10000")
 
 	return result, nil
 }
@@ -65,7 +66,9 @@ func (c *Context) fetchRow(query string, values ...interface{}) (sqlite3.RowMap,
 		return result, err
 	}
 
-	defer rs.Close()
+	if rs != nil {
+		defer rs.Close()
+	}
 
 	rs.Scan(result)
 
@@ -81,7 +84,15 @@ func (c *Context) Begin() error {
 }
 
 func (c *Context) Commit() error {
+	c.inTransaction = false
+
 	return c.conn.Commit()
+}
+
+func (c *Context) Rollback() error {
+	c.inTransaction = false
+
+	return c.conn.Rollback()
 }
 
 func (c *Context) Close() error {

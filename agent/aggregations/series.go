@@ -207,6 +207,10 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int) (inte
 		return nil, err
 	}
 
+	if rs != nil {
+		defer rs.Close()
+	}
+
 	rows := map[int]float64{}
 
 	if err != io.EOF {
@@ -238,6 +242,37 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int) (inte
 	}
 
 	return interface{}(output), nil
+}
+
+func (s *Series) Items(count int) (interface{}, error) {
+	rs, err := s.query("SELECT ts, value FROM ?? WHERE rowid IN (SELECT rowid FROM ?? ORDER BY ts DESC LIMIT ?) ORDER BY ts", count)
+
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	if rs != nil {
+		defer rs.Close()
+	}
+
+	output := []interface{}{}
+
+	if err != io.EOF {
+		for rs.Next() == nil {
+			var ts int
+			var value float64
+
+			err := rs.Scan(&ts, &value)
+
+			if err != nil {
+				return err, nil
+			}
+
+			output = append(output, map[string]interface{}{"ts": ts, "value": value})
+		}
+	}
+
+	return output, nil
 }
 
 func (s *Series) TrimSince(since time.Time) error {
