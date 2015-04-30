@@ -22,7 +22,7 @@
 }
 
 %type <cmds> commands, command_list, command_block
-%type <cmd> command, set_property, assign_to_var, if_then_else
+%type <cmd> command, set_property, assign_to_var, if_then_else, while_loop
 %type <ex> expr, function_call, callable_expr, property, operation
 %type <exl> named_params map_properties
 %type <exi> named_param map_property
@@ -35,6 +35,7 @@
 %token <t> T_IF T_ELSE
 %token <t> T_TERMINATOR
 %token <t> T_COMMENT
+%token <t> T_WHILE
 
 %left T_FUNCTION_CALL
 %left T_OR
@@ -78,6 +79,8 @@ command					: set_property T_TERMINATOR
 								| assign_to_var T_TERMINATOR
 									{ $$ = $1 }
 								| if_then_else
+									{ $$ = $1 }
+								| while_loop
 									{ $$ = $1 }
 								| expr T_TERMINATOR
 									{ $$ = newEvaluateCommand($1) }
@@ -202,4 +205,8 @@ if_then_else		: T_IF expr command_block
 										{ $$ = newIfThenElseCommand($2, $3, []command{}) }
 								| T_IF expr command_block T_ELSE command_block
 										{ $$ = newIfThenElseCommand($2, $3, $5) }
+								;
+
+while_loop			: T_WHILE expr command_block
+										{ $$ = newWhileLoopCommand($2, $3) }
 								;

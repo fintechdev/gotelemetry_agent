@@ -51,6 +51,7 @@ var identifierMap = map[string]terminal{
 	"true":  T_TRUE,
 	"if":    T_IF,
 	"else":  T_ELSE,
+	"while": T_WHILE,
 }
 
 func lexASL(name string, source string) chan token {

@@ -158,8 +158,8 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 				p.args = append(p.args, fmt.Sprintf("%#v", arg))
 			}
 		}
-	} else if args, ok := c["args"].(map[string]interface{}); ok {
-		p.scriptArgs = args
+	} else if args, ok := c["args"].(map[interface{}]interface{}); ok {
+		p.scriptArgs = config.MapFromYaml(args).(map[string]interface{})
 	}
 
 	if p.path != "" {

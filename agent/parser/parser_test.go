@@ -39,7 +39,7 @@ func testRunAndReturnErrors(s string) (map[string]interface{}, *dummyNotificatio
 		return nil, np, errs
 	}
 
-	if res, err := Run(np, commands); err == nil {
+	if res, err := Run(np, map[string]interface{}{"test": 10.0}, commands); err == nil {
 		return res, np, nil
 	} else {
 		return res, np, []error{err}
@@ -131,6 +131,7 @@ func TestGlobalMethods(t *testing.T) {
 		"Global.now()":            {"a=now()", checkFloat},
 		"Global.now() assignment": {"$a=now(); a=$a", checkFloat},
 		"Global.notify()":         {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
+		"Global.arg()":            {`a=arg("test")`, 10.0},
 	}
 
 	runParserTests(tests, t)
@@ -373,5 +374,12 @@ func TestAnomaly(t *testing.T) {
 	}
 
 	runParserTests(tests, t)
+}
 
+func TestWhile(t *testing.T) {
+	tests := map[string]parserTest{
+		"While loop": {"$a = 10; while $a < 20 { $a = $a + 1 } a = $a", 20.0},
+	}
+
+	runParserTests(tests, t)
 }
