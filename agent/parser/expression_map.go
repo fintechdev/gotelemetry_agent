@@ -116,7 +116,7 @@ func (a *mapExpression) item() expression {
 
 func (a *mapExpression) set() expression {
 	return newCallableExpression(
-		"item",
+		"set",
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			index := args["index"].(string)
 			value := args["value"]

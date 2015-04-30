@@ -106,7 +106,8 @@ func TestBasicExpressions(t *testing.T) {
 		"Unary Minus":              {"a=123+-10", 113.0},
 		"Unary Minus + precedence": {"a=-(123+10)*10", -1330.0},
 		"Variable assignment":      {"$a=10; a=$a+10", 20.0},
-		"Arithmetic deviance":      {`a="test"+10`, func(res testR, errs testE) bool { return len(errs) == 1 }},
+		"Addition with strings":    {`a="test"+10`, "test10"},
+		"Addition with strings 2":  {`a=10+"test"`, func(res testR, errs testE) bool { return len(errs) == 1 }},
 		"Variable transassignment": {`$a= series("cpu_load"); a= $a.last()`, func(res testR, errs testE) bool { _, ok := res["a"].(float64); return ok }},
 	}
 

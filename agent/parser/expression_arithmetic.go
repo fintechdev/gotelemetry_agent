@@ -48,13 +48,40 @@ func newArithmeticExpression(left, right expression, operator token, line, posit
 	return &arithmeticExpression{left, right, operator, line, position}
 }
 
+func (a *arithmeticExpression) evaluateAddition(c *executionContext) (interface{}, error) {
+	l, r, err := forceNumeric(c, a.left, a.right, a.l, a.p)
+
+	if err == nil {
+		return l + r, nil
+	}
+
+	ll, err := resolveExpression(c, a.left)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if lll, ok := ll.(string); ok {
+		rrr, err := resolveExpression(c, a.right)
+
+		if err != nil {
+			return nil, err
+		}
+
+		return fmt.Sprintf("%s%v", lll, rrr), nil
+	}
+
+	return nil, errors.New(fmt.Sprintf("Unable to add expressions %s and %s", a.left, a.right))
+}
+
 func (a *arithmeticExpression) evaluate(c *executionContext) (interface{}, error) {
+	if a.operator.terminal == T_PLUS {
+		return a.evaluateAddition(c)
+	}
+
 	l, r, err := forceNumeric(c, a.left, a.right, a.l, a.p)
 
 	switch a.operator.terminal {
-	case T_PLUS:
-		return l + r, err
-
 	case T_MULTIPLY:
 		return l * r, err
 

@@ -44,6 +44,7 @@ type ProcessPlugin struct {
 	templateFile string
 	path         string
 	args         []string
+	scriptArgs   map[string]interface{}
 	template     map[string]interface{}
 	flow         *gotelemetry.Flow
 }
@@ -147,6 +148,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	}
 
 	p.args = []string{}
+	p.scriptArgs = map[string]interface{}{}
 
 	if args, ok := c["args"].([]interface{}); ok {
 		for _, arg := range args {
@@ -156,19 +158,25 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 				p.args = append(p.args, fmt.Sprintf("%#v", arg))
 			}
 		}
-	}
-
-	if p.path == "" && len(p.args) > 0 {
-		return errors.New("You cannot specify an `args` property if you do not specify a `path` property.")
+	} else if args, ok := c["args"].(map[string]interface{}); ok {
+		p.scriptArgs = args
 	}
 
 	if p.path != "" {
+		if len(p.scriptArgs) != 0 {
+			return errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
+		}
+
 		if _, err := os.Stat(p.path); os.IsNotExist(err) {
 			return errors.New("File " + p.path + " does not exist.")
 		}
 	}
 
 	if p.url != "" {
+		if len(p.args) != 0 {
+			return errors.New("You cannot specify an array of arguments when executing a template. Provide a key/value hash instead.")
+		}
+
 		if strings.HasPrefix(p.url, "tpl://") {
 			URL, err := url.Parse(p.url)
 
@@ -319,11 +327,7 @@ func (p *ProcessPlugin) performScriptTask(j *job.Job) (string, error) {
 
 	out, err := exec.Command(p.path, p.args...).Output()
 
-	if err != nil {
-		return "", err
-	}
-
-	return string(out), nil
+	return string(out), err
 }
 
 func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
@@ -361,7 +365,7 @@ func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 		return "", errs[0]
 	}
 
-	output, err := parser.Run(j, commands)
+	output, err := parser.Run(j, p.scriptArgs, commands)
 
 	if err != nil {
 		return "", err

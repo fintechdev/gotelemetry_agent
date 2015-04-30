@@ -8,6 +8,7 @@ import (
 type executionContext struct {
 	aggregationContext   *aggregations.Context
 	variables            map[string]interface{}
+	arguments            map[string]interface{}
 	output               map[string]interface{}
 	notificationProvider executionContextNotificationProvider
 }
@@ -16,10 +17,11 @@ type executionContextNotificationProvider interface {
 	SendNotification(n gotelemetry.Notification, channelTag string) bool
 }
 
-func newExecutionContext(ac *aggregations.Context, np executionContextNotificationProvider) *executionContext {
+func newExecutionContext(ac *aggregations.Context, np executionContextNotificationProvider, args map[string]interface{}) *executionContext {
 	return &executionContext{
 		aggregationContext:   ac,
 		variables:            map[string]interface{}{},
+		arguments:            args,
 		output:               map[string]interface{}{},
 		notificationProvider: np,
 	}

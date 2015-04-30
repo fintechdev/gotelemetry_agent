@@ -46,6 +46,9 @@ var globalProperties = map[string]globalProperty{
 	"anomaly": func(g *globalExpression) expression {
 		return g.anomaly()
 	},
+	"arg": func(g *globalExpression) expression {
+		return g.arg()
+	},
 }
 
 func (g *globalExpression) now() expression {
@@ -72,6 +75,24 @@ func (g *globalExpression) counter() expression {
 			}
 
 			return newCounterExpression(n, res, g.p, g.p), nil
+		},
+		map[string]callableArgument{"name": callableArgumentString},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) arg() expression {
+	return newCallableExpression(
+		"arg",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			n := args["name"].(string)
+
+			if res, ok := c.arguments[n]; ok {
+				return expressionFromInterface(res, g.l, g.p)
+			} else {
+				return nil, errors.New(fmt.Sprintf("Unknown argument %s", n))
+			}
 		},
 		map[string]callableArgument{"name": callableArgumentString},
 		g.l,
