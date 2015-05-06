@@ -39,7 +39,7 @@ func testRunAndReturnErrors(s string) (map[string]interface{}, *dummyNotificatio
 		return nil, np, errs
 	}
 
-	if res, err := Run(np, map[string]interface{}{"test": 10.0}, commands); err == nil {
+	if res, err := Run(np, nil, map[string]interface{}{"test": 10.0}, commands); err == nil {
 		return res, np, nil
 	} else {
 		return res, np, []error{err}
@@ -132,6 +132,7 @@ func TestGlobalMethods(t *testing.T) {
 		"Global.now() assignment": {"$a=now(); a=$a", checkFloat},
 		"Global.notify()":         {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
 		"Global.arg()":            {`a=arg("test")`, 10.0},
+		"Global.load()":           {`$a=load(format:"yaml",path:"parser_test_load.yaml"); a=$a.item("value")`, 123.0},
 	}
 
 	runParserTests(tests, t)

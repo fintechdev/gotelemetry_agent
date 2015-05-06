@@ -16,13 +16,13 @@ import (
 func Init(configFile *config.ConfigFile, errorChannel chan error) error {
 	var err error
 
-	apiKey, err := configFile.Accounts()[0].GetAPIKey()
+	apiToken, err := configFile.APIToken()
 
 	if err != nil {
 		return err
 	}
 
-	credentials, err := gotelemetry.NewCredentials(apiKey)
+	credentials, err := gotelemetry.NewCredentials(apiToken)
 
 	if err != nil {
 		return err

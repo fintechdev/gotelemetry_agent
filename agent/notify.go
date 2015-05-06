@@ -8,7 +8,7 @@ import (
 func ProcessNotificationRequest(configFile *config.ConfigFile, errorChannel chan error, completionChannel chan bool, notificationChannel string, notification gotelemetry.Notification) {
 	errorChannel <- gotelemetry.NewLogError("Notification mode is on.")
 
-	apiKey, err := configFile.Accounts()[0].GetAPIKey()
+	apiToken, err := configFile.APIToken()
 
 	if err != nil {
 		errorChannel <- err
@@ -17,7 +17,7 @@ func ProcessNotificationRequest(configFile *config.ConfigFile, errorChannel chan
 		return
 	}
 
-	credentials, err := gotelemetry.NewCredentials(apiKey)
+	credentials, err := gotelemetry.NewCredentials(apiToken)
 
 	if err != nil {
 		errorChannel <- err

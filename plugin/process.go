@@ -57,7 +57,9 @@ type ProcessPlugin struct {
 //
 // - path                         The executable's path
 //
-// - args													An array of arguments that are sent to the executable
+// - args													An array of arguments that are sent to the executable or, if
+// 																executing an ASL script, a hash of key/value pairs that
+// 																will be accessible through the `arg()` global method
 //
 // - flow_tag                     The tag of the flow to populate
 //
@@ -124,17 +126,11 @@ type ProcessPlugin struct {
 //   without a `path` property.
 
 func (p *ProcessPlugin) Init(job *job.Job) error {
-	var ok bool
-
 	c := job.Config()
 
 	job.Debugf("The configuration is %#v", c)
 
-	p.flowTag, ok = c["flow_tag"].(string)
-
-	if !ok {
-		return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
-	}
+	p.flowTag, _ = c["flow_tag"].(string)
 
 	p.path, _ = c["path"].(string)
 	p.url, _ = c["url"].(string)
@@ -160,6 +156,8 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	} else if args, ok := c["args"].(map[interface{}]interface{}); ok {
 		p.scriptArgs = config.MapFromYaml(args).(map[string]interface{})
+	} else if args, ok := c["args"].(map[string]interface{}); ok {
+		p.scriptArgs = args
 	}
 
 	if p.path != "" {
@@ -196,6 +194,10 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	variant, variantOK := c["variant"].(string)
 
 	if variantOK && templateOK {
+		if p.flowTag == "" {
+			return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
+		}
+
 		if f, err := job.GetOrCreateFlow(p.flowTag, variant, template); err != nil {
 			return err
 		} else {
@@ -291,6 +293,10 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 		return nil
 	}
 
+	if p.flowTag == "" {
+		return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
+	}
+
 	if isReplace {
 		if p.expiration > 0 {
 			newExpiration := time.Now().Add(p.expiration)
@@ -359,13 +365,13 @@ func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 		return "", err
 	}
 
-	commands, errs := parser.Parse(p.flowTag, string(source))
+	commands, errs := parser.Parse(j.ID, string(source))
 
 	if len(errs) > 0 {
 		return "", errs[0]
 	}
 
-	output, err := parser.Run(j, p.scriptArgs, commands)
+	output, err := parser.Run(j, j, p.scriptArgs, commands)
 
 	if err != nil {
 		return "", err
@@ -399,13 +405,19 @@ func (p *ProcessPlugin) performAllTasks(j *job.Job) {
 	}
 
 	if err != nil {
-		j.SetFlowError(p.flowTag, map[string]interface{}{"error": err.Error(), "output": string(response)})
+		if p.flowTag != "" {
+			j.SetFlowError(p.flowTag, map[string]interface{}{"error": err.Error(), "output": string(response)})
+		}
+
 		j.ReportError(err)
 		return
 	}
 
 	j.Debugf("Process output: %s", strings.Replace(response, "\n", "\\n", -1))
-	j.Debugf("Posting flow %s", p.flowTag)
+
+	if p.flowTag != "" {
+		j.Debugf("Posting flow %s", p.flowTag)
+	}
 
 	if err := p.analyzeAndSubmitProcessResponse(j, response); err != nil {
 		j.ReportError(errors.New("Unable to analyze process output: " + err.Error()))

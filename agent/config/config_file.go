@@ -5,12 +5,56 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 )
 
+type Job map[string]interface{}
+
+func (j Job) ID() string {
+	if result, success := j["id"].(string); success {
+		return result
+	}
+
+	if result, success := j["flow_tag"].(string); success {
+		return result
+	}
+
+	return ""
+}
+
+func (j Job) Plugin() string {
+	if result, success := j["plugin"].(string); success {
+		return result
+	}
+
+	return "com.telemetryapp.process"
+}
+
+type DataConfig struct {
+	DataLocation *string `yaml:"path"`
+}
+
+type GraphiteConfig struct {
+	TCPListenPort string `yaml:"listen_tcp"`
+	UDPListenPort string `yaml:"listen_udp"`
+}
+
+type ConfigInterface interface {
+	APIToken() (string, error)
+	ListenAddress() string
+	DataConfig() DataConfig
+	GraphiteConfig() GraphiteConfig
+	SubmissionInterval() float64
+	Jobs() []Job
+}
+
 type ConfigFile struct {
-	Data        DataConfig
-	Graphite    GraphiteConfig
-	AllAccounts []AccountConfig
+	APITokenField           string         `yaml:"api_token"`
+	Graphite                GraphiteConfig `yaml:"graphite"`
+	Data                    DataConfig     `yaml:"data"`
+	Listen                  string         `yaml:"listen"`
+	SubmissionIntervalField float64        `yaml:"submission_interval"`
+	JobsField               []Job          `yaml:"jobs"`
 }
 
 func NewConfigFile() (*ConfigFile, error) {
@@ -19,52 +63,34 @@ func NewConfigFile() (*ConfigFile, error) {
 	if err != nil {
 		if CLIConfig.IsPiping || CLIConfig.IsNotifying {
 			return &ConfigFile{
-				Data:        DataConfig{},
-				Graphite:    GraphiteConfig{},
-				AllAccounts: []AccountConfig{AccountConfig{}},
+				Data:      DataConfig{},
+				Graphite:  GraphiteConfig{},
+				JobsField: []Job{},
 			}, nil
 		}
 
 		return nil, errors.New(fmt.Sprintf("Unable to open configuration file at %s. Did you use --config to specify the right path?\n\n", CLIConfig.ConfigFileLocation))
 	}
 
-	result := &AccountConfig{}
+	result := &ConfigFile{}
 
 	err = yaml.Unmarshal(source, result)
 
-	if err != nil {
-		return nil, err
-	}
-
-	result.Jobs = make([]Job, len(result.RawJobs))
-
-	for index, rawJob := range result.RawJobs {
-		if _, ok := rawJob["config"].(map[interface{}]interface{}); ok {
-			if b, err := yaml.Marshal(rawJob); err == nil {
-				j := Job{}
-
-				if err := yaml.Unmarshal(b, &j); err == nil {
-					result.Jobs[index] = j
-				} else {
-					return nil, err
-				}
-			} else {
-				return nil, err
-			}
-		} else {
-			result.Jobs[index] = Job{Config: rawJob}
-		}
-	}
-
-	return &ConfigFile{
-		Data:        result.Data,
-		Graphite:    result.Graphite,
-		AllAccounts: []AccountConfig{*result},
-	}, err
+	return result, err
 }
 
-func (c *ConfigFile) Accounts() []AccountConfig {
-	return c.AllAccounts
+func (c *ConfigFile) APIToken() (string, error) {
+	result := c.APITokenField
+
+	if result == "" {
+		result = os.ExpandEnv("$TELEMETRY_API_TOKEN")
+	}
+
+	if result != "" {
+		return result, nil
+	}
+
+	return "", errors.New("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 }
 
 func (c *ConfigFile) DataConfig() DataConfig {
@@ -76,5 +102,13 @@ func (c *ConfigFile) GraphiteConfig() GraphiteConfig {
 }
 
 func (c *ConfigFile) ListenAddress() string {
-	return c.AllAccounts[0].Listen
+	return c.Listen
+}
+
+func (c *ConfigFile) SubmissionInterval() float64 {
+	return c.SubmissionIntervalField
+}
+
+func (c *ConfigFile) Jobs() []Job {
+	return c.JobsField
 }

@@ -18,12 +18,12 @@ type Job struct {
 	instance          PluginInstance           // The plugin instance
 	errorChannel      chan error               // A channel to which all errors are funneled
 	config            map[string]interface{}   // The configuration associated with the job
-	then              []*Job                   // Dependent jobs associated with this job
 	completionChannel chan string              // To be pinged when the job has finished running, so that the manager knows when to quit
+	manager           *JobManager              // The manager that owns this job
 }
 
 // newJob creates and starts a new Job
-func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config map[string]interface{}, then []*Job, instance PluginInstance, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
+func newJob(manager *JobManager, credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config map[string]interface{}, instance PluginInstance, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
 	result := &Job{
 		ID:                id,
 		credentials:       credentials,
@@ -31,8 +31,8 @@ func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream
 		instance:          instance,
 		errorChannel:      errorChannel,
 		config:            config,
-		then:              then,
 		completionChannel: jobCompletionChannel,
+		manager:           manager,
 	}
 
 	if wait {
@@ -197,14 +197,6 @@ func (j *Job) SendNotification(notification gotelemetry.Notification, channelTag
 	return false
 }
 
-// Function PerformSubtasks runs any tasks that have been associated with the
-// `then` entry to the current task.
-func (j *Job) PerformSubtasks() {
-	for _, job := range j.then {
-		job.instance.RunOnce(job)
-	}
-}
-
 // Log sends data to the agent's global log. It works like log.Log
 func (j *Job) Log(v ...interface{}) {
 	for _, val := range v {
@@ -230,4 +222,21 @@ func (j *Job) Debugf(format string, v ...interface{}) {
 	if j.errorChannel != nil {
 		j.errorChannel <- gotelemetry.NewDebugError("%s -> %#s", j.ID, fmt.Sprintf(format, v...))
 	}
+}
+
+func (j *Job) SpawnJob(id string, plugin string, cfg map[string]interface{}) error {
+	j.Logf("Spawning new job %s", id)
+
+	cfg["id"] = id
+	cfg["plugin"] = plugin
+
+	jobDescriptor := config.Job(cfg)
+
+	newJob, err := createJob(j.manager, j.credentials, j.stream, j.errorChannel, jobDescriptor, j.completionChannel, false)
+
+	if err != nil {
+		return err
+	}
+
+	return j.manager.addJob(newJob)
 }

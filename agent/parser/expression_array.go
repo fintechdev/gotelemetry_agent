@@ -77,6 +77,15 @@ var arrayProperties = map[string]arrayProperty{
 	"item": func(a *arrayExpression) expression {
 		return a.item()
 	},
+	"set": func(a *arrayExpression) expression {
+		return a.set()
+	},
+	"push": func(a *arrayExpression) expression {
+		return a.push()
+	},
+	"pop": func(a *arrayExpression) expression {
+		return a.pop()
+	},
 	"count": func(a *arrayExpression) expression {
 		return a.count()
 	},
@@ -205,6 +214,68 @@ func (a *arrayExpression) item() expression {
 			return expressionFromInterface(a.values[index], a.l, a.p)
 		},
 		map[string]callableArgument{"index": callableArgumentNumeric},
+		a.l,
+		a.p,
+	)
+}
+
+func (a *arrayExpression) pop() expression {
+	return newCallableExpression(
+		"pop",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			if len(a.values) == 0 {
+				return nil, errors.New("Cannot pop from an empty array")
+			}
+
+			result, err := expressionFromInterface(a.values[len(a.values)-1], a.l, a.p)
+
+			a.values = a.values[:len(a.values)-1]
+
+			return result, err
+		},
+		map[string]callableArgument{"index": callableArgumentNumeric},
+		a.l,
+		a.p,
+	)
+}
+
+func (a *arrayExpression) set() expression {
+	return newCallableExpression(
+		"set",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			index := int(args["index"].(float64))
+			value := args["value"]
+
+			if index < 0 || index > len(a.values)-1 {
+				return nil, errors.New(fmt.Sprintf("Invalid index %d", index))
+			}
+
+			a.values[index] = value
+
+			return nil, nil
+		},
+		map[string]callableArgument{
+			"index": callableArgumentNumeric,
+			"value": callableArgumentInterface,
+		},
+		a.l,
+		a.p,
+	)
+}
+
+func (a *arrayExpression) push() expression {
+	return newCallableExpression(
+		"push",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			value := args["value"]
+
+			a.values = append(a.values, value)
+
+			return nil, nil
+		},
+		map[string]callableArgument{
+			"value": callableArgumentInterface,
+		},
 		a.l,
 		a.p,
 	)

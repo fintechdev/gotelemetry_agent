@@ -1,11 +1,17 @@
 package parser
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
 	"math"
+	"strings"
 	"time"
 )
 
@@ -49,6 +55,18 @@ var globalProperties = map[string]globalProperty{
 	"arg": func(g *globalExpression) expression {
 		return g.arg()
 	},
+	"load": func(g *globalExpression) expression {
+		return g.load()
+	},
+	"spawn": func(g *globalExpression) expression {
+		return g.spawn()
+	},
+	"log": func(g *globalExpression) expression {
+		return g.log()
+	},
+	"error": func(g *globalExpression) expression {
+		return g.emitError()
+	},
 }
 
 func (g *globalExpression) now() expression {
@@ -58,6 +76,36 @@ func (g *globalExpression) now() expression {
 			return newNumericExpression(time.Now().Unix(), g.l, g.p), nil
 		},
 		map[string]callableArgument{},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) emitError() expression {
+	return newCallableExpression(
+		"error",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			return nil, errors.New(args["message"].(string))
+		},
+		map[string]callableArgument{
+			"message": callableArgumentString,
+		},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) log() expression {
+	return newCallableExpression(
+		"log",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			log.Println(args["message"].(string))
+
+			return nil, nil
+		},
+		map[string]callableArgument{
+			"message": callableArgumentString,
+		},
 		g.l,
 		g.p,
 	)
@@ -183,6 +231,104 @@ func (g *globalExpression) anomaly() expression {
 		map[string]callableArgument{
 			"data":  callableArgumentNumericArray,
 			"value": callableArgumentNumeric,
+		},
+		g.l,
+		g.p,
+	)
+}
+
+func mapFromYaml(from interface{}) interface{} {
+	switch from.(type) {
+	case map[interface{}]interface{}:
+		result := map[string]interface{}{}
+
+		for index, value := range from.(map[interface{}]interface{}) {
+			result[index.(string)] = mapFromYaml(value)
+		}
+
+		return result
+
+	case []interface{}:
+		f := from.([]interface{})
+
+		for index, value := range f {
+			f[index] = mapFromYaml(value)
+		}
+
+		return f
+
+	default:
+		return from
+	}
+}
+
+func (g *globalExpression) load() expression {
+	return newCallableExpression(
+		"load",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			format := strings.ToLower(args["format"].(string))
+			path := args["path"].(string)
+
+			data, err := ioutil.ReadFile(path)
+
+			if err != nil {
+				return nil, err
+			}
+
+			var result interface{}
+
+			switch format {
+			case "json":
+				err = json.Unmarshal(data, &result)
+
+			case "yaml":
+				err = yaml.Unmarshal(data, &result)
+
+			case "toml":
+				_, err = toml.Decode(string(data), &result)
+
+			default:
+				return nil, errors.New(fmt.Sprintf("Unknown file format %s", format))
+			}
+
+			if err != nil {
+				return nil, err
+			}
+
+			return expressionFromInterface(mapFromYaml(result), g.l, g.p)
+		},
+		map[string]callableArgument{
+			"format": callableArgumentString,
+			"path":   callableArgumentString,
+		},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) spawn() expression {
+	return newCallableExpression(
+		"spawn",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			flowTag := args["tag"].(string)
+
+			cfg := map[string]interface{}{
+				"url":      "tpl://" + args["path"].(string),
+				"refresh":  int(args["refresh"].(float64)),
+				"flow_tag": flowTag,
+			}
+
+			if ar, ok := args["args"].(map[string]interface{}); ok {
+				cfg["args"] = ar
+			}
+
+			return nil, c.jobSpawner.SpawnJob(flowTag, "com.telemetryapp.process", cfg)
+		},
+		map[string]callableArgument{
+			"path":    callableArgumentString,
+			"refresh": callableArgumentNumeric,
+			"args":    callableArgumentOptionalMap,
+			"tag":     callableArgumentString,
 		},
 		g.l,
 		g.p,

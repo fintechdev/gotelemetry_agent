@@ -7,15 +7,15 @@ import (
 )
 
 type JobManager struct {
-	credentials          map[string]gotelemetry.Credentials
-	accountStreams       map[string]*gotelemetry.BatchStream
+	credentials          gotelemetry.Credentials
+	accountStream        *gotelemetry.BatchStream
 	jobs                 map[string]*Job
 	completionChannel    chan bool
 	jobCompletionChannel chan string
 }
 
-func createJob(credentials gotelemetry.Credentials, accountStream *gotelemetry.BatchStream, errorChannel chan error, jobDescription config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
-	pluginFactory, err := GetPlugin(jobDescription.Plugin)
+func createJob(manager *JobManager, credentials gotelemetry.Credentials, accountStream *gotelemetry.BatchStream, errorChannel chan error, jobDescription config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
+	pluginFactory, err := GetPlugin(jobDescription.Plugin())
 
 	if err != nil {
 		return nil, err
@@ -23,105 +23,70 @@ func createJob(credentials gotelemetry.Credentials, accountStream *gotelemetry.B
 
 	pluginInstance := pluginFactory()
 
-	then := []*Job{}
-
-	for _, jobConfig := range jobDescription.Then {
-		job, err := createJob(credentials, accountStream, errorChannel, jobConfig, jobCompletionChannel, true)
-
-		if err != nil {
-			return nil, err
-		}
-
-		then = append(then, job)
-	}
-
-	return newJob(credentials, accountStream, jobDescription.ID, jobDescription.Config, then, pluginInstance, errorChannel, jobCompletionChannel, wait)
+	return newJob(manager, credentials, accountStream, jobDescription.ID(), jobDescription, pluginInstance, errorChannel, jobCompletionChannel, wait)
 }
 
 func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, completionChannel chan bool) (*JobManager, error) {
 	result := &JobManager{
-		credentials:          map[string]gotelemetry.Credentials{},
-		accountStreams:       map[string]*gotelemetry.BatchStream{},
 		jobs:                 map[string]*Job{},
 		completionChannel:    completionChannel,
 		jobCompletionChannel: make(chan string),
 	}
 
-	for _, account := range jobConfig.Accounts() {
-		var err error
+	apiToken, err := jobConfig.APIToken()
 
-		apiKey, err := account.GetAPIKey()
+	if err != nil {
+		return nil, err
+	}
+
+	credentials, err := gotelemetry.NewCredentials(apiToken)
+
+	if err != nil {
+		return nil, err
+	}
+
+	credentials.SetDebugChannel(errorChannel)
+
+	result.credentials = credentials
+
+	submissionInterval := time.Duration(jobConfig.SubmissionInterval()) * time.Second
+
+	if submissionInterval < time.Second {
+		errorChannel <- gotelemetry.NewLogError("Submission interval automatically set to 1s. You can change this value by adding a `submission_interval` property to your configuration file.")
+		submissionInterval = time.Second
+	}
+
+	accountStream, err := gotelemetry.NewBatchStream(credentials, submissionInterval, errorChannel)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result.accountStream = accountStream
+
+	for _, jobDescription := range jobConfig.Jobs() {
+		jobId := jobDescription.ID()
+
+		if jobId == "" {
+			return nil, gotelemetry.NewError(500, "Job ID missing and no `flow_tag` provided.")
+		}
+
+		if !config.CLIConfig.Filter.MatchString(jobId) {
+			continue
+		}
+
+		if config.CLIConfig.ForceRunOnce {
+			delete(jobDescription, "refresh")
+		}
+
+		job, err := createJob(result, credentials, accountStream, errorChannel, jobDescription, result.jobCompletionChannel, false)
 
 		if err != nil {
 			return nil, err
 		}
 
-		credentials, success := result.credentials[apiKey]
-
-		if !success {
-			credentials, err = gotelemetry.NewCredentials(apiKey)
-
-			if err != nil {
-				return nil, err
-			}
-
-			credentials.SetDebugChannel(errorChannel)
-
-			result.credentials[apiKey] = credentials
-		}
-
-		accountStream, success := result.accountStreams[apiKey]
-
-		if !success {
-			submissionInterval := time.Duration(account.SubmissionInterval) * time.Second
-
-			if submissionInterval < time.Second {
-				errorChannel <- gotelemetry.NewLogError("Submission interval automatically set to 1s. You can change this value by adding a `submission_interval` property to your configuration file.")
-				submissionInterval = time.Second
-			}
-
-			accountStream, err = gotelemetry.NewBatchStream(credentials, submissionInterval, errorChannel)
-
-			if err != nil {
-				return nil, err
-			}
-
-			result.accountStreams[apiKey] = accountStream
-		}
-
-		for _, jobDescription := range account.Jobs {
-			jobId := jobDescription.ID
-
-			if jobId == "" {
-				if tag, ok := jobDescription.Config["flow_tag"].(string); ok {
-					jobId = tag
-					jobDescription.ID = tag
-				} else {
-					return nil, gotelemetry.NewError(500, "Job ID missing and no `flow_tag` provided.")
-				}
-			}
-
-			if !config.CLIConfig.Filter.MatchString(jobId) {
-				continue
-			}
-
-			if config.CLIConfig.ForceRunOnce {
-				delete(jobDescription.Config, "refresh")
-			}
-
-			_, success := result.jobs[jobId]
-
-			if success {
-				return nil, gotelemetry.NewError(500, "Duplicate job `"+jobId+"`")
-			}
-
-			job, err := createJob(credentials, accountStream, errorChannel, jobDescription, result.jobCompletionChannel, false)
-
-			if err != nil {
-				return nil, err
-			}
-
-			result.jobs[job.ID] = job
+		if err := result.addJob(job); err != nil {
+			return nil, err
 		}
 	}
 
@@ -135,6 +100,16 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 	return result, nil
 }
 
+func (m *JobManager) addJob(job *Job) error {
+	if _, found := m.jobs[job.ID]; found {
+		return gotelemetry.NewError(500, "Duplicate job `"+job.ID+"`")
+	}
+
+	m.jobs[job.ID] = job
+
+	return nil
+}
+
 func (m *JobManager) monitorDoneChannel() {
 	for {
 		select {
@@ -142,9 +117,7 @@ func (m *JobManager) monitorDoneChannel() {
 			delete(m.jobs, id)
 
 			if len(m.jobs) == 0 {
-				for _, stream := range m.accountStreams {
-					stream.Flush()
-				}
+				m.accountStream.Flush()
 
 				m.completionChannel <- true
 				return

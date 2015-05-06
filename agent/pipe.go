@@ -23,7 +23,7 @@ func ProcessPipeRequest(configFile *config.ConfigFile, errorChannel chan error, 
 		errorChannel <- gotelemetry.NewDebugError("Will perform a Rails-style HTTP PATCH operation")
 	}
 
-	apiKey, err := configFile.Accounts()[0].GetAPIKey()
+	apiToken, err := configFile.APIToken()
 
 	if err != nil {
 		errorChannel <- err
@@ -32,7 +32,7 @@ func ProcessPipeRequest(configFile *config.ConfigFile, errorChannel chan error, 
 		return
 	}
 
-	credentials, err := gotelemetry.NewCredentials(apiKey)
+	credentials, err := gotelemetry.NewCredentials(apiToken)
 
 	if err != nil {
 		errorChannel <- err
