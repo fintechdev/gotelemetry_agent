@@ -1,4 +1,6 @@
-listen: ":8000"
+server:
+    api_token: abc123
+    submission_interval: 20s
 graphite:
     listen_tcp: ":2003"
     listen_udp: ":2004"

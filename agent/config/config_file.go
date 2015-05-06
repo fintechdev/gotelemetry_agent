@@ -6,6 +6,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 type Job map[string]interface{}
@@ -30,6 +31,11 @@ func (j Job) Plugin() string {
 	return "com.telemetryapp.process"
 }
 
+type ServerConfig struct {
+	APIToken              string      `yaml:"api_token"`
+	RawSubmissionInterval interface{} `yaml:"submission_interval"`
+}
+
 type DataConfig struct {
 	DataLocation *string `yaml:"path"`
 }
@@ -44,17 +50,16 @@ type ConfigInterface interface {
 	ListenAddress() string
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
-	SubmissionInterval() float64
+	SubmissionInterval() time.Duration
 	Jobs() []Job
 }
 
 type ConfigFile struct {
-	APITokenField           string         `yaml:"api_token"`
-	Graphite                GraphiteConfig `yaml:"graphite"`
-	Data                    DataConfig     `yaml:"data"`
-	Listen                  string         `yaml:"listen"`
-	SubmissionIntervalField float64        `yaml:"submission_interval"`
-	JobsField               []Job          `yaml:"jobs"`
+	Server    ServerConfig   `yaml:"server"`
+	Graphite  GraphiteConfig `yaml:"graphite"`
+	Data      DataConfig     `yaml:"data"`
+	Listen    string         `yaml:"listen"`
+	JobsField []Job          `yaml:"jobs"`
 }
 
 func NewConfigFile() (*ConfigFile, error) {
@@ -80,7 +85,7 @@ func NewConfigFile() (*ConfigFile, error) {
 }
 
 func (c *ConfigFile) APIToken() (string, error) {
-	result := c.APITokenField
+	result := c.Server.APIToken
 
 	if result == "" {
 		result = os.ExpandEnv("$TELEMETRY_API_TOKEN")
@@ -105,8 +110,20 @@ func (c *ConfigFile) ListenAddress() string {
 	return c.Listen
 }
 
-func (c *ConfigFile) SubmissionInterval() float64 {
-	return c.SubmissionIntervalField
+func (c *ConfigFile) SubmissionInterval() time.Duration {
+	if s, ok := c.Server.RawSubmissionInterval.(string); ok {
+		d, err := time.ParseDuration(s)
+
+		if err == nil {
+			return d
+		}
+	}
+
+	if s, ok := c.Server.RawSubmissionInterval.(float64); ok {
+		return time.Duration(s) * time.Second
+	}
+
+	return 0
 }
 
 func (c *ConfigFile) Jobs() []Job {

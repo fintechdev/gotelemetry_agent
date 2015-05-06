@@ -49,7 +49,7 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 
 	result.credentials = credentials
 
-	submissionInterval := time.Duration(jobConfig.SubmissionInterval()) * time.Second
+	submissionInterval := jobConfig.SubmissionInterval()
 
 	if submissionInterval < time.Second {
 		errorChannel <- gotelemetry.NewLogError("Submission interval automatically set to 1s. You can change this value by adding a `submission_interval` property to your configuration file.")
