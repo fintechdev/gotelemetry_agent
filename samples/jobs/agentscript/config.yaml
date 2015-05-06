@@ -9,4 +9,4 @@ jobs:
     - url: tpl://set_test_flow.asl
       flow_tag: test_flow
       expiration: 0
-      refresh: 10
+      interval: 2s

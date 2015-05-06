@@ -63,11 +63,11 @@ type ProcessPlugin struct {
 //
 // - flow_tag                     The tag of the flow to populate
 //
-// - refresh                      The number of seconds between subsequent executions of the
+// - interval                     The number of seconds between subsequent executions of the
 //                                plugin. Default: never
 //
 // - expiration										The number of seconds after which flow data is set to expire.
-//                                Default: refresh * 3; 0 = never.
+//                                Default: interval * 3; 0 = never.
 //
 // - variant                      The variant of the flow
 //
@@ -93,7 +93,7 @@ type ProcessPlugin struct {
 //    - id: Telemetry External
 //      plugin: com.telemetryapp.process
 //      config:
-//        refresh: 86400
+//        interval: 86400
 //        path: ./test.php
 //        args:
 //        	- value
@@ -213,12 +213,22 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		p.expiration = time.Duration(expiration) * time.Second
 	}
 
-	if refresh, ok := c["refresh"].(int); ok {
+	if interval, ok := c["interval"].(int); ok {
 		if p.expiration == 0 {
-			p.expiration = time.Duration(refresh*3) * time.Second
+			p.expiration = time.Duration(interval*3) * time.Second
 		}
 
-		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, time.Duration(refresh)*time.Second)
+		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, time.Duration(interval)*time.Second)
+	} else if interval, ok := c["interval"].(string); ok {
+		if timeInterval, err := time.ParseDuration(interval); err == nil {
+			if p.expiration == 0 {
+				p.expiration = timeInterval * 3.0
+			}
+
+			p.PluginHelper.AddTaskWithClosure(p.performAllTasks, timeInterval)
+		} else {
+			return err
+		}
 	} else {
 		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, 0)
 	}
