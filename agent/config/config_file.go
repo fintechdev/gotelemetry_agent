@@ -3,9 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path"
 	"time"
 )
 
@@ -17,6 +19,10 @@ func (j Job) ID() string {
 	}
 
 	if result, success := j["flow_tag"].(string); success {
+		return result
+	}
+
+	if result, success := j["tag"].(string); success {
 		return result
 	}
 
@@ -32,17 +38,17 @@ func (j Job) Plugin() string {
 }
 
 type ServerConfig struct {
-	APIToken              string      `yaml:"api_token"`
-	RawSubmissionInterval interface{} `yaml:"submission_interval"`
+	APIToken              string      `yaml:"api_token" toml:"api_token"`
+	RawSubmissionInterval interface{} `yaml:"submission_interval" toml:"submission_interval"`
 }
 
 type DataConfig struct {
-	DataLocation *string `yaml:"path"`
+	DataLocation *string `yaml:"path" toml:"path"`
 }
 
 type GraphiteConfig struct {
-	TCPListenPort string `yaml:"listen_tcp"`
-	UDPListenPort string `yaml:"listen_udp"`
+	TCPListenPort string `yaml:"listen_tcp" toml:"listen_tcp"`
+	UDPListenPort string `yaml:"listen_udp" toml:"listen_udp"`
 }
 
 type ConfigInterface interface {
@@ -55,11 +61,12 @@ type ConfigInterface interface {
 }
 
 type ConfigFile struct {
-	Server    ServerConfig   `yaml:"server"`
-	Graphite  GraphiteConfig `yaml:"graphite"`
-	Data      DataConfig     `yaml:"data"`
-	Listen    string         `yaml:"listen"`
-	JobsField []Job          `yaml:"jobs"`
+	Server    ServerConfig   `yaml:"server" toml:"server"`
+	Graphite  GraphiteConfig `yaml:"graphite" toml:"graphite"`
+	Data      DataConfig     `yaml:"data" toml:"data"`
+	Listen    string         `yaml:"listen" toml:"listen"`
+	JobsField []Job          `yaml:"jobs" toml:"jobs"`
+	FlowField []Job          `yaml:"flows" toml:"flow"`
 }
 
 func NewConfigFile() (*ConfigFile, error) {
@@ -79,7 +86,15 @@ func NewConfigFile() (*ConfigFile, error) {
 
 	result := &ConfigFile{}
 
-	err = yaml.Unmarshal(source, result)
+	if path.Ext(CLIConfig.ConfigFileLocation) == ".toml" {
+		_, err = toml.Decode(string(source), result)
+	} else {
+		err = yaml.Unmarshal(source, result)
+	}
+
+	for _, job := range result.FlowField {
+		result.JobsField = append(result.JobsField, job)
+	}
 
 	return result, err
 }

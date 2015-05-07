@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 )
@@ -130,17 +131,23 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 
 	job.Debugf("The configuration is %#v", c)
 
-	p.flowTag, _ = c["flow_tag"].(string)
+	var ok bool
 
-	p.path, _ = c["path"].(string)
+	p.flowTag, ok = c["flow_tag"].(string)
+
+	if !ok {
+		p.flowTag, _ = c["tag"].(string)
+	}
+
+	p.path, _ = c["script"].(string)
 	p.url, _ = c["url"].(string)
 
 	if p.path == "" && p.url == "" {
-		return errors.New("You must provide either a `path` or `url` property.")
+		return errors.New("You must provide either a `script` or `url` property.")
 	}
 
 	if p.path != "" && p.url != "" {
-		return errors.New("You cannot provide both a `path` and `url` property.")
+		return errors.New("You cannot provide both a `script` and `url` property.")
 	}
 
 	p.args = []string{}
@@ -161,12 +168,17 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	}
 
 	if p.path != "" {
-		if len(p.scriptArgs) != 0 {
-			return errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
-		}
-
 		if _, err := os.Stat(p.path); os.IsNotExist(err) {
 			return errors.New("File " + p.path + " does not exist.")
+		}
+
+		if path.Ext(p.path) == ".asl" {
+			p.url = "tpl://" + p.path
+			p.path = ""
+		} else {
+			if len(p.scriptArgs) != 0 {
+				return errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
+			}
 		}
 	}
 
