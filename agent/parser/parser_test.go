@@ -384,3 +384,12 @@ func TestWhile(t *testing.T) {
 
 	runParserTests(tests, t)
 }
+
+func TestExcel(t *testing.T) {
+	tests := map[string]parserTest{
+		"Excel 1": {`a = excel("excel_test.xlsx").cells(ranges:"A2").item(0)`, 10.0},
+		"Excel 2": {`a = excel("excel_test.xlsx").cells(ranges:"C10:E10").sum()`, 90.0},
+	}
+
+	runParserTests(tests, t)
+}

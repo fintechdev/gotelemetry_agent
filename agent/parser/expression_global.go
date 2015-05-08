@@ -67,6 +67,9 @@ var globalProperties = map[string]globalProperty{
 	"error": func(g *globalExpression) expression {
 		return g.emitError()
 	},
+	"excel": func(g *globalExpression) expression {
+		return g.excel()
+	},
 }
 
 func (g *globalExpression) now() expression {
@@ -105,6 +108,22 @@ func (g *globalExpression) log() expression {
 		},
 		map[string]callableArgument{
 			"message": callableArgumentString,
+		},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) excel() expression {
+	return newCallableExpression(
+		"excel",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			path := args["path"].(string)
+
+			return newExcelExpression(path, g.l, g.p), nil
+		},
+		map[string]callableArgument{
+			"path": callableArgumentString,
 		},
 		g.l,
 		g.p,
