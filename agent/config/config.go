@@ -18,6 +18,7 @@ type CLIConfigType struct {
 	UsePOST             bool
 	IsNotifying         bool
 	NotificationChannel string
+	NotificationFlow    string
 	Notification        gotelemetry.Notification
 	WantsFunctionHelp   bool
 	FunctionHelpName    string
@@ -55,11 +56,12 @@ func init() {
 	pipe.Flag("post", "With --pipe, submit the package as a POST request instead. Ignored otherwise.").BoolVar(&CLIConfig.UsePOST)
 
 	notify := app.Command("notify", "Send a channel notification.")
-	notify.Flag("channel", "The ID of the channel to which the notification is sent.").Required().StringVar(&CLIConfig.NotificationChannel)
+	notify.Flag("channel", "The ID of the channel to which the notification is sent. Either channel or flow is required.").StringVar(&CLIConfig.NotificationChannel)
+	notify.Flag("flow", "The Tag of the Flow to whose channel the notification is sent. Either channel or flow is required.").StringVar(&CLIConfig.NotificationFlow)
 	notify.Flag("title", "The title of the notification.").Required().StringVar(&CLIConfig.Notification.Title)
 	notify.Flag("message", "The message to be displayed in the notification.").Required().StringVar(&CLIConfig.Notification.Message)
 	notify.Flag("icon", "An icon to be displayed in the notification.").StringVar(&CLIConfig.Notification.Icon)
-	notify.Flag("duration", "The amount of milliseconds for which the notification must be displayed.").Default("1000").IntVar(&CLIConfig.Notification.Duration)
+	notify.Flag("duration", "The amount of seconds for which the notification must be displayed.").Default("1").IntVar(&CLIConfig.Notification.Duration)
 	notify.Flag("sound", "A URL to a notification sound (use `default` for Telemetry's default notification sound).").StringVar(&CLIConfig.Notification.SoundURL)
 
 	functions := app.Command("functions", "Print function help.")
