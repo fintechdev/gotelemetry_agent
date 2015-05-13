@@ -170,6 +170,8 @@ func TestSeries(t *testing.T) {
 		"Series.last()":        {`a=series("cpu_load").last()+10`, checkFloat},
 		"Series.aggregate()":   {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
 		"Series.aggregate() 2": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50).values.count()`, 50.0},
+		"Series.aggregate() 3": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:10,end_time:"2010-01-02").values.count()`, 10.0},
+		"Series.aggregate() 4": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:10,end_time:"2010-01-02 10:15:16").values.count()`, 10.0},
 		"Series.avg()":         {`a=series("cpu_load").avg("10m")+10`, checkFloat},
 		"Series.sum()":         {`a=series("cpu_load").avg("10m")+10`, checkFloat},
 		"Series.count()":       {`a=series("cpu_load").count("10m")+10`, checkFloat},

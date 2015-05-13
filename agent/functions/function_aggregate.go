@@ -3,6 +3,7 @@ package functions
 import (
 	"errors"
 	"fmt"
+	"github.com/araddon/dateparse"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/functions/schemas"
 	"time"
@@ -66,11 +67,20 @@ func aggregateHandler(context *aggregations.Context, input interface{}) (interfa
 		}
 	}
 
+	var endTimePtr *time.Time = nil
+	if endTimeStr, ok := data["end_time"].(string); ok && len(endTimeStr) > 0 {
+		endTime, err := dateparse.ParseAny(endTimeStr)
+		if err != nil {
+			return nil, err
+		}
+		endTimePtr = &endTime
+	}
+
 	series, err := aggregations.GetSeries(context, seriesName)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return series.Aggregate(op, int(data["interval"].(float64)), int(data["count"].(float64)))
+	return series.Aggregate(op, int(data["interval"].(float64)), int(data["count"].(float64)), endTimePtr)
 }

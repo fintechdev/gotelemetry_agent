@@ -176,7 +176,7 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 	}
 }
 
-func (s *Series) Aggregate(functionType FunctionType, interval, count int) (interface{}, error) {
+func (s *Series) Aggregate(functionType FunctionType, interval, count int, endTimePtr *time.Time) (interface{}, error) {
 	var operation string
 
 	switch functionType {
@@ -199,7 +199,14 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int) (inte
 		return nil, errors.New(fmt.Sprintf("Unknown operation %d", functionType))
 	}
 
-	start := int(time.Now().Add(-time.Duration(interval*count)*time.Second).Unix()) / interval * interval
+	var endTime time.Time
+	if endTimePtr != nil {
+		endTime = *endTimePtr
+	} else {
+		endTime = time.Now()
+	}
+
+	start := int(endTime.Add(-time.Duration(interval*count)*time.Second).Unix()) / interval * interval
 
 	rs, err := s.query("SELECT (ts - ?) / ? * ? AS interval, "+operation+"(value) AS result FROM ?? WHERE ts >= ? GROUP BY interval", start, interval, interval, start)
 
