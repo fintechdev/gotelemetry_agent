@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"github.com/araddon/dateparse"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"io"
 	"time"
@@ -247,7 +248,16 @@ func (s *seriesExpression) aggregate() expression {
 
 			count := int(args["count"].(float64))
 
-			l, err := s.series.Aggregate(function, interval, count)
+			var endTimePtr *time.Time = nil
+			if endTimeStr, ok := args["end_time"].(string); ok && len(endTimeStr) > 0 {
+				endTime, err := dateparse.ParseAny(endTimeStr)
+				if err != nil {
+					return nil, err
+				}
+				endTimePtr = &endTime
+			}
+
+			l, err := s.series.Aggregate(function, interval, count, endTimePtr)
 
 			if err != nil {
 				return nil, err
@@ -259,6 +269,7 @@ func (s *seriesExpression) aggregate() expression {
 			"func":     callableArgumentString,
 			"interval": callableArgumentString,
 			"count":    callableArgumentNumeric,
+			"end_time": callableArgumentOptionalString,
 		},
 		s.l,
 		s.p,
