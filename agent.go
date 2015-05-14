@@ -50,7 +50,7 @@ func main() {
 
 					switch logLevel {
 					case gotelemetry.LogLevelLog:
-						prefix = "Log  "
+						prefix = "Info "
 
 					case gotelemetry.LogLevelDebug:
 						prefix = "Debug"
