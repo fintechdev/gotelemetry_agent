@@ -203,8 +203,11 @@ func (g *globalExpression) notify() expression {
 			title := args["title"].(string)
 			message := args["message"].(string)
 
-			d, err := time.ParseDuration(args["duration"].(string))
-
+			dString, _ := args["duration"].(string)
+			if len(dString) == 0 {
+				dString = "1s"
+			}
+			d, err := time.ParseDuration(dString)
 			if err != nil {
 				return nil, err
 			}
@@ -215,7 +218,6 @@ func (g *globalExpression) notify() expression {
 				duration = 1
 			}
 
-			tag, _ := args["tag"].(string)
 			icon, _ := args["icon"].(string)
 			sound, ok := args["sound"].(string)
 
@@ -223,20 +225,21 @@ func (g *globalExpression) notify() expression {
 				sound = "default"
 			}
 
-			channelTag := args["channel"].(string)
+			channelTag, _ := args["channel"].(string)
+			flowTag, _ := args["flow"].(string)
 
-			notification := gotelemetry.NewNotification(title, message, icon, duration, sound, tag)
+			notification := gotelemetry.NewNotification(title, message, icon, duration, sound)
 
-			result := c.notificationProvider.SendNotification(notification, channelTag)
+			result := c.notificationProvider.SendNotification(notification, channelTag, flowTag)
 
 			return newBooleanExpression(result, g.l, g.p), nil
 		},
 		map[string]callableArgument{
-			"channel":  callableArgumentString,
+			"channel":  callableArgumentOptionalString,
+			"flow":     callableArgumentOptionalString,
 			"title":    callableArgumentString,
 			"message":  callableArgumentString,
-			"duration": callableArgumentString,
-			"tag":      callableArgumentOptionalBoolean,
+			"duration": callableArgumentOptionalString,
 			"icon":     callableArgumentOptionalString,
 			"sound":    callableArgumentOptionalString,
 		},

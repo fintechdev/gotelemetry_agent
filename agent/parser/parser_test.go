@@ -12,7 +12,7 @@ type dummyNotificationProvider struct {
 	channels      []string
 }
 
-func (d *dummyNotificationProvider) SendNotification(n gotelemetry.Notification, c string) bool {
+func (d *dummyNotificationProvider) SendNotification(n gotelemetry.Notification, c string, f string) bool {
 	d.notifications = append(d.notifications, n)
 	d.channels = append(d.channels, c)
 

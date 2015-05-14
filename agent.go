@@ -92,7 +92,7 @@ func run() {
 
 		agent.ProcessPipeRequest(configFile, errorChannel, completionChannel, payload)
 	} else if config.CLIConfig.IsNotifying {
-		agent.ProcessNotificationRequest(configFile, errorChannel, completionChannel, config.CLIConfig.NotificationChannel, config.CLIConfig.Notification)
+		agent.ProcessNotificationRequest(configFile, errorChannel, completionChannel, config.CLIConfig.NotificationChannel, config.CLIConfig.NotificationFlow, config.CLIConfig.Notification)
 	} else {
 		if configFile.ListenAddress() != "" {
 			if err := server.Init(configFile, errorChannel); err != nil {

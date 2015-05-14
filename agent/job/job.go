@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"net/http"
 )
 
 type Job struct {
@@ -186,10 +187,19 @@ func (j *Job) SetFlowError(tag string, body interface{}) {
 	}
 }
 
-func (j *Job) SendNotification(notification gotelemetry.Notification, channelTag string) bool {
-	channel := gotelemetry.NewChannel(channelTag)
+func (j *Job) SendNotification(notification gotelemetry.Notification, channelTag string, flowTag string) bool {
+	var err error
 
-	if err := channel.SendNotification(j.credentials, notification); err != nil {
+	if len(channelTag) > 0 {
+		channel := gotelemetry.NewChannel(channelTag)
+		err = channel.SendNotification(j.credentials, notification)
+	} else if len(flowTag) > 0 {
+		err = gotelemetry.SendFlowChannelNotification(j.credentials, flowTag, notification)
+	} else {
+		err = gotelemetry.NewError(http.StatusBadRequest, "Either channel or flow is required")
+	}
+
+	if err != nil {
 		j.ReportError(err)
 		return true
 	}
