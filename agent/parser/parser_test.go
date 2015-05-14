@@ -393,3 +393,41 @@ func TestExcel(t *testing.T) {
 
 	runParserTests(tests, t)
 }
+
+func TestGet(t *testing.T) {
+	tests := map[string]parserTest{
+		"Get 1": {`a = get(url:"http://jsonplaceholder.typicode.com/users")`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				len(a["body"].([]interface{})) == 10)
+		}},
+		"Get 2": {`a = get(url:"http://jsonplaceholder.typicode.com/users", query:{id:2})`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				len(a["body"].([]interface{})) == 1)
+		}},
+	}
+
+	runParserTests(tests, t)
+}
+
+func TestPost(t *testing.T) {
+	tests := map[string]parserTest{
+		"Post 1": {`a = post(url:"http://jsonplaceholder.typicode.com/posts", parameters:{title:"blah",body:"foobar",userId:1}, json:true)`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			body := a["body"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				body["title"].(string) == "blah" &&
+				body["body"].(string) == "foobar")
+		}},
+		"Post 2": {`a = post(url:"http://jsonplaceholder.typicode.com/posts", parameters:{title:"blah",body:"foobar",userId:1})`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			body := a["body"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				body["title"].(string) == "blah" &&
+				body["body"].(string) == "foobar")
+		}},
+	}
+
+	runParserTests(tests, t)
+}
