@@ -57,7 +57,7 @@ $(BUILD_LIST_WIN): %_build_win: %_fmt
 
 $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 	@echo "Building Linux AMD64..."
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-amd64/telemetry_agent
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-amd64/usr/bin/telemetry_agent
 	@echo "Building complete."
 
 $(TEST_LIST): %_test:

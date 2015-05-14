@@ -165,6 +165,7 @@ func (x *excelExpression) cells() expression {
 			return newArrayExpression(result, x.l, x.p), nil
 		},
 		map[string]callableArgument{
+			"sheet":  callableArgumentOptionalNumeric,
 			"ranges": callableArgumentString,
 		},
 		x.l,

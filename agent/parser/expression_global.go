@@ -332,9 +332,16 @@ func (g *globalExpression) spawn() expression {
 			flowTag := args["tag"].(string)
 
 			cfg := map[string]interface{}{
-				"url":      "tpl://" + args["path"].(string),
 				"refresh":  int(args["refresh"].(float64)),
 				"flow_tag": flowTag,
+			}
+
+			if script, ok := args["script"].(string); ok {
+				cfg["script"] = script
+			}
+
+			if exec, ok := args["exec"].(string); ok {
+				cfg["exec"] = exec
 			}
 
 			if ar, ok := args["args"].(map[string]interface{}); ok {
@@ -344,7 +351,8 @@ func (g *globalExpression) spawn() expression {
 			return nil, c.jobSpawner.SpawnJob(flowTag, "com.telemetryapp.process", cfg)
 		},
 		map[string]callableArgument{
-			"path":    callableArgumentString,
+			"exec":    callableArgumentOptionalString,
+			"script":  callableArgumentOptionalString,
 			"refresh": callableArgumentNumeric,
 			"args":    callableArgumentOptionalMap,
 			"tag":     callableArgumentString,

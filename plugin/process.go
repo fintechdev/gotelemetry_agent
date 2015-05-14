@@ -56,7 +56,9 @@ type ProcessPlugin struct {
 //
 // - url													The URL from where to retrieve the data to evaluate
 //
-// - path                         The executable's path
+// - exec                         The path to an external executable
+//
+// - script												The path to an ASL script
 //
 // - args													An array of arguments that are sent to the executable or, if
 // 																executing an ASL script, a hash of key/value pairs that
@@ -79,7 +81,7 @@ type ProcessPlugin struct {
 // output to log and the plugin is not allowed to run. If the flow does not exist, it is created using
 // the contents of `template`. If the creation fails, the plugin is not allowed to run.
 //
-// If `path` is specified, the plugin will attempt to execute the file it points to, optionally passing
+// If `exec` is specified, the plugin will attempt to execute the file it points to, optionally passing
 // `args` if they are specified.
 //
 // In output, the process has two options:
@@ -95,7 +97,7 @@ type ProcessPlugin struct {
 //      plugin: com.telemetryapp.process
 //      config:
 //        interval: 86400
-//        path: ./test.php
+//        exec: ./test.php
 //        args:
 //        	- value
 //        	- 1
@@ -123,8 +125,8 @@ type ProcessPlugin struct {
 //   template locally in the file `update_timeseries.yaml`, and point to it by providing the value
 //   `tpl://./update_timeseries.yaml` for the job's `url` property.
 //
-//   It is a user error to specify both a `url` and `path` property, or to provide an `args` property
-//   without a `path` property.
+//   It is a user error to specify both a `url` and `exec` property, or to provide an `args` property
+//   without a `exec` property.
 
 func (p *ProcessPlugin) Init(job *job.Job) error {
 	c := job.Config()
@@ -139,15 +141,27 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		p.flowTag, _ = c["tag"].(string)
 	}
 
-	p.path, _ = c["script"].(string)
+	exec, _ := c["exec"].(string)
+	script, _ := c["script"].(string)
+
+	if exec != "" && script != "" {
+		return errors.New("You cannot specify both `script` and `exec` properties.")
+	}
+
+	if exec != "" {
+		p.path = exec
+	} else if script != "" {
+		p.path = script
+	}
+
 	p.url, _ = c["url"].(string)
 
 	if p.path == "" && p.url == "" {
-		return errors.New("You must provide either a `script` or `url` property.")
+		return errors.New("You must specify a `script`, `exec`, or `url` property.")
 	}
 
 	if p.path != "" && p.url != "" {
-		return errors.New("You cannot provide both a `script` and `url` property.")
+		return errors.New("You cannot provide both `script` or `exec` and `url` properties.")
 	}
 
 	p.args = []string{}

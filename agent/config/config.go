@@ -45,7 +45,7 @@ func init() {
 
 	app.Flag("config", "Path to the configuration file for this agent.").Short('c').Default("./gotelemetry_agent.yaml").StringVar(&CLIConfig.ConfigFileLocation)
 
-	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `log`, `error`).").Short('v').Default("log").Enum("debug", "log", "error")
+	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")
 	filter := app.Flag("filter", "Run only the jobs whose IDs (or tags if no ID is specified) match the given regular expression").Default(".").String()
 
 	once := app.Command("once", "Run all jobs exactly once and exit.")
@@ -89,7 +89,7 @@ func init() {
 	case "debug":
 		CLIConfig.LogLevel = gotelemetry.LogLevelDebug
 
-	case "log":
+	case "info":
 		CLIConfig.LogLevel = gotelemetry.LogLevelLog
 
 	case "error":
