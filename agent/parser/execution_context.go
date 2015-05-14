@@ -6,7 +6,7 @@ import (
 )
 
 type executionContextNotificationProvider interface {
-	SendNotification(n gotelemetry.Notification, channelTag string) bool
+	SendNotification(n gotelemetry.Notification, channelTag string, flowTag string) bool
 }
 
 type executionContextJobSpawner interface {

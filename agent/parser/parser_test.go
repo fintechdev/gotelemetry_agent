@@ -12,7 +12,7 @@ type dummyNotificationProvider struct {
 	channels      []string
 }
 
-func (d *dummyNotificationProvider) SendNotification(n gotelemetry.Notification, c string) bool {
+func (d *dummyNotificationProvider) SendNotification(n gotelemetry.Notification, c string, f string) bool {
 	d.notifications = append(d.notifications, n)
 	d.channels = append(d.channels, c)
 
@@ -170,6 +170,8 @@ func TestSeries(t *testing.T) {
 		"Series.last()":        {`a=series("cpu_load").last()+10`, checkFloat},
 		"Series.aggregate()":   {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
 		"Series.aggregate() 2": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50).values.count()`, 50.0},
+		"Series.aggregate() 3": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:10,end_time:"2010-01-02").values.count()`, 10.0},
+		"Series.aggregate() 4": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:10,end_time:"2010-01-02 10:15:16").values.count()`, 10.0},
 		"Series.avg()":         {`a=series("cpu_load").avg("10m")+10`, checkFloat},
 		"Series.sum()":         {`a=series("cpu_load").avg("10m")+10`, checkFloat},
 		"Series.count()":       {`a=series("cpu_load").count("10m")+10`, checkFloat},
@@ -389,6 +391,44 @@ func TestExcel(t *testing.T) {
 	tests := map[string]parserTest{
 		"Excel 1": {`a = excel("excel_test.xlsx").cells(ranges:"A2").item(0)`, 10.0},
 		"Excel 2": {`a = excel("excel_test.xlsx").cells(ranges:"C10:E10").sum()`, 90.0},
+	}
+
+	runParserTests(tests, t)
+}
+
+func TestGet(t *testing.T) {
+	tests := map[string]parserTest{
+		"Get 1": {`a = get(url:"http://jsonplaceholder.typicode.com/users")`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				len(a["body"].([]interface{})) == 10)
+		}},
+		"Get 2": {`a = get(url:"http://jsonplaceholder.typicode.com/users", query:{id:2})`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				len(a["body"].([]interface{})) == 1)
+		}},
+	}
+
+	runParserTests(tests, t)
+}
+
+func TestPost(t *testing.T) {
+	tests := map[string]parserTest{
+		"Post 1": {`a = post(url:"http://jsonplaceholder.typicode.com/posts", parameters:{title:"blah",body:"foobar",userId:1}, json:true)`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			body := a["body"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				body["title"].(string) == "blah" &&
+				body["body"].(string) == "foobar")
+		}},
+		"Post 2": {`a = post(url:"http://jsonplaceholder.typicode.com/posts", parameters:{title:"blah",body:"foobar",userId:1})`, func(res testR, errs testE) bool {
+			a := res["a"].(map[string]interface{})
+			body := a["body"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				body["title"].(string) == "blah" &&
+				body["body"].(string) == "foobar")
+		}},
 	}
 
 	runParserTests(tests, t)
