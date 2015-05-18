@@ -126,7 +126,7 @@ func parseTraditionalRequest(context *aggregations.Context, remoteAddress string
 		)
 	}
 
-	series, err := aggregations.GetSeries(context, seriesName)
+	series, isCreated, err := aggregations.GetSeries(context, seriesName)
 
 	if err != nil {
 		return gotelemetry.NewErrorWithFormat(
@@ -136,6 +136,10 @@ func parseTraditionalRequest(context *aggregations.Context, remoteAddress string
 			seriesName,
 			err.Error(),
 		)
+	}
+
+	if isCreated {
+		errorChannel <- gotelemetry.NewLogError("Graphite => Started receiving graphite data for '%s'", seriesName)
 	}
 
 	ts := time.Unix(timestamp, 0)
@@ -178,7 +182,11 @@ func parseCounterRequest(context *aggregations.Context, remoteAddress string, li
 		)
 	}
 
-	counter, err := aggregations.GetCounter(context, counterName)
+	counter, isCreated, err := aggregations.GetCounter(context, counterName)
+
+	if isCreated {
+		errorChannel <- gotelemetry.NewLogError("Graphite => Started receiving graphite data for '%s'", counterName)
+	}
 
 	if err != nil {
 		return gotelemetry.NewErrorWithFormat(

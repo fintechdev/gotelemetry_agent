@@ -17,7 +17,7 @@ func getHandler(context *aggregations.Context, input interface{}) (interface{}, 
 
 	data := input.(map[string]interface{})
 
-	counter, err := aggregations.GetCounter(context, data["name"].(string))
+	counter, _, err := aggregations.GetCounter(context, data["name"].(string))
 
 	if err != nil {
 		return nil, err
