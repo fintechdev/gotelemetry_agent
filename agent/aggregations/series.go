@@ -69,9 +69,11 @@ func GetSeries(context *Context, name string) (*Series, error) {
 		}
 
 		ticker := time.Tick(time.Second)
-		for range ticker {
-			result.deleteOldData()
-		}
+		go func() {
+			for range ticker {
+				result.deleteOldData()
+			}
+		}()
 	}
 
 	return result, nil
