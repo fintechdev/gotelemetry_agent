@@ -44,6 +44,7 @@ type ServerConfig struct {
 
 type DataConfig struct {
 	DataLocation *string `yaml:"path" toml:"path"`
+	TTL          *int    `yaml:"ttl" toml:"ttl"`
 }
 
 type GraphiteConfig struct {

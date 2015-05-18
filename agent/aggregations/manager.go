@@ -6,16 +6,23 @@ import (
 
 type Manager struct {
 	path         string
+	ttl          int
 	errorChannel chan error
 }
 
 var manager *Manager = nil
 
-func Init(location *string, errorChannel chan error) error {
+func Init(location *string, ttl *int, errorChannel chan error) error {
 	if location != nil {
 		manager = &Manager{
 			path:         *location,
 			errorChannel: errorChannel,
+		}
+
+		if ttl != nil && *ttl > 0 {
+			manager.ttl = *ttl
+		} else {
+			manager.ttl = 0
 		}
 
 		c, err := GetContext()
