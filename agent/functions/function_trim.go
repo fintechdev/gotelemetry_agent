@@ -19,7 +19,7 @@ func trimHandler(context *aggregations.Context, input interface{}) (interface{},
 
 	data := input.(map[string]interface{})
 
-	series, err := aggregations.GetSeries(context, data["series"].(string))
+	series, _, err := aggregations.GetSeries(context, data["series"].(string))
 
 	if err != nil {
 		return nil, err

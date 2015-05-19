@@ -26,17 +26,17 @@ type Counter struct {
 var counters = map[string]*Counter{}
 var counterLock = sync.Mutex{}
 
-func GetCounter(context *Context, name string) (*Counter, error) {
+func GetCounter(context *Context, name string) (*Counter, bool, error) {
 	counterLock.Lock()
 
 	defer counterLock.Unlock()
 
 	if counter, ok := counters[name]; ok {
-		return counter, nil
+		return counter, false, nil
 	}
 
 	if err := context.conn.Exec("INSERT OR IGNORE INTO _counters (name, rollover_last) VALUES (?, ?)", name, time.Now().Unix()); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	row, err := context.fetchRow("SELECT value, rollover_last, rollover_interval, rollover_expression FROM _counters WHERE name = ?", name)
@@ -54,7 +54,7 @@ func GetCounter(context *Context, name string) (*Counter, error) {
 
 		if expr, ok := row["rollover_expression"].(string); ok {
 			if err := json.Unmarshal([]byte(expr), &counter.rolloverExpression); err != nil {
-				return nil, err
+				return nil, false, err
 			}
 		}
 
@@ -64,10 +64,10 @@ func GetCounter(context *Context, name string) (*Counter, error) {
 		counter.scheduleRollover()
 		counter.lock.Unlock()
 
-		return counter, nil
+		return counter, true, nil
 	}
 
-	return nil, err
+	return nil, false, err
 }
 
 func (c *Counter) fatal(err error) {
