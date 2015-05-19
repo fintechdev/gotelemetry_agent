@@ -80,7 +80,7 @@ func GetSeries(context *Context, name string) (*Series, error) {
 }
 
 func (s *Series) deleteOldData() {
-	s.exec("DELETE FROM ?? WHERE ts < ?", int(time.Now().Unix())-manager.ttl)
+	s.exec("DELETE FROM ?? WHERE ts < ?", int(time.Now().Add(-manager.ttl).Unix()))
 }
 
 func (s *Series) Push(timestamp *time.Time, value float64) error {

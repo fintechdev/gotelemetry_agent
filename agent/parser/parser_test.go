@@ -30,7 +30,7 @@ func testRunAndReturnErrors(s string) (map[string]interface{}, *dummyNotificatio
 
 	parserTestInitOnce.Do(func() {
 		l := "/tmp/agent.sqlite3"
-		ttl := 3600
+		ttl := "1h"
 		aggregations.Init(&l, &ttl, make(chan error, 99999))
 	})
 
