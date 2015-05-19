@@ -6,7 +6,7 @@ graphite:
     listen_udp: ":2004"
 data:
     path: /tmp/agent.sqlite3
-    ttl: 3600
+    ttl: 1h
 jobs:
     - url: tpl://set_test_flow.asl
       flow_tag: test_flow

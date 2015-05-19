@@ -2,20 +2,32 @@ package aggregations
 
 import (
 	"github.com/telemetryapp/gotelemetry"
+	"time"
 )
 
 type Manager struct {
 	path         string
+	ttl          time.Duration
 	errorChannel chan error
 }
 
 var manager *Manager = nil
 
-func Init(location *string, errorChannel chan error) error {
+func Init(location *string, ttlString *string, errorChannel chan error) error {
 	if location != nil {
 		manager = &Manager{
 			path:         *location,
 			errorChannel: errorChannel,
+		}
+
+		if ttlString != nil && len(*ttlString) > 0 {
+			ttl, err := time.ParseDuration(*ttlString)
+			if err != nil {
+				return err
+			}
+			manager.ttl = ttl
+		} else {
+			manager.ttl = 0
 		}
 
 		c, err := GetContext()

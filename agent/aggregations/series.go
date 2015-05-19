@@ -67,9 +67,22 @@ func GetSeries(context *Context, name string) (*Series, error) {
 		if err := createSeries(context, name); err != nil {
 			return nil, err
 		}
+
+		if manager.ttl > 0 {
+			ticker := time.Tick(time.Second)
+			go func() {
+				for range ticker {
+					result.deleteOldData()
+				}
+			}()
+		}
 	}
 
 	return result, nil
+}
+
+func (s *Series) deleteOldData() {
+	s.exec("DELETE FROM ?? WHERE ts < ?", int(time.Now().Add(-manager.ttl).Unix()))
 }
 
 func (s *Series) Push(timestamp *time.Time, value float64) error {
