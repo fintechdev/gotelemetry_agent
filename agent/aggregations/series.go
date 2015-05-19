@@ -68,12 +68,14 @@ func GetSeries(context *Context, name string) (*Series, error) {
 			return nil, err
 		}
 
-		ticker := time.Tick(time.Second)
-		go func() {
-			for range ticker {
-				result.deleteOldData()
-			}
-		}()
+		if manager.ttl > 0 {
+			ticker := time.Tick(time.Second)
+			go func() {
+				for range ticker {
+					result.deleteOldData()
+				}
+			}()
+		}
 	}
 
 	return result, nil
