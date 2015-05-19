@@ -69,7 +69,7 @@ func computeHandler(context *aggregations.Context, input interface{}) (interface
 		}
 	}
 
-	series, err := aggregations.GetSeries(context, seriesName)
+	series, _, err := aggregations.GetSeries(context, seriesName)
 
 	if err != nil {
 		return nil, err

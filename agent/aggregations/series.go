@@ -53,9 +53,9 @@ var cachedSeries = map[string]*Series{}
 
 var seriesNameRegex = regexp.MustCompile(`^[A-Za-z\-][A-Za-z0-9_.\-]*$`)
 
-func GetSeries(context *Context, name string) (*Series, error) {
+func GetSeries(context *Context, name string) (*Series, bool, error) {
 	if err := validateSeriesName(name); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	result := &Series{
@@ -63,9 +63,11 @@ func GetSeries(context *Context, name string) (*Series, error) {
 		Name:    name,
 	}
 
+	created := false
+
 	if _, ok := cachedSeries[name]; !ok {
 		if err := createSeries(context, name); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		if manager.ttl > 0 {
@@ -76,9 +78,11 @@ func GetSeries(context *Context, name string) (*Series, error) {
 				}
 			}()
 		}
+
+		created = true
 	}
 
-	return result, nil
+	return result, created, nil
 }
 
 func (s *Series) deleteOldData() {

@@ -145,7 +145,7 @@ func (g *globalExpression) counter() expression {
 		"counter",
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			n := args["name"].(string)
-			res, err := aggregations.GetCounter(c.aggregationContext, n)
+			res, _, err := aggregations.GetCounter(c.aggregationContext, n)
 
 			if err != nil {
 				return nil, err
@@ -182,7 +182,7 @@ func (g *globalExpression) series() expression {
 		"series",
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			n := args["name"].(string)
-			s, err := aggregations.GetSeries(c.aggregationContext, n)
+			s, _, err := aggregations.GetSeries(c.aggregationContext, n)
 
 			if err != nil {
 				return nil, err

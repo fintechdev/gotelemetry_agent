@@ -45,7 +45,7 @@ func anomalyHandler(context *aggregations.Context, input interface{}) (interface
 
 	seriesName := data["series"].(string)
 
-	series, err := aggregations.GetSeries(context, seriesName)
+	series, _, err := aggregations.GetSeries(context, seriesName)
 
 	if err != nil {
 		return nil, err

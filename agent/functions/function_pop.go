@@ -26,7 +26,7 @@ func popHandler(context *aggregations.Context, input interface{}) (interface{}, 
 		condition = true
 	}
 
-	series, err := aggregations.GetSeries(context, seriesName)
+	series, _, err := aggregations.GetSeries(context, seriesName)
 
 	if err != nil {
 		return nil, err
