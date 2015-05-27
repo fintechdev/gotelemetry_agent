@@ -24,7 +24,7 @@ type CLIConfigType struct {
 	FunctionHelpName    string
 }
 
-const AgentVersion = "2.0.0"
+const AgentVersion = "2.0.1"
 
 var CLIConfig CLIConfigType
 
