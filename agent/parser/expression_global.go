@@ -391,7 +391,7 @@ func execHttpRequest(method string, c *executionContext, args map[string]interfa
 	var contentType string
 
 	var body io.Reader = nil
-	paramsMap, _ := args["parameters"].(map[string]interface{})
+	paramsMap, _ := args["body"].(map[string]interface{})
 	if len(paramsMap) > 0 {
 		if isJson, ok := args["json"].(bool); ok && isJson {
 			j, err := json.Marshal(paramsMap)
@@ -489,11 +489,11 @@ func (g *globalExpression) post() expression {
 			return execHttpRequest("POST", c, args, g.l, g.p)
 		},
 		map[string]callableArgument{
-			"url":        callableArgumentString,
-			"auth":       callableArgumentOptionalMap,
-			"query":      callableArgumentOptionalMap,
-			"parameters": callableArgumentOptionalMap,
-			"json":       callableArgumentOptionalBoolean,
+			"url":   callableArgumentString,
+			"auth":  callableArgumentOptionalMap,
+			"query": callableArgumentOptionalMap,
+			"body":  callableArgumentOptionalMap,
+			"json":  callableArgumentOptionalBoolean,
 		},
 		g.l,
 		g.p,

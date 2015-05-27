@@ -14,6 +14,10 @@ type Context struct {
 }
 
 func GetContext() (*Context, error) {
+	if manager == nil {
+		return nil, errors.New("No data context is available. Did you set the `data.path` property in the Agent's configuration file?")
+	}
+
 	conn, err := sqlite3.Open(manager.path)
 
 	if err != nil {
