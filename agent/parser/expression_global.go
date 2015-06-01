@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
@@ -83,6 +84,9 @@ var globalProperties = map[string]globalProperty{
 	"post": func(g *globalExpression) expression {
 		return g.post()
 	},
+	"random": func(g *globalExpression) expression {
+		return g.random()
+	},
 }
 
 func (g *globalExpression) now() expression {
@@ -121,6 +125,26 @@ func (g *globalExpression) log() expression {
 		},
 		map[string]callableArgument{
 			"message": callableArgumentString,
+		},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) random() expression {
+	return newCallableExpression(
+		"random",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			max, ok := args["max"].(float64)
+
+			if !ok {
+				max = 1
+			}
+
+			return newNumericExpression(rand.Float64()*max, g.l, g.p), nil
+		},
+		map[string]callableArgument{
+			"max": callableArgumentOptionalNumeric,
 		},
 		g.l,
 		g.p,

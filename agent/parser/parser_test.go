@@ -122,6 +122,18 @@ func TestGlobalMethods(t *testing.T) {
 		return ok
 	}
 
+	checkFloatLessThan := func(max float64) func(res testR, errs testE) bool {
+		return func(res testR, errs testE) bool {
+			val, ok := res["a"].(float64)
+
+			if ok {
+				return val < max
+			}
+
+			return false
+		}
+	}
+
 	checkNotification := func(count int) func(*dummyNotificationProvider) bool {
 		return func(np *dummyNotificationProvider) bool {
 			return len(np.notifications) == 1
@@ -129,11 +141,13 @@ func TestGlobalMethods(t *testing.T) {
 	}
 
 	tests := map[string]parserTest{
-		"Global.now()":            {"a=now()", checkFloat},
-		"Global.now() assignment": {"$a=now(); a=$a", checkFloat},
-		"Global.notify()":         {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
-		"Global.arg()":            {`a=arg("test")`, 10.0},
-		"Global.load()":           {`$a=load(format:"yaml",path:"parser_test_load.yaml"); a=$a.item("value")`, 123.0},
+		"Global.now()":             {"a=now()", checkFloat},
+		"Global.now() assignment":  {"$a=now(); a=$a", checkFloat},
+		"Global.notify()":          {`notify(channel:"123",title:"test",duration:"10s",message:"Hello")`, checkNotification(1)},
+		"Global.arg()":             {`a=arg("test")`, 10.0},
+		"Global.load()":            {`$a=load(format:"yaml",path:"parser_test_load.yaml"); a=$a.item("value")`, 123.0},
+		"Global.random()":          {`a=random(10)`, checkFloatLessThan(10)},
+		"Global.random() (no max)": {`a=random()`, checkFloatLessThan(1)},
 	}
 
 	runParserTests(tests, t)
