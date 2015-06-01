@@ -1,18 +1,20 @@
 package parser
 
 import (
+	"errors"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
-type excelExpressionCellReference struct {
+type spreadsheetExpressionCellReference struct {
 	Row    int
 	Column int
 }
 
-func newExcelExpressionCellReference(column, row string) excelExpressionCellReference {
-	result := excelExpressionCellReference{}
+func newSpreadsheetExpressionCellReference(column, row string) spreadsheetExpressionCellReference {
+	result := spreadsheetExpressionCellReference{}
 
 	column = strings.ToUpper(column)
 
@@ -32,4 +34,65 @@ func newExcelExpressionCellReference(column, row string) excelExpressionCellRefe
 	}
 
 	return result
+}
+
+var spreadsheetExpressionRangeRegex = regexp.MustCompile(`^\s*([A-Za-z]+)(\d+)\s*[-:]\s*([A-Za-z]+)(\d+)\s*`)
+var spreadsheetExpressionCellRegex = regexp.MustCompile(`^\s*([A-Za-z]+)(\d+)\s*$`)
+
+func parseRange(rangeSpec string) ([]spreadsheetExpressionCellReference, error) {
+	result := []spreadsheetExpressionCellReference{}
+	ranges := strings.Split(rangeSpec, ",")
+
+	for _, r := range ranges {
+		rangeMatches := spreadsheetExpressionRangeRegex.FindStringSubmatch(r)
+		cellMatches := spreadsheetExpressionCellRegex.FindStringSubmatch(r)
+
+		switch {
+		case len(rangeMatches) > 0:
+			startCell := newSpreadsheetExpressionCellReference(rangeMatches[1], rangeMatches[2])
+			endCell := newSpreadsheetExpressionCellReference(rangeMatches[3], rangeMatches[4])
+
+			if startCell.Column-endCell.Column != 0 && startCell.Row-endCell.Row != 0 {
+				return result, errors.New("The range expression `" + r + "` does not represent a mono-dimensional block of cells.")
+			}
+
+			if startCell.Column-endCell.Column == 0 {
+				var start, end int
+
+				if startCell.Row < endCell.Row {
+					start = startCell.Row - 1
+					end = endCell.Row
+				} else {
+					start = endCell.Row - 1
+					end = startCell.Row
+				}
+
+				for index := start; index < end; index++ {
+					result = append(result, spreadsheetExpressionCellReference{Row: index, Column: startCell.Column})
+				}
+			} else {
+				var start, end int
+
+				if startCell.Column < endCell.Column {
+					start = startCell.Column
+					end = endCell.Column + 1
+				} else {
+					start = endCell.Column
+					end = startCell.Column + 1
+				}
+
+				for index := start; index < end; index++ {
+					result = append(result, spreadsheetExpressionCellReference{Row: startCell.Row, Column: index})
+				}
+			}
+
+		case len(cellMatches) > 0:
+			result = append(result, newSpreadsheetExpressionCellReference(cellMatches[1], cellMatches[2]))
+
+		default:
+			return result, errors.New("Unable to parse range expression `" + r + "`")
+		}
+	}
+
+	return result, nil
 }

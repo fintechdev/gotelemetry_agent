@@ -74,6 +74,9 @@ var globalProperties = map[string]globalProperty{
 	"excel": func(g *globalExpression) expression {
 		return g.excel()
 	},
+	"googleSpreadsheet": func(g *globalExpression) expression {
+		return g.googleSpreadsheet()
+	},
 	"get": func(g *globalExpression) expression {
 		return g.get()
 	},
@@ -134,6 +137,21 @@ func (g *globalExpression) excel() expression {
 		},
 		map[string]callableArgument{
 			"path": callableArgumentString,
+		},
+		g.l,
+		g.p,
+	)
+}
+
+func (g *globalExpression) googleSpreadsheet() expression {
+	return newCallableExpression(
+		"googleSpreadsheet",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			spreadsheetId := args["spreadsheetId"].(string)
+			return newGoogleSpreadsheetExpression(spreadsheetId, g.l, g.p), nil
+		},
+		map[string]callableArgument{
+			"spreadsheetId": callableArgumentString,
 		},
 		g.l,
 		g.p,

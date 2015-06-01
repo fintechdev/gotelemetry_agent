@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tealeg/xlsx"
-	"regexp"
-	"strings"
 )
 
 // Number
@@ -46,67 +44,6 @@ var excelProperties = map[string]excelProperty{
 	},
 }
 
-var excelExpressionRangeRegex = regexp.MustCompile(`^\s*([A-Za-z]+)(\d+)\s*[-:]\s*([A-Za-z]+)(\d+)\s*`)
-var excelExpressionCellRegex = regexp.MustCompile(`^\s*([A-Za-z]+)(\d+)\s*$`)
-
-func (x *excelExpression) parseRange(rangeSpec string) ([]excelExpressionCellReference, error) {
-	result := []excelExpressionCellReference{}
-	ranges := strings.Split(rangeSpec, ",")
-
-	for _, r := range ranges {
-		rangeMatches := excelExpressionRangeRegex.FindStringSubmatch(r)
-		cellMatches := excelExpressionCellRegex.FindStringSubmatch(r)
-
-		switch {
-		case len(rangeMatches) > 0:
-			startCell := newExcelExpressionCellReference(rangeMatches[1], rangeMatches[2])
-			endCell := newExcelExpressionCellReference(rangeMatches[3], rangeMatches[4])
-
-			if startCell.Column-endCell.Column != 0 && startCell.Row-endCell.Row != 0 {
-				return result, errors.New("The range expression `" + r + "` does not represent a mono-dimensional block of cells.")
-			}
-
-			if startCell.Column-endCell.Column == 0 {
-				var start, end int
-
-				if startCell.Row < endCell.Row {
-					start = startCell.Row - 1
-					end = endCell.Row
-				} else {
-					start = endCell.Row - 1
-					end = startCell.Row
-				}
-
-				for index := start; index < end; index++ {
-					result = append(result, excelExpressionCellReference{Row: index, Column: startCell.Column})
-				}
-			} else {
-				var start, end int
-
-				if startCell.Column < endCell.Column {
-					start = startCell.Column
-					end = endCell.Column + 1
-				} else {
-					start = endCell.Column
-					end = startCell.Column + 1
-				}
-
-				for index := start; index < end; index++ {
-					result = append(result, excelExpressionCellReference{Row: startCell.Row, Column: index})
-				}
-			}
-
-		case len(cellMatches) > 0:
-			result = append(result, newExcelExpressionCellReference(cellMatches[1], cellMatches[2]))
-
-		default:
-			return result, errors.New("Unable to parse range expression `" + r + "`")
-		}
-	}
-
-	return result, nil
-}
-
 func (x *excelExpression) cells() expression {
 	return newCallableExpression(
 		"cells",
@@ -132,7 +69,7 @@ func (x *excelExpression) cells() expression {
 				sheet = sheets[sheetIndex]
 			}
 
-			cells, err := x.parseRange(args["ranges"].(string))
+			cells, err := parseRange(args["ranges"].(string))
 
 			if err != nil {
 				return nil, err
