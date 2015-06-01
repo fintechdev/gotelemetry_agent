@@ -9,7 +9,6 @@ import (
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
-	"regexp"
 	"strings"
 	"time"
 )
@@ -34,7 +33,7 @@ type ExcelPlugin struct {
 	*job.PluginHelper
 	filePath string
 	refresh  time.Duration
-	cells    []excelCellReference
+	cells    []spreadsheetCellReference
 	patch    string
 	flowTag  string
 	variant  string
@@ -49,11 +48,11 @@ type ExcelPlugin struct {
 //
 // - observe                      Whether the plugin should observe the file for changes, and run whenever changes are detected
 //
-// - source                       The data to be extracted; a comma-separated list of one or more cells (e.g.: “A12”) or monodimensional cell ranges (e.g.: “A1:A14”). The plugin supports both string and numeric values.
+// - source                       The data to be extracted; a comma-separated list of one or more cells (e.g.: “A12”) or one-dimensional cell ranges (e.g.: “A1:A14”). The plugin supports both string and numeric values.
 //
 // - flow_tag                     The tag of the flow to populate
 //
-// - variant                      The varient of the flow
+// - variant                      The variant of the flow
 //
 // - template                     A template that will be used to populate the flow when it is created
 //
@@ -72,7 +71,7 @@ func (p *ExcelPlugin) Init(job *job.Job) error {
 	p.flowTag = c["flow_tag"].(string)
 	p.variant = c["variant"].(string)
 
-	p.cells, err = p.parseRange(c["source"].(string))
+	p.cells, err = parseRange(c["source"].(string))
 
 	if err != nil {
 		job.ReportError(err)
@@ -103,67 +102,6 @@ func (p *ExcelPlugin) Init(job *job.Job) error {
 	}
 
 	return nil
-}
-
-var excelRangeRegex = regexp.MustCompile(`^\s*([A-Za-z]+)(\d+)\s*[-:]\s*([A-Za-z]+)(\d+)\s*`)
-var excelCellRegex = regexp.MustCompile(`^\s*([A-Za-z]+)(\d+)\s*$`)
-
-func (p *ExcelPlugin) parseRange(rangeSpec string) ([]excelCellReference, error) {
-	result := []excelCellReference{}
-	ranges := strings.Split(rangeSpec, ",")
-
-	for _, r := range ranges {
-		rangeMatches := excelRangeRegex.FindStringSubmatch(r)
-		cellMatches := excelCellRegex.FindStringSubmatch(r)
-
-		switch {
-		case len(rangeMatches) > 0:
-			startCell := newExcelCellReference(rangeMatches[1], rangeMatches[2])
-			endCell := newExcelCellReference(rangeMatches[3], rangeMatches[4])
-
-			if startCell.Column-endCell.Column != 0 && startCell.Row-endCell.Row != 0 {
-				return result, errors.New("The range expression `" + r + "` does not represent a mono-dimensional block of cells.")
-			}
-
-			if startCell.Column-endCell.Column == 0 {
-				var start, end int
-
-				if startCell.Row < endCell.Row {
-					start = startCell.Row - 1
-					end = endCell.Row
-				} else {
-					start = endCell.Row - 1
-					end = startCell.Row
-				}
-
-				for index := start; index < end; index++ {
-					result = append(result, excelCellReference{Row: index, Column: startCell.Column})
-				}
-			} else {
-				var start, end int
-
-				if startCell.Column < endCell.Column {
-					start = startCell.Column - 1
-					end = endCell.Column
-				} else {
-					start = endCell.Column - 1
-					end = startCell.Column
-				}
-
-				for index := start; index < end; index++ {
-					result = append(result, excelCellReference{Row: startCell.Row, Column: index})
-				}
-			}
-
-		case len(cellMatches) > 0:
-			result = append(result, newExcelCellReference(cellMatches[1], cellMatches[2]))
-
-		default:
-			return result, errors.New("Unable to parse range expression `" + r + "`")
-		}
-	}
-
-	return result, nil
 }
 
 func (p *ExcelPlugin) performAllTasks(j *job.Job) {
