@@ -397,6 +397,16 @@ func TestExcel(t *testing.T) {
 	runParserTests(tests, t)
 }
 
+func TestGoogleSpreadsheet(t *testing.T) {
+	tests := map[string]parserTest{
+		"GoogleSpreadsheet 1": {`a = googleSpreadsheet("1gtvewgRXv3YpcduvJQXiD0Db0L3q05113jGKYJv4De8").cells(ranges:"E3").item(0)`, 275.0},
+		"GoogleSpreadsheet 2": {`a = googleSpreadsheet("1gtvewgRXv3YpcduvJQXiD0Db0L3q05113jGKYJv4De8").cells(ranges:"E4").item(0)`, "abcdef"},
+		"GoogleSpreadsheet 3": {`a = googleSpreadsheet("1gtvewgRXv3YpcduvJQXiD0Db0L3q05113jGKYJv4De8").cells(ranges:"E5").item(0)`, false},
+	}
+
+	runParserTests(tests, t)
+}
+
 func TestGet(t *testing.T) {
 	tests := map[string]parserTest{
 		"Get 1": {`a = get(url:"http://jsonplaceholder.typicode.com/users")`, func(res testR, errs testE) bool {
