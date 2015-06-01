@@ -49,7 +49,7 @@ func newGoogleSpreadsheetExpression(spreadsheetId string, line, position int) ex
 	spreadsheetFeed := atomFeed{}
 	err = xml.Unmarshal(rawXML, &spreadsheetFeed)
 	if err != nil {
-		return &googleSpreadsheetExpression{err: err}
+		return &googleSpreadsheetExpression{err: errors.New(fmt.Sprintf("The Google spreadsheet with the ID `%s` is not published. Spreadsheets must be published publicly in order to be accessible", spreadsheetId))}
 	}
 
 	worksheetIds := []string{}
@@ -130,15 +130,11 @@ func (x *googleSpreadsheetExpression) cells() expression {
 
 				}
 
-				fmt.Printf("cellURL = %+v", cellURL)
-
 				cellFeed := atomFeed{}
 				err = xml.Unmarshal(rawXML, &cellFeed)
 				if err != nil {
 					return nil, errors.New(fmt.Sprintf("Unable to unmarshal cell data %s: %v", cellURL, err))
 				}
-
-				fmt.Printf("cellFeed = %+v", cellFeed)
 
 				c := cellFeed.Entries[0].Cell
 
