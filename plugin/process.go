@@ -39,15 +39,16 @@ func ProcessPluginFactory() job.PluginInstance {
 // For configuration parameters, see the Init() function
 type ProcessPlugin struct {
 	*job.PluginHelper
-	expiration   time.Duration
-	flowTag      string
-	url          string
-	templateFile string
-	path         string
 	args         []string
+	batch        bool
+	expiration   time.Duration
+	flow         *gotelemetry.Flow
+	flowTag      string
+	path         string
 	scriptArgs   map[string]interface{}
 	template     map[string]interface{}
-	flow         *gotelemetry.Flow
+	templateFile string
+	url          string
 }
 
 // Function Init initializes the plugin.
@@ -75,6 +76,8 @@ type ProcessPlugin struct {
 // - variant                      The variant of the flow
 //
 // - template                     A template that will be used to populate the flow when it is created
+//
+// - batch												Whether the output of this script should be considered a batch update
 //
 // If `variant` and `template` are both specified, the plugin will verify that the flow exists and is of the
 // correct variant on startup. In that case, if the flow is found but is of the wrong variant, an error is
@@ -139,6 +142,12 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 
 	if !ok {
 		p.flowTag, _ = c["tag"].(string)
+	}
+
+	p.batch, ok = c["batch"].(bool)
+
+	if ok && p.flowTag != "" {
+		return errors.New("You cannot specify both `flow_tag` and `batch` properties.")
 	}
 
 	exec, _ := c["exec"].(string)
@@ -268,6 +277,32 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	return nil
 }
 
+func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace bool, data map[string]interface{}) {
+	if isReplace {
+		if p.expiration > 0 {
+			newExpiration := time.Now().Add(p.expiration)
+			newUnixExpiration := newExpiration.Unix()
+
+			j.Debugf("Forcing expiration to %d (%s)", newUnixExpiration, newExpiration)
+
+			data["expires_at"] = newUnixExpiration
+		}
+
+		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypePOST)
+	} else {
+		if p.expiration > 0 {
+			newExpiration := time.Now().Add(p.expiration)
+			newUnixExpiration := newExpiration.Unix()
+
+			j.Debugf("Forcing expiration to %d (%s)", newUnixExpiration, newExpiration)
+
+			data["expires_at"] = newUnixExpiration
+		}
+
+		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypePATCH)
+	}
+}
+
 func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response string) error {
 	isReplace := false
 
@@ -329,33 +364,23 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 		return nil
 	}
 
+	if p.batch {
+		for key, value := range data {
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				p.performDataUpdate(j, key, isReplace, valueMap)
+			} else {
+				return errors.New(fmt.Sprintf("Invalid data for flow %s", key))
+			}
+		}
+
+		return nil
+	}
+
 	if p.flowTag == "" {
 		return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
 	}
 
-	if isReplace {
-		if p.expiration > 0 {
-			newExpiration := time.Now().Add(p.expiration)
-			newUnixExpiration := newExpiration.Unix()
-
-			j.Debugf("Forcing expiration to %d (%s)", newUnixExpiration, newExpiration)
-
-			data["expires_at"] = newUnixExpiration
-		}
-
-		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypePOST)
-	} else {
-		if p.expiration > 0 {
-			newExpiration := time.Now().Add(p.expiration)
-			newUnixExpiration := newExpiration.Unix()
-
-			j.Debugf("Forcing expiration to %d (%s)", newUnixExpiration, newExpiration)
-
-			data["expires_at"] = newUnixExpiration
-		}
-
-		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypePATCH)
-	}
+	p.performDataUpdate(j, p.flowTag, isReplace, data)
 
 	return nil
 }

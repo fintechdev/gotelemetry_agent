@@ -169,8 +169,15 @@ func parseTraditionalRequest(context *aggregations.Context, remoteAddress string
 
 func parseCounterRequest(context *aggregations.Context, remoteAddress string, line []string, errorChannel chan error) error {
 	counterName := line[0]
+	valueString := line[1]
 
-	value, err := strconv.ParseInt(line[1], 10, 64)
+	isSetOperation := valueString[0] == '='
+
+	if isSetOperation {
+		valueString = strings.TrimPrefix(valueString, "=")
+	}
+
+	value, err := strconv.ParseInt(valueString, 10, 64)
 
 	if err != nil {
 		return gotelemetry.NewErrorWithFormat(
@@ -198,7 +205,11 @@ func parseCounterRequest(context *aggregations.Context, remoteAddress string, li
 		)
 	}
 
-	counter.Increment(value)
+	if isSetOperation {
+		counter.SetValue(value)
+	} else {
+		counter.Increment(value)
+	}
 
 	return nil
 }
