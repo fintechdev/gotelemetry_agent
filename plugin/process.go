@@ -288,7 +288,7 @@ func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace 
 			data["expires_at"] = newUnixExpiration
 		}
 
-		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypePOST)
+		j.QueueDataUpdate(flowTag, data, gotelemetry.BatchTypePOST)
 	} else {
 		if p.expiration > 0 {
 			newExpiration := time.Now().Add(p.expiration)
@@ -299,7 +299,7 @@ func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace 
 			data["expires_at"] = newUnixExpiration
 		}
 
-		j.QueueDataUpdate(p.flowTag, data, gotelemetry.BatchTypePATCH)
+		j.QueueDataUpdate(flowTag, data, gotelemetry.BatchTypePATCH)
 	}
 }
 

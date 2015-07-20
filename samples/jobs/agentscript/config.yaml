@@ -8,7 +8,8 @@ data:
     path: /tmp/agent.sqlite3
     ttl: 1h
 jobs:
-    - url: tpl://set_test_flow.asl
-      flow_tag: test_flow
+    - id: Test Me
+      url: tpl://set_test_flow.asl
       expiration: 0
       interval: 2s
+      batch: true
