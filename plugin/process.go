@@ -240,18 +240,8 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	}
 
-	if expiration, ok := c["expiration"].(int); ok {
-		if expiration < 0 {
-			return errors.New("Invalid expiration time")
-		}
-
-		p.expiration = time.Duration(expiration) * time.Second
-	}
-
 	if interval, ok := c["interval"].(int); ok {
-		if p.expiration == 0 {
-			p.expiration = time.Duration(interval*3) * time.Second
-		}
+		p.expiration = time.Duration(interval*3) * time.Second
 
 		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, time.Duration(interval)*time.Second)
 	} else if interval, ok := c["interval"].(string); ok {
@@ -266,6 +256,20 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	} else {
 		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, 0)
+	}
+
+	if expiration, ok := c["expiration"].(int); ok {
+		p.expiration = time.Duration(expiration) * time.Second
+	} else if expiration, ok := c["expiration"].(string); ok {
+		if timeInterval, err := time.ParseDuration(expiration); err == nil {
+			p.expiration = timeInterval
+		} else {
+			return errors.New("Invalid expiration value. Must be either a number of seconds or a time interval string.")
+		}
+	}
+
+	if p.expiration < 0 {
+		return errors.New("Invalid expiration time")
 	}
 
 	if p.expiration > 0 {
