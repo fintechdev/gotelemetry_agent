@@ -25,7 +25,7 @@ func newVariableExpression(name string, line, position int) expression {
 
 func (v *variableExpression) evaluate(c *executionContext) (interface{}, error) {
 	if val, ok := c.variables[v.name]; ok {
-		return val, nil
+		return expressionFromInterface(val, v.l, v.p)
 	} else {
 		return nil, errors.New(fmt.Sprintf("Unknown variable `%s`", v.name))
 	}

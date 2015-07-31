@@ -115,6 +115,14 @@ func TestBasicExpressions(t *testing.T) {
 	runParserTests(tests, t)
 }
 
+func TestStringConversion(t *testing.T) {
+	tests := map[string]parserTest{
+		"String to number conversion": {`$a="10.23"; a= $a.toNumber()`, 10.23},
+	}
+
+	runParserTests(tests, t)
+}
+
 func TestGlobalMethods(t *testing.T) {
 	checkFloat := func(res testR, errs testE) bool {
 		_, ok := res["a"].(float64)
@@ -320,6 +328,51 @@ func TestArrays(t *testing.T) {
 	}
 
 	runParserTests(tests, t)
+}
+
+func TestArrayIteration(t *testing.T) {
+	np := newDummyNotificationProvider()
+
+	script := `
+
+		$i = 0
+		$in = [ { value : 10 , text : "Test 1" } , { value : 20 , text : "Test 2" } , { value : 30 , text : "Test 3" } ]
+		$out = [ ]
+
+		while $i < $in.count() {
+			$item = $in.item($i)
+	    $v = $item.item("value")
+	    $l = $item.item("text")
+	    $out.push(value: { value: $v, label: $l} )
+		  $i = $i + 1
+		}
+
+		result = $out
+	`
+
+	parserTestInitOnce.Do(func() {
+		l := "/tmp/agent.sqlite3"
+		ttl := "1h"
+		aggregations.Init(&l, &ttl, make(chan error, 99999))
+	})
+
+	commands, errs := Parse("test", script)
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			t.Logf("%s", err)
+		}
+
+		t.Error("Parse errors. Failing.")
+	}
+
+	if res, err := Run(np, nil, map[string]interface{}{"test": 10.0}, commands); err == nil {
+		if len(res["result"].([]interface{})) != 3 {
+			t.Errorf("Unexpected output: %#v", res["result"])
+		}
+	} else {
+		t.Errorf("Execute Error: %#v", err)
+	}
 }
 
 func TestMaps(t *testing.T) {

@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -35,6 +36,9 @@ var stringProperties = map[string]stringProperty{
 	"split": func(s *stringExpression) expression {
 		return s.split()
 	},
+	"toNumber": func(s *stringExpression) expression {
+		return s.toNumber()
+	},
 }
 
 func (s *stringExpression) split() expression {
@@ -54,6 +58,22 @@ func (s *stringExpression) split() expression {
 		map[string]callableArgument{
 			"separator": callableArgumentString,
 		},
+		s.l,
+		s.p,
+	)
+}
+
+func (s *stringExpression) toNumber() expression {
+	return newCallableExpression(
+		"toNumber",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			if v, err := strconv.ParseFloat(s.value, 64); err != nil {
+				return nil, err
+			} else {
+				return newNumericExpression(v, s.l, s.p), nil
+			}
+		},
+		map[string]callableArgument{},
 		s.l,
 		s.p,
 	)

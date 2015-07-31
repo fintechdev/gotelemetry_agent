@@ -101,6 +101,8 @@ assign_to_var		: T_VARIABLE T_ASSIGN expr
 
 expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
 										{ $$ = $2 }
+								| T_OPEN_BRACKET T_CLOSE_BRACKET
+										{ $$ = newArrayExpression([]interface{}{}, $1.line, $1.start) }
 								| T_OPEN_BRACKET expr_list T_CLOSE_BRACKET
 										{ $$ = newArrayExpression($2, $1.line, $1.start) }
 								| T_OPEN_BRACE map_properties T_TERMINATOR T_CLOSE_BRACE
