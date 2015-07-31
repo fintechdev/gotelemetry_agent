@@ -53,6 +53,7 @@ type GraphiteConfig struct {
 }
 
 type ConfigInterface interface {
+	APIURL() string
 	APIToken() (string, error)
 	ListenAddress() string
 	DataConfig() DataConfig
@@ -114,6 +115,10 @@ func (c *ConfigFile) APIToken() (string, error) {
 	return "", errors.New("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 }
 
+func (c *ConfigFile) APIURL() string {
+	return CLIConfig.APIURL
+}
+
 func (c *ConfigFile) DataConfig() DataConfig {
 	return c.Data
 }
@@ -128,7 +133,7 @@ func (c *ConfigFile) ListenAddress() string {
 
 func (c *ConfigFile) SubmissionInterval() time.Duration {
 	if s, ok := c.Server.RawSubmissionInterval.(string); ok {
-		d, err := time.ParseDuration(s)
+		d, err := ParseTimeInterval(s)
 
 		if err == nil {
 			return d

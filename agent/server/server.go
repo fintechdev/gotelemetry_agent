@@ -22,7 +22,7 @@ func Init(configFile *config.ConfigFile, errorChannel chan error) error {
 		return err
 	}
 
-	credentials, err := gotelemetry.NewCredentials(apiToken)
+	credentials, err := gotelemetry.NewCredentials(apiToken, configFile.APIURL())
 
 	if err != nil {
 		return err

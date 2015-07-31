@@ -2,6 +2,7 @@ package aggregations
 
 import (
 	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"time"
 )
 
@@ -21,7 +22,7 @@ func Init(location *string, ttlString *string, errorChannel chan error) error {
 		}
 
 		if ttlString != nil && len(*ttlString) > 0 {
-			ttl, err := time.ParseDuration(*ttlString)
+			ttl, err := config.ParseTimeInterval(*ttlString)
 			if err != nil {
 				return err
 			}

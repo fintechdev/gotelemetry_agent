@@ -1,6 +1,7 @@
 server:
     api_token: abc123
-    submission_interval: 1s
+    submission_interval: 1w
+    ttl: 1w
 graphite:
     listen_tcp: ":2003"
     listen_udp: ":2004"

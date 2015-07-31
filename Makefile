@@ -12,6 +12,7 @@ POSTBUILD_LIST = $(foreach int, $(ALL_LIST), $(int)_postbuild)
 BUILD_LIST_OSX = $(foreach int, $(ALL_LIST), $(int)_build_osx)
 BUILD_LIST_WIN = $(foreach int, $(ALL_LIST), $(int)_build_win)
 BUILD_LIST_LINUX = $(foreach int, $(ALL_LIST), $(int)_build_linux)
+BUILD_LIST_LINUX_386 = $(foreach int, $(ALL_LIST), $(int)_build_linux_386)
 TEST_LIST = $(foreach int, $(ALL_LIST), $(int)_test)
 FMT_TEST = $(foreach int, $(ALL_LIST), $(int)_fmt)
 RUN_LIST = $(foreach int, $(ALL_LIST), $(int)_run)
@@ -24,6 +25,7 @@ build: prebuild $(BUILD_LIST_OSX) $(BUILD_LIST_WIN) $(BUILD_LIST_LINUX) postbuil
 build_osx: prebuild $(BUILD_LIST_OSX) postbuild
 build_win: prebuild $(BUILD_LIST_WIN) postbuild
 build_linux: prebuild $(BUILD_LIST_LINUX) postbuild
+build_linux_386: prebuild $(BUILD_LIST_LINUX_386) postbuild
 clean: $(CLEAN_LIST)
 test: $(TEST_LIST)
 fmt: $(FMT_TEST)
@@ -59,6 +61,31 @@ $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 	@echo "Building Linux AMD64..."
 	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-amd64/usr/bin/telemetry_agent
 	@echo "Building complete."
+	@echo Building DEB and RPM files
+	@rm -Rf /tmp/telemetry_agent
+	@mkdir -p /tmp/telemetry_agent/usr/bin
+	@cp bin/linux-amd64/usr/bin/telemetry_agent /tmp/telemetry_agent/usr/bin
+	@chmod 755 /tmp/telemetry_agent/usr/bin/telemetry_agent
+	@cp VERSION /tmp/TELEMETRY_AGENT_VERSION
+	@cd /tmp/telemetry_agent && fpm -s dir -t deb -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
+	@cd /tmp/telemetry_agent/ && fpm -s dir -t rpm -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
+	@cp /tmp/telemetry_agent/*rpm bin/linux-amd64
+	@cp /tmp/telemetry_agent/*deb bin/linux-amd64
+
+$(BUILD_LIST_LINUX_386): %_build_linux_386: %_fmt
+	@echo "Building Linux 386..."
+	@GOOS=linux GOARCH=386 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-386/usr/bin/telemetry_agent
+	@echo "Building complete."
+	@echo Building DEB and RPM files
+	@rm -Rf /tmp/telemetry_agent
+	@mkdir -p /tmp/telemetry_agent/usr/bin
+	@cp bin/linux-386/usr/bin/telemetry_agent /tmp/telemetry_agent/usr/bin
+	@chmod 755 /tmp/telemetry_agent/usr/bin/telemetry_agent
+	@cp VERSION /tmp/TELEMETRY_AGENT_VERSION
+	@cd /tmp/telemetry_agent && fpm -s dir -t deb -a i386 -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
+	@cd /tmp/telemetry_agent/ && fpm -s dir -t rpm -a i386 -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
+	@cp /tmp/telemetry_agent/*rpm bin/linux-386
+	@cp /tmp/telemetry_agent/*deb bin/linux-386
 
 $(TEST_LIST): %_test:
 	@echo "Running go test..."

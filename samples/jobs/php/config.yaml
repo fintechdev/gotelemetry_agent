@@ -1,9 +1,9 @@
+data:
+    path: /tmp/agent.sqlite3
+    ttl: 1h
 jobs:
-  - flow_tag: test_flow
-    path: ./demo.php
+  - flow_tag: metrics_number_1
+    script: ./demo.php
     refresh: 10
     args:
       - 1320
-    variant: value
-    template:
-      value: 123

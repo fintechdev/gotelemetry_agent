@@ -39,7 +39,7 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 		return nil, err
 	}
 
-	credentials, err := gotelemetry.NewCredentials(apiToken)
+	credentials, err := gotelemetry.NewCredentials(apiToken, jobConfig.APIURL())
 
 	if err != nil {
 		return nil, err
@@ -54,6 +54,8 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 	if submissionInterval < time.Second {
 		errorChannel <- gotelemetry.NewLogError("Submission interval automatically set to 1s. You can change this value by adding a `submission_interval` property to your configuration file.")
 		submissionInterval = time.Second
+	} else {
+		errorChannel <- gotelemetry.NewLogError("Submission interval set to %ds", submissionInterval/time.Second)
 	}
 
 	accountStream, err := gotelemetry.NewBatchStream(credentials, submissionInterval, errorChannel)
