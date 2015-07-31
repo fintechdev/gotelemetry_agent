@@ -57,9 +57,10 @@ const T_ELSE = 57376
 const T_TERMINATOR = 57377
 const T_COMMENT = 57378
 const T_WHILE = 57379
-const T_FUNCTION_CALL = 57380
-const T_UMINUS = 57381
-const T_UPLUS = 57382
+const T_NULL = 57380
+const T_FUNCTION_CALL = 57381
+const T_UMINUS = 57382
+const T_UPLUS = 57383
 
 var parserToknames = []string{
 	"T_STRING",
@@ -96,6 +97,7 @@ var parserToknames = []string{
 	"T_TERMINATOR",
 	"T_COMMENT",
 	"T_WHILE",
+	"T_NULL",
 	"T_FUNCTION_CALL",
 	"T_UMINUS",
 	"T_UPLUS",
@@ -111,131 +113,137 @@ var parserExca = []int{
 	-1, 1,
 	1, -1,
 	-2, 0,
-	-1, 25,
-	18, 50,
-	-2, 26,
-	-1, 70,
-	26, 0,
-	27, 0,
-	-2, 37,
+	-1, 26,
+	18, 51,
+	-2, 27,
 	-1, 71,
 	26, 0,
 	27, 0,
 	-2, 38,
+	-1, 72,
+	26, 0,
+	27, 0,
+	-2, 39,
 }
 
-const parserNprod = 60
+const parserNprod = 61
 const parserPrivate = 57344
 
 var parserTokenNames []string
 var parserStates []string
 
-const parserLast = 365
+const parserLast = 409
 
 var parserAct = []int{
 
-	9, 4, 92, 50, 81, 33, 3, 32, 98, 30,
-	95, 86, 64, 90, 52, 82, 54, 57, 58, 60,
-	89, 101, 102, 82, 53, 80, 100, 61, 62, 63,
-	35, 36, 37, 38, 52, 47, 66, 67, 68, 69,
-	70, 71, 72, 73, 74, 75, 76, 77, 37, 38,
-	47, 47, 65, 83, 84, 30, 85, 78, 59, 87,
-	48, 2, 49, 91, 23, 94, 20, 19, 56, 55,
-	21, 22, 27, 26, 25, 29, 24, 8, 7, 6,
-	17, 5, 18, 97, 31, 96, 1, 0, 0, 0,
-	28, 99, 20, 19, 13, 14, 21, 22, 27, 26,
-	103, 0, 94, 105, 104, 0, 17, 0, 18, 0,
-	31, 79, 0, 0, 0, 0, 28, 0, 0, 0,
-	0, 15, 0, 10, 11, 16, 20, 19, 13, 14,
-	21, 22, 27, 26, 0, 0, 35, 36, 37, 38,
-	17, 47, 18, 0, 12, 0, 0, 0, 0, 0,
-	28, 0, 39, 40, 0, 15, 0, 10, 11, 16,
-	20, 19, 51, 14, 21, 22, 27, 26, 0, 0,
-	0, 0, 0, 0, 17, 0, 18, 0, 12, 0,
-	0, 0, 0, 0, 28, 0, 0, 0, 0, 15,
-	0, 10, 11, 16, 20, 19, 13, 14, 21, 22,
-	27, 26, 0, 0, 0, 0, 0, 0, 17, 0,
-	18, 0, 31, 0, 35, 36, 37, 38, 28, 47,
-	0, 0, 0, 15, 0, 10, 11, 16, 42, 41,
-	39, 40, 0, 43, 45, 44, 46, 0, 0, 34,
-	35, 36, 37, 38, 0, 47, 0, 0, 0, 88,
-	0, 0, 0, 0, 42, 41, 39, 40, 0, 43,
-	45, 44, 46, 35, 36, 37, 38, 0, 47, 0,
-	0, 0, 0, 0, 0, 86, 0, 42, 41, 39,
-	40, 0, 43, 45, 44, 46, 35, 36, 37, 38,
-	0, 47, 0, 0, 35, 36, 37, 38, 0, 47,
-	42, 41, 39, 40, 0, 43, 45, 44, 46, 41,
-	39, 40, 0, 43, 45, 44, 46, 35, 36, 37,
-	38, 0, 47, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 39, 40, 0, 43, 45, 44, 46,
-	20, 19, 93, 55, 21, 22, 27, 26, 0, 0,
-	0, 0, 0, 0, 17, 0, 18, 0, 31, 0,
-	0, 0, 0, 0, 28,
+	9, 4, 93, 51, 82, 34, 3, 33, 99, 31,
+	36, 37, 38, 39, 96, 48, 55, 58, 59, 61,
+	87, 53, 83, 103, 91, 81, 40, 41, 62, 63,
+	64, 90, 65, 38, 39, 83, 48, 67, 68, 69,
+	70, 71, 72, 73, 74, 75, 76, 77, 78, 54,
+	53, 48, 66, 102, 84, 85, 31, 86, 101, 79,
+	88, 60, 36, 37, 38, 39, 95, 48, 49, 2,
+	50, 92, 24, 26, 30, 25, 8, 7, 6, 5,
+	1, 0, 0, 0, 98, 0, 97, 0, 0, 0,
+	0, 0, 100, 20, 19, 13, 14, 21, 22, 28,
+	27, 104, 0, 95, 106, 105, 0, 17, 0, 18,
+	0, 32, 80, 0, 0, 0, 0, 29, 0, 0,
+	0, 0, 15, 0, 10, 11, 16, 23, 20, 19,
+	13, 14, 21, 22, 28, 27, 0, 0, 0, 0,
+	0, 0, 17, 0, 18, 0, 12, 0, 0, 0,
+	0, 0, 29, 0, 0, 0, 0, 15, 0, 10,
+	11, 16, 23, 20, 19, 52, 14, 21, 22, 28,
+	27, 0, 0, 0, 0, 0, 0, 17, 0, 18,
+	0, 12, 0, 0, 0, 0, 0, 29, 0, 0,
+	0, 0, 15, 0, 10, 11, 16, 23, 20, 19,
+	13, 14, 21, 22, 28, 27, 0, 0, 0, 0,
+	0, 0, 17, 0, 18, 0, 32, 0, 0, 0,
+	0, 0, 29, 0, 0, 0, 0, 15, 0, 10,
+	11, 16, 23, 20, 19, 57, 56, 21, 22, 28,
+	27, 0, 0, 0, 0, 0, 0, 17, 0, 18,
+	0, 32, 0, 0, 0, 0, 0, 29, 20, 19,
+	94, 56, 21, 22, 28, 27, 0, 23, 0, 0,
+	0, 0, 17, 0, 18, 0, 32, 0, 0, 0,
+	0, 0, 29, 36, 37, 38, 39, 0, 48, 0,
+	0, 0, 23, 0, 0, 0, 0, 43, 42, 40,
+	41, 0, 44, 46, 45, 47, 0, 0, 35, 36,
+	37, 38, 39, 0, 48, 0, 0, 0, 89, 0,
+	0, 0, 0, 43, 42, 40, 41, 0, 44, 46,
+	45, 47, 36, 37, 38, 39, 0, 48, 0, 0,
+	0, 0, 0, 0, 87, 0, 43, 42, 40, 41,
+	0, 44, 46, 45, 47, 36, 37, 38, 39, 0,
+	48, 0, 0, 36, 37, 38, 39, 0, 48, 43,
+	42, 40, 41, 0, 44, 46, 45, 47, 42, 40,
+	41, 0, 44, 46, 45, 47, 36, 37, 38, 39,
+	0, 48, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 40, 41, 0, 44, 46, 45, 47,
 }
 var parserPact = []int{
 
-	122, -1000, 190, -1000, -1000, -28, -30, -1000, -1000, 204,
-	-1000, -1000, 156, 18, 8, 62, 62, 62, 62, -1000,
-	-1000, -1000, -1000, -1000, -1000, -1000, 62, 62, 62, -6,
-	-1000, 46, -1000, -1000, -1000, 62, 62, 62, 62, 62,
-	62, 62, 62, 62, 62, 62, 62, 51, 88, -10,
-	-1000, -2, 62, 62, 253, -1000, -1000, 253, 230, -1,
-	276, 35, 35, 35, 336, 6, 36, 36, 35, 35,
-	20, 20, 307, 284, 126, 126, 126, 126, -1000, -1000,
-	-13, 46, 62, 276, 276, -26, 122, -1000, -1000, -1000,
-	62, 7, -1000, 5, 276, -1000, -1000, 276, -11, 276,
-	-1000, 336, 62, -1000, -1000, 276,
+	124, -1000, 194, -1000, -1000, -28, -30, -1000, -1000, 273,
+	-1000, -1000, 159, 34, 33, 229, 229, 229, 229, -1000,
+	-1000, -1000, -1000, -1000, -1000, -1000, -1000, 229, 229, 229,
+	14, -1000, 46, -1000, -1000, -1000, 229, 229, 229, 229,
+	229, 229, 229, 229, 229, 229, 229, 229, 53, 89,
+	-10, -1000, 5, 229, 229, 322, -1000, -1000, 322, 299,
+	10, 345, 36, 36, 36, 254, 18, 21, 21, 36,
+	36, 52, 52, 376, 353, 0, 0, 0, 0, -1000,
+	-1000, -9, 46, 229, 345, 345, -26, 124, -1000, -1000,
+	-1000, 229, 39, -1000, 6, 345, -1000, -1000, 345, -2,
+	345, -1000, 254, 229, -1000, -1000, 345,
 }
 var parserPgo = []int{
 
-	0, 60, 86, 1, 6, 81, 79, 78, 77, 0,
-	76, 75, 74, 64, 63, 62, 2, 3, 58,
+	0, 68, 80, 1, 6, 79, 78, 77, 76, 0,
+	75, 74, 73, 72, 71, 70, 2, 3, 61,
 }
 var parserR1 = []int{
 
 	0, 2, 2, 1, 1, 1, 3, 4, 4, 4,
 	4, 4, 4, 4, 5, 6, 9, 9, 9, 9,
-	9, 9, 9, 9, 9, 9, 9, 18, 18, 15,
-	15, 15, 17, 13, 13, 13, 13, 13, 13, 13,
-	13, 13, 13, 13, 13, 13, 13, 13, 10, 11,
-	11, 12, 14, 14, 14, 16, 16, 7, 7, 8,
+	9, 9, 9, 9, 9, 9, 9, 9, 18, 18,
+	15, 15, 15, 17, 13, 13, 13, 13, 13, 13,
+	13, 13, 13, 13, 13, 13, 13, 13, 13, 10,
+	11, 11, 12, 14, 14, 14, 16, 16, 7, 7,
+	8,
 }
 var parserR2 = []int{
 
 	0, 0, 1, 2, 1, 1, 3, 2, 2, 1,
 	1, 2, 1, 1, 3, 3, 3, 3, 4, 1,
-	1, 1, 1, 1, 1, 1, 1, 3, 1, 3,
-	1, 0, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 2, 2, 2, 4, 1,
-	1, 3, 3, 1, 0, 3, 1, 3, 5, 3,
+	1, 1, 1, 1, 1, 1, 1, 1, 3, 1,
+	3, 1, 0, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 2, 2, 2, 4,
+	1, 1, 3, 3, 1, 0, 3, 1, 3, 5,
+	3,
 }
 var parserChk = []int{
 
 	-1000, -2, -1, -4, -3, -5, -6, -7, -8, -9,
 	35, 36, 22, 6, 7, 33, 37, 18, 20, 5,
-	4, 8, 9, -13, -10, -12, 11, 10, 28, -11,
-	-4, 22, 35, 35, 35, 10, 11, 12, 13, 26,
-	27, 25, 24, 29, 31, 30, 32, 15, -1, -15,
-	-17, 6, 16, 16, -9, 7, 6, -9, -9, -18,
-	-9, -9, -9, -9, 18, 6, -9, -9, -9, -9,
-	-9, -9, -9, -9, -9, -9, -9, -9, 6, 23,
-	35, 14, 17, -9, -9, -3, 22, -3, 19, 21,
-	14, -14, -16, 6, -9, 23, -17, -9, 34, -9,
-	19, 14, 17, -3, -16, -9,
+	4, 8, 9, 38, -13, -10, -12, 11, 10, 28,
+	-11, -4, 22, 35, 35, 35, 10, 11, 12, 13,
+	26, 27, 25, 24, 29, 31, 30, 32, 15, -1,
+	-15, -17, 6, 16, 16, -9, 7, 6, -9, -9,
+	-18, -9, -9, -9, -9, 18, 6, -9, -9, -9,
+	-9, -9, -9, -9, -9, -9, -9, -9, -9, 6,
+	23, 35, 14, 17, -9, -9, -3, 22, -3, 19,
+	21, 14, -14, -16, 6, -9, 23, -17, -9, 34,
+	-9, 19, 14, 17, -3, -16, -9,
 }
 var parserDef = []int{
 
 	1, -2, 2, 4, 5, 0, 0, 9, 10, 0,
-	12, 13, 31, 49, 21, 0, 0, 0, 0, 19,
-	20, 22, 23, 24, 25, -2, 0, 0, 0, 0,
-	3, 31, 7, 8, 11, 0, 0, 0, 0, 0,
+	12, 13, 32, 50, 21, 0, 0, 0, 0, 19,
+	20, 22, 23, 24, 25, 26, -2, 0, 0, 0,
+	0, 3, 32, 7, 8, 11, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	30, 49, 0, 0, 0, 21, 49, 0, 0, 0,
-	28, 45, 46, 47, 54, 0, 33, 34, 35, 36,
-	-2, -2, 39, 40, 41, 42, 43, 44, 51, 6,
-	0, 0, 0, 14, 15, 57, 0, 59, 16, 17,
-	0, 0, 53, 49, 56, 18, 29, 32, 0, 27,
-	48, 0, 0, 58, 52, 55,
+	0, 31, 50, 0, 0, 0, 21, 50, 0, 0,
+	0, 29, 46, 47, 48, 55, 0, 34, 35, 36,
+	37, -2, -2, 40, 41, 42, 43, 44, 45, 52,
+	6, 0, 0, 0, 14, 15, 58, 0, 60, 16,
+	17, 0, 0, 54, 50, 57, 18, 30, 33, 0,
+	28, 49, 0, 0, 59, 53, 56,
 }
 var parserTok1 = []int{
 
@@ -246,7 +254,7 @@ var parserTok2 = []int{
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
 	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 	22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-	32, 33, 34, 35, 36, 37, 38, 39, 40,
+	32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
 }
 var parserTok3 = []int{
 	0,
@@ -478,12 +486,12 @@ parserdefault:
 	switch parsernt {
 
 	case 1:
-		//line internal_parser.y:54
+		//line internal_parser.y:55
 		{
 			parserVAL.cmds = []command{}
 		}
 	case 2:
-		//line internal_parser.y:56
+		//line internal_parser.y:57
 		{
 			for _, cmd := range parserVAL.cmds {
 				parserlex.(*aslLexer).AddCommand(cmd)
@@ -492,14 +500,14 @@ parserdefault:
 			parserVAL.cmds = parserS[parserpt-0].cmds
 		}
 	case 3:
-		//line internal_parser.y:66
+		//line internal_parser.y:67
 		{
 			if parserS[parserpt-0].cmd != nil {
 				parserVAL.cmds = append(parserVAL.cmds, parserS[parserpt-0].cmd)
 			}
 		}
 	case 4:
-		//line internal_parser.y:68
+		//line internal_parser.y:69
 		{
 			if parserS[parserpt-0].cmd != nil {
 				parserVAL.cmds = []command{parserS[parserpt-0].cmd}
@@ -508,277 +516,282 @@ parserdefault:
 			}
 		}
 	case 5:
-		//line internal_parser.y:70
+		//line internal_parser.y:71
 		{
 			parserVAL.cmds = parserS[parserpt-0].cmds
 		}
 	case 6:
-		//line internal_parser.y:74
+		//line internal_parser.y:75
 		{
 			parserVAL.cmds = parserS[parserpt-1].cmds
 		}
 	case 7:
-		//line internal_parser.y:78
+		//line internal_parser.y:79
 		{
 			parserVAL.cmd = parserS[parserpt-1].cmd
 		}
 	case 8:
-		//line internal_parser.y:80
+		//line internal_parser.y:81
 		{
 			parserVAL.cmd = parserS[parserpt-1].cmd
 		}
 	case 9:
-		//line internal_parser.y:82
+		//line internal_parser.y:83
 		{
 			parserVAL.cmd = parserS[parserpt-0].cmd
 		}
 	case 10:
-		//line internal_parser.y:84
+		//line internal_parser.y:85
 		{
 			parserVAL.cmd = parserS[parserpt-0].cmd
 		}
 	case 11:
-		//line internal_parser.y:86
+		//line internal_parser.y:87
 		{
 			parserVAL.cmd = newEvaluateCommand(parserS[parserpt-1].ex)
 		}
 	case 12:
-		//line internal_parser.y:88
+		//line internal_parser.y:89
 		{
 			parserVAL.cmd = parserVAL.cmd
 		}
 	case 13:
-		//line internal_parser.y:90
+		//line internal_parser.y:91
 		{
 			parserVAL.cmd = parserVAL.cmd
 		}
 	case 14:
-		//line internal_parser.y:94
+		//line internal_parser.y:95
 		{
 			parserVAL.cmd = newOutputCommand(parserS[parserpt-2].t, parserS[parserpt-0].ex)
 		}
 	case 15:
-		//line internal_parser.y:98
+		//line internal_parser.y:99
 		{
 			parserVAL.cmd = newAssignCommand(parserS[parserpt-2].t, parserS[parserpt-0].ex)
 		}
 	case 16:
-		//line internal_parser.y:102
+		//line internal_parser.y:103
 		{
 			parserVAL.ex = parserS[parserpt-1].ex
 		}
 	case 17:
-		//line internal_parser.y:104
+		//line internal_parser.y:105
 		{
 			parserVAL.ex = newArrayExpression(parserS[parserpt-1].exa, parserS[parserpt-2].t.line, parserS[parserpt-2].t.start)
 		}
 	case 18:
-		//line internal_parser.y:106
+		//line internal_parser.y:107
 		{
 			parserVAL.ex = newMapExpression(parserS[parserpt-2].exl, parserS[parserpt-3].t.line, parserS[parserpt-3].t.start)
 		}
 	case 19:
-		//line internal_parser.y:108
+		//line internal_parser.y:109
 		{
 			parserVAL.ex = newNumericExpression(parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 20:
-		//line internal_parser.y:110
+		//line internal_parser.y:111
 		{
 			parserVAL.ex = newStringExpression(parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 21:
-		//line internal_parser.y:112
+		//line internal_parser.y:113
 		{
 			parserVAL.ex = newVariableExpression(parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 22:
-		//line internal_parser.y:114
+		//line internal_parser.y:115
 		{
 			parserVAL.ex = newBooleanExpression(true, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 23:
-		//line internal_parser.y:116
+		//line internal_parser.y:117
 		{
 			parserVAL.ex = newBooleanExpression(false, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 24:
-		//line internal_parser.y:118
+		//line internal_parser.y:119
 		{
-			parserVAL.ex = parserS[parserpt-0].ex
+			parserVAL.ex = newNullExpression(nil, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
 	case 25:
-		//line internal_parser.y:120
+		//line internal_parser.y:121
 		{
 			parserVAL.ex = parserS[parserpt-0].ex
 		}
 	case 26:
-		//line internal_parser.y:122
+		//line internal_parser.y:123
 		{
 			parserVAL.ex = parserS[parserpt-0].ex
 		}
 	case 27:
-		//line internal_parser.y:126
+		//line internal_parser.y:125
+		{
+			parserVAL.ex = parserS[parserpt-0].ex
+		}
+	case 28:
+		//line internal_parser.y:129
 		{
 			parserVAL.exa = append(parserVAL.exa, parserS[parserpt-0].ex)
 		}
-	case 28:
-		//line internal_parser.y:128
+	case 29:
+		//line internal_parser.y:131
 		{
 			parserVAL.exa = []expression{parserS[parserpt-0].ex}
 		}
-	case 29:
-		//line internal_parser.y:132
+	case 30:
+		//line internal_parser.y:135
 		{
 			parserVAL.exl[parserS[parserpt-0].exi.key] = parserS[parserpt-0].exi.value
 		}
-	case 30:
-		//line internal_parser.y:134
+	case 31:
+		//line internal_parser.y:137
 		{
 			parserVAL.exl = map[string]expression{parserS[parserpt-0].exi.key: parserS[parserpt-0].exi.value}
 		}
-	case 31:
-		//line internal_parser.y:136
+	case 32:
+		//line internal_parser.y:139
 		{
 			parserVAL.exl = map[string]expression{}
 		}
-	case 32:
-		//line internal_parser.y:140
+	case 33:
+		//line internal_parser.y:143
 		{
 			parserVAL.exi = parseArgument{parserS[parserpt-2].t.source, parserS[parserpt-0].ex}
 		}
-	case 33:
-		//line internal_parser.y:145
-		{
-			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
-		}
 	case 34:
-		//line internal_parser.y:147
+		//line internal_parser.y:148
 		{
 			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 35:
-		//line internal_parser.y:149
+		//line internal_parser.y:150
 		{
 			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 36:
-		//line internal_parser.y:151
+		//line internal_parser.y:152
 		{
 			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 37:
-		//line internal_parser.y:153
+		//line internal_parser.y:154
 		{
-			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
+			parserVAL.ex = newArithmeticExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 38:
-		//line internal_parser.y:155
+		//line internal_parser.y:156
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 39:
-		//line internal_parser.y:157
+		//line internal_parser.y:158
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 40:
-		//line internal_parser.y:159
+		//line internal_parser.y:160
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 41:
-		//line internal_parser.y:161
+		//line internal_parser.y:162
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 42:
-		//line internal_parser.y:163
+		//line internal_parser.y:164
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 43:
-		//line internal_parser.y:165
+		//line internal_parser.y:166
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 44:
-		//line internal_parser.y:167
+		//line internal_parser.y:168
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 45:
-		//line internal_parser.y:169
+		//line internal_parser.y:170
 		{
-			parserVAL.ex = newArithmeticExpression(numericExpressionZero, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
+			parserVAL.ex = newLogicalExpression(parserS[parserpt-2].ex, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
 	case 46:
-		//line internal_parser.y:171
+		//line internal_parser.y:172
 		{
 			parserVAL.ex = newArithmeticExpression(numericExpressionZero, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
 		}
 	case 47:
-		//line internal_parser.y:173
+		//line internal_parser.y:174
+		{
+			parserVAL.ex = newArithmeticExpression(numericExpressionZero, parserS[parserpt-0].ex, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
+		}
+	case 48:
+		//line internal_parser.y:176
 		{
 			parserVAL.ex = newLogicalExpression(parserS[parserpt-0].ex, booleanExpressionZero, parserS[parserpt-1].t, parserS[parserpt-1].t.line, parserS[parserpt-1].t.start)
 		}
-	case 48:
-		//line internal_parser.y:177
+	case 49:
+		//line internal_parser.y:180
 		{
 			parserVAL.ex = newFunctionCallExpression(parserS[parserpt-3].ex, parserS[parserpt-1].exl, parserS[parserpt-3].ex.line(), parserS[parserpt-3].ex.position())
 		}
-	case 49:
-		//line internal_parser.y:181
+	case 50:
+		//line internal_parser.y:184
 		{
 			parserVAL.ex = newPropertyExpression(newGlobalExpression(parserS[parserpt-0].t.line, parserS[parserpt-0].t.start), parserS[parserpt-0].t.source, parserS[parserpt-0].t.line, parserS[parserpt-0].t.start)
 		}
-	case 50:
-		//line internal_parser.y:183
+	case 51:
+		//line internal_parser.y:186
 		{
 			parserVAL.ex = parserS[parserpt-0].ex
 		}
-	case 51:
-		//line internal_parser.y:187
+	case 52:
+		//line internal_parser.y:190
 		{
 			parserVAL.ex = newPropertyExpression(parserS[parserpt-2].ex, parserS[parserpt-0].t.source, parserS[parserpt-2].ex.line(), parserS[parserpt-2].ex.position())
 		}
-	case 52:
-		//line internal_parser.y:191
+	case 53:
+		//line internal_parser.y:194
 		{
 			parserVAL.exl[parserS[parserpt-0].exi.key] = parserS[parserpt-0].exi.value
 		}
-	case 53:
-		//line internal_parser.y:193
+	case 54:
+		//line internal_parser.y:196
 		{
 			parserVAL.exl = map[string]expression{parserS[parserpt-0].exi.key: parserS[parserpt-0].exi.value}
 		}
-	case 54:
-		//line internal_parser.y:195
+	case 55:
+		//line internal_parser.y:198
 		{
 			parserVAL.exl = map[string]expression{}
 		}
-	case 55:
-		//line internal_parser.y:199
+	case 56:
+		//line internal_parser.y:202
 		{
 			parserVAL.exi = parseArgument{parserS[parserpt-2].t.source, parserS[parserpt-0].ex}
 		}
-	case 56:
-		//line internal_parser.y:201
+	case 57:
+		//line internal_parser.y:204
 		{
 			parserVAL.exi = parseArgument{singleUnnamedArgument, parserS[parserpt-0].ex}
 		}
-	case 57:
-		//line internal_parser.y:205
+	case 58:
+		//line internal_parser.y:208
 		{
 			parserVAL.cmd = newIfThenElseCommand(parserS[parserpt-1].ex, parserS[parserpt-0].cmds, []command{})
 		}
-	case 58:
-		//line internal_parser.y:207
+	case 59:
+		//line internal_parser.y:210
 		{
 			parserVAL.cmd = newIfThenElseCommand(parserS[parserpt-3].ex, parserS[parserpt-2].cmds, parserS[parserpt-0].cmds)
 		}
-	case 59:
-		//line internal_parser.y:211
+	case 60:
+		//line internal_parser.y:214
 		{
 			parserVAL.cmd = newWhileLoopCommand(parserS[parserpt-1].ex, parserS[parserpt-0].cmds)
 		}

@@ -36,6 +36,7 @@
 %token <t> T_TERMINATOR
 %token <t> T_COMMENT
 %token <t> T_WHILE
+%token <t> T_NULL
 
 %left T_FUNCTION_CALL
 %left T_OR
@@ -114,6 +115,8 @@ expr						: T_OPEN_PARENS expr T_CLOSE_PARENS
 										{ $$ = newBooleanExpression(true, $1.line, $1.start) }
 								|	T_FALSE
 										{ $$ = newBooleanExpression(false, $1.line, $1.start) }
+								| T_NULL
+										{ $$ = newNullExpression(nil, $1.line, $1.start) }
 								| operation
 										{ $$ = $1 }
 								| function_call

@@ -272,6 +272,14 @@ func TestBooleanAndLogicOperations(t *testing.T) {
 	runParserTests(tests, t)
 }
 
+func TestNull(t *testing.T) {
+	tests := map[string]parserTest{
+		"If then": {"a=null", nil},
+	}
+
+	runParserTests(tests, t)
+}
+
 func TestIfThenElse(t *testing.T) {
 	tests := map[string]parserTest{
 		"If then":      {"if true==true{a=10}", 10.0},
@@ -443,16 +451,12 @@ func TestPost(t *testing.T) {
 		"Post 1": {`a = post(url:"http://jsonplaceholder.typicode.com/posts", parameters:{title:"blah",body:"foobar",userId:1}, json:true)`, func(res testR, errs testE) bool {
 			a := res["a"].(map[string]interface{})
 			body := a["body"].(map[string]interface{})
-			return (a["status_code"] == 200.0 &&
-				body["title"].(string) == "blah" &&
-				body["body"].(string) == "foobar")
+			return (a["status_code"] == 201.0 && body["id"].(float64) == 101)
 		}},
 		"Post 2": {`a = post(url:"http://jsonplaceholder.typicode.com/posts", parameters:{title:"blah",body:"foobar",userId:1})`, func(res testR, errs testE) bool {
 			a := res["a"].(map[string]interface{})
 			body := a["body"].(map[string]interface{})
-			return (a["status_code"] == 200.0 &&
-				body["title"].(string) == "blah" &&
-				body["body"].(string) == "foobar")
+			return (a["status_code"] == 201.0 && body["id"].(float64) == 101)
 		}},
 	}
 
