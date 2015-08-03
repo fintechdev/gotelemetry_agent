@@ -46,7 +46,22 @@ func newArrayExpression(value interface{}, line, position int) expression {
 }
 
 func (a *arrayExpression) evaluate(c *executionContext) (interface{}, error) {
-	return a.values, nil
+	result := make([]interface{}, len(a.values))
+
+	for key, v := range a.values {
+		if vv, ok := v.(resolvable); ok {
+			if vvv, err := vv.resolve(c); err == nil {
+				result[key] = vvv
+			} else {
+				return nil, err
+			}
+
+		} else {
+			result[key] = v
+		}
+	}
+
+	return newArrayExpression(result, a.l, a.p), nil
 }
 
 func (a *arrayExpression) resolve(c *executionContext) (interface{}, error) {
