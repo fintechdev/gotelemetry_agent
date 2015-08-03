@@ -375,7 +375,7 @@ func TestArrayIteration(t *testing.T) {
 	}
 }
 
-func TestMaps(t *testing.T) {
+func compareMaps(expect map[string]interface{}) func(res testR, errs testE) bool {
 	compareArray := func(expect []interface{}, r []interface{}) bool {
 		if len(r) != len(expect) {
 			return false
@@ -390,57 +390,113 @@ func TestMaps(t *testing.T) {
 		return true
 	}
 
-	compareMaps := func(expect map[string]interface{}) func(res testR, errs testE) bool {
-		return func(res testR, errs testE) bool {
-			r := res["a"].(map[string]interface{})
+	return func(res testR, errs testE) bool {
+		r := res["a"].(map[string]interface{})
 
-			for i, v := range expect {
-				if vv, ok := r[i]; ok {
-					if vvv, ok := v.([]interface{}); ok {
-						if !compareArray(vvv, vv.([]interface{})) {
-							return false
-						} else {
-
-						}
+		for i, v := range expect {
+			if vv, ok := r[i]; ok {
+				if vvv, ok := v.([]interface{}); ok {
+					if !compareArray(vvv, vv.([]interface{})) {
+						return false
 					} else {
-						if v != vv {
-							return false
-						}
+
 					}
 				} else {
-					return false
-				}
-			}
-
-			for i, v := range r {
-				if vv, ok := expect[i]; ok {
-					if vvv, ok := vv.([]interface{}); ok {
-						if !compareArray(vvv, v.([]interface{})) {
-							return false
-						} else {
-
-						}
-					} else {
-						if v != vv {
-							return false
-						}
+					if v != vv {
+						return false
 					}
-				} else {
-					return false
 				}
+			} else {
+				return false
 			}
-
-			return true
 		}
+
+		for i, v := range r {
+			if vv, ok := expect[i]; ok {
+				if vvv, ok := vv.([]interface{}); ok {
+					if !compareArray(vvv, v.([]interface{})) {
+						return false
+					} else {
+
+					}
+				} else {
+					if v != vv {
+						return false
+					}
+				}
+			} else {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
+func TestMaps(t *testing.T) {
+	tests := map[string]parserTest{
+		"Immediate map":                    {`a = {a:10, b:"test", c:[10, 20, 30]}`, compareMaps(map[string]interface{}{"a": 10.0, "b": "test", "c": []interface{}{10.0, 20.0, 30.0}})},
+		"Map assignment":                   {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a`, compareMaps(map[string]interface{}{"a": 10.0, "b": "test", "c": []interface{}{10.0, 20.0, 30.0}})},
+		"Map item":                         {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.item("a")`, 10.0},
+		"Map count":                        {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.count()`, 3.0},
+		"Map set":                          {`$a = {a:10, b:"test", c:[10, 20, 30]}; $a.set(index:"a", value:10+10); a = $a.item("a")`, 20.0},
+		"Map and array":                    {`$a = [ { color: "red", values: series("sampleseries").sum("10s") } ]; a = $a.item(0)`, compareMaps(map[string]interface{}{"values": 0.0, "color": "red"})},
+		"Map variable resolution (number)": {`$a = 10; $b = { value : $a }; $a = 20; a = $b.item("value")`, 10.0},
+		"Map variable resolution (string)": {`$a = "Test"; $b = { value : $a }; $a = "Nope"; a = $b.item("value")`, "Test"},
+		"Map variable resolution (map)":    {`$a = "Test"; $b = { value : $a }; $a = "Nope"; a = $b`, compareMaps(map[string]interface{}{"value": "Test"})},
+	}
+
+	runParserTests(tests, t)
+}
+
+func TestMapIteration(t *testing.T) {
+	test := `
+		$i = 0
+		$in = [ { value : 10 , text : "Test 1" } , { value : 20 , text : "Test 2" } , { value : 30 , text : "Test 3" } ]
+		$out = [ ]
+
+		while $i < $in.count() {
+		    $item = $in.item($i)
+		    $v = $item.item("value")
+		    $l = $item.item("text")
+		    $out.push(value: { value: $v, label: $l} )
+
+		    $i = $i + 1
+		}
+
+		a = $out
+	`
+
+	checkResult := func(res testR, errs testE) bool {
+		array, ok := res["a"].([]interface{})
+
+		if !ok {
+			return false
+		}
+
+		row := array[0].(map[string]interface{})
+
+		if row["value"] != 10.0 || row["label"] != "Test 1" {
+			return false
+		}
+
+		row = array[1].(map[string]interface{})
+
+		if row["value"] != 20.0 || row["label"] != "Test 2" {
+			return false
+		}
+
+		row = array[2].(map[string]interface{})
+
+		if row["value"] != 30.0 || row["label"] != "Test 3" {
+			return false
+		}
+
+		return true
 	}
 
 	tests := map[string]parserTest{
-		"Immediate map":  {`a = {a:10, b:"test", c:[10, 20, 30]}`, compareMaps(map[string]interface{}{"a": 10.0, "b": "test", "c": []interface{}{10.0, 20.0, 30.0}})},
-		"Map assignment": {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a`, compareMaps(map[string]interface{}{"a": 10.0, "b": "test", "c": []interface{}{10.0, 20.0, 30.0}})},
-		"Map item":       {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.item("a")`, 10.0},
-		"Map count":      {`$a = {a:10, b:"test", c:[10, 20, 30]}; a = $a.count()`, 3.0},
-		"Map set":        {`$a = {a:10, b:"test", c:[10, 20, 30]}; $a.set(index:"a", value:10+10); a = $a.item("a")`, 20.0},
-		"Map and array":  {`$a = [ { color: "red", values: series("sampleseries").sum("10s") } ]; a = $a.item(0)`, compareMaps(map[string]interface{}{"values": 0.0, "color": "red"})},
+		"Map iteration and assignment (AG-20)": {test, checkResult},
 	}
 
 	runParserTests(tests, t)

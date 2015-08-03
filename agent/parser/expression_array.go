@@ -246,6 +246,14 @@ func (a *arrayExpression) set() expression {
 			index := int(args["index"].(float64))
 			value := args["value"]
 
+			if vv, ok := value.(resolvable); ok {
+				if vvv, err := vv.resolve(c); err == nil {
+					value = vvv
+				} else {
+					return nil, err
+				}
+			}
+
 			if index < 0 || index > len(a.values)-1 {
 				return nil, errors.New(fmt.Sprintf("Invalid index %d", index))
 			}
@@ -268,6 +276,14 @@ func (a *arrayExpression) push() expression {
 		"push",
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			value := args["value"]
+
+			if vv, ok := value.(resolvable); ok {
+				if vvv, err := vv.resolve(c); err == nil {
+					value = vvv
+				} else {
+					return nil, err
+				}
+			}
 
 			a.values = append(a.values, value)
 

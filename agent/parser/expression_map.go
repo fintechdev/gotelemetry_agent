@@ -46,7 +46,22 @@ func newMapExpression(value interface{}, line, position int) expression {
 }
 
 func (a *mapExpression) evaluate(c *executionContext) (interface{}, error) {
-	return a.values, nil
+	result := map[string]interface{}{}
+
+	for key, v := range a.values {
+		if vv, ok := v.(resolvable); ok {
+			if vvv, err := vv.resolve(c); err == nil {
+				result[key] = vvv
+			} else {
+				return nil, err
+			}
+
+		} else {
+			result[key] = v
+		}
+	}
+
+	return newMapExpression(result, a.l, a.p), nil
 }
 
 func (a *mapExpression) resolve(c *executionContext) (interface{}, error) {
@@ -120,6 +135,14 @@ func (a *mapExpression) set() expression {
 		func(c *executionContext, args map[string]interface{}) (expression, error) {
 			index := args["index"].(string)
 			value := args["value"]
+
+			if vv, ok := value.(resolvable); ok {
+				if vvv, err := vv.resolve(c); err == nil {
+					value = vvv
+				} else {
+					return nil, err
+				}
+			}
 
 			a.values[index] = value
 
