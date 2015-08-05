@@ -476,7 +476,13 @@ func (p *ProcessPlugin) performAllTasks(j *job.Job) {
 
 	if err != nil {
 		if p.flowTag != "" {
-			j.SetFlowError(p.flowTag, map[string]interface{}{"error": err.Error(), "output": string(response)})
+			res := err.Error() + " : " + strings.TrimSpace(string(response))
+
+			if res == "" {
+				res = "No output detected."
+			}
+
+			j.SetFlowError(p.flowTag, map[string]interface{}{"message": res})
 		}
 
 		j.ReportError(err)
