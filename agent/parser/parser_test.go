@@ -3,6 +3,7 @@ package parser
 import (
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"runtime"
 	"sync"
 	"testing"
 )
@@ -571,4 +572,50 @@ func TestPost(t *testing.T) {
 	}
 
 	runParserTests(tests, t)
+}
+
+func testMemoryUsageInstanceRun(source string) []error {
+	np := newDummyNotificationProvider()
+
+	commands, errs := Parse("test", source)
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	if _, err := Run(np, nil, map[string]interface{}{"test": 10.0}, commands); err == nil {
+		return nil
+	} else {
+		return []error{err}
+	}
+}
+
+func testMemoryUsageInstance(t *testing.T, source string) []error {
+	parserTestInitOnce.Do(func() {
+		l := "/tmp/agent.sqlite3"
+		ttl := "1h"
+		aggregations.Init(&l, &ttl, make(chan error, 99999))
+	})
+
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+
+	for index := 0; index < 40000; index++ {
+		if errs := testMemoryUsageInstanceRun(source); errs != nil {
+			t.Errorf("%#v", errs[0].Error())
+
+			return errs
+		}
+	}
+
+	runtime.ReadMemStats(&after)
+
+	t.Logf("Before: %#v", before.HeapAlloc)
+	t.Logf("After: %#v (growth %d)", after.HeapAlloc, (after.HeapAlloc - before.HeapAlloc))
+
+	return nil
+}
+
+func TestMemoryUsage(t *testing.T) {
+	testMemoryUsageInstance(t, `a=123`)
 }
