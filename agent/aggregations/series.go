@@ -70,14 +70,14 @@ func GetSeries(context *Context, name string) (*Series, bool, error) {
 			return nil, false, err
 		}
 
-		if manager.ttl > 0 {
-			ticker := time.Tick(time.Second)
-			go func() {
-				for range ticker {
-					result.deleteOldData()
-				}
-			}()
-		}
+		// if manager.ttl > 0 {
+		// 	ticker := time.Tick(time.Second)
+		// 	go func() {
+		// 		for range ticker {
+		// 			result.deleteOldData()
+		// 		}
+		// 	}()
+		// }
 
 		created = true
 	}
@@ -95,11 +95,38 @@ func (s *Series) Push(timestamp *time.Time, value float64) error {
 		*timestamp = time.Now()
 	}
 
-	return s.exec("INSERT INTO ?? (ts, value) VALUES (?, ?)", *timestamp, value)
+	return s.exec("INSERT INTO ?? (ts, value) VALUES (?, ?)", (*timestamp).Unix(), value)
 }
 
 func (s *Series) last() (map[string]interface{}, error) {
-	return s.fetchRow("SELECT rowid, ts, value FROM ?? ORDER BY ts DESC LIMIT 1")
+	rs, err := s.query("SELECT rowid, ts, value FROM ?? ORDER BY ts DESC LIMIT 1")
+
+	if err != nil {
+		return nil, err
+	}
+
+	if rs != nil {
+		defer rs.Close()
+	}
+
+	if rs.Next() {
+		var rowid, ts int
+		var value float64
+
+		err := rs.Scan(&rowid, &ts, &value)
+
+		if err != nil {
+			return nil, nil
+		}
+
+		return map[string]interface{}{
+			"rowid": rowid,
+			"ts":    ts,
+			"value": value,
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (s *Series) Last() (map[string]interface{}, error) {
@@ -174,23 +201,31 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 		*end = time.Now()
 	}
 
-	row, err := s.fetchRow("SELECT CAST("+operation+" AS FLOAT) AS result FROM ?? WHERE ts BETWEEN ? AND ?", *start, *end)
+	rows, err := s.query("SELECT COALESCE(CAST("+operation+" AS FLOAT), 0.0) AS result FROM ?? WHERE ts BETWEEN ? AND ?", *start, *end)
 
 	if err != nil {
 		return 0.0, err
 	}
 
-	result, ok := row["result"].(float64)
-
-	if !ok {
-		result = 0.0
+	if rows != nil {
+		defer rows.Close()
 	}
 
-	if functionType == StdDev {
-		return math.Sqrt(result), nil
-	} else {
-		return result, nil
+	var result = 0.0
+
+	if rows.Next() {
+		if err := rows.Scan(&result); err != nil {
+			return 0.0, err
+		}
+
+		if functionType == StdDev {
+			return math.Sqrt(result), nil
+		} else {
+			return result, nil
+		}
 	}
+
+	return 0.0, nil
 }
 
 func (s *Series) Aggregate(functionType FunctionType, interval, count int, endTimePtr *time.Time) (interface{}, error) {
@@ -238,7 +273,7 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int, endTi
 	rows := map[int]float64{}
 
 	if err != io.EOF {
-		for rs.Next() == nil {
+		for rs.Next() {
 			var index int
 			var value float64
 
@@ -282,7 +317,7 @@ func (s *Series) Items(count int) (interface{}, error) {
 	output := []interface{}{}
 
 	if err != io.EOF {
-		for rs.Next() == nil {
+		for rs.Next() {
 			var ts int
 			var value float64
 

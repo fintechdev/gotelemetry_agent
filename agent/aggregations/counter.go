@@ -35,36 +35,41 @@ func GetCounter(context *Context, name string) (*Counter, bool, error) {
 		return counter, false, nil
 	}
 
-	if err := context.conn.Exec("INSERT OR IGNORE INTO _counters (name, rollover_last) VALUES (?, ?)", name, time.Now().Unix()); err != nil {
+	if _, err := context.conn.Exec("INSERT OR IGNORE INTO _counters (name, rollover_last) VALUES (?, ?)", name, time.Now().Unix()); err != nil {
 		return nil, false, err
 	}
 
-	row, err := context.fetchRow("SELECT value, rollover_last, rollover_interval, rollover_expression FROM _counters WHERE name = ?", name)
+	rows, err := context.query("SELECT coalesce(value, 0), coalesce(rollover_last, 0), coalesce(rollover_interval, 0), coalesce(rollover_expression, '') FROM _counters WHERE name = ?", name)
 
-	if err == nil {
-		v := row["value"].(int64)
+	if err == nil && rows.Next() {
+		var value int64
+		var rollover_interval int64
+		var rollover_last int64
+		var rollover_expression string
 
-		counter := &Counter{
-			Name:             name,
-			value:            &v,
-			rolloverLast:     row["rollover_last"].(int64),
-			rolloverInterval: row["rollover_interval"].(int64),
-			lock:             &sync.Mutex{},
-		}
-
-		if expr, ok := row["rollover_expression"].(string); ok {
-			if err := json.Unmarshal([]byte(expr), &counter.rolloverExpression); err != nil {
-				return nil, false, err
+		if err := rows.Scan(&value, &rollover_last, &rollover_interval, &rollover_expression); err == nil {
+			counter := &Counter{
+				Name:             name,
+				value:            &value,
+				rolloverLast:     rollover_last,
+				rolloverInterval: rollover_interval,
+				lock:             &sync.Mutex{},
 			}
+
+			if rollover_expression != "" {
+				if err := json.Unmarshal([]byte(rollover_expression), &counter.rolloverExpression); err != nil {
+					return nil, false, err
+				}
+			}
+
+			counters[name] = counter
+
+			counter.lock.Lock()
+			counter.scheduleRollover()
+			counter.lock.Unlock()
+
+			return counter, true, nil
 		}
-
-		counters[name] = counter
-
-		counter.lock.Lock()
-		counter.scheduleRollover()
-		counter.lock.Unlock()
-
-		return counter, true, nil
 	}
 
 	return nil, false, err
@@ -180,7 +185,7 @@ func (c *Counter) save() {
 		c.fatal(err)
 	}
 
-	err = context.conn.Exec("UPDATE _counters SET value = ?, rollover_last = ?, rollover_interval = ?, rollover_expression = ?", v, c.rolloverLast, c.rolloverInterval, expr)
+	_, err = context.conn.Exec("UPDATE _counters SET value = ?, rollover_last = ?, rollover_interval = ?, rollover_expression = ?", v, c.rolloverLast, c.rolloverInterval, expr)
 
 	if err != nil {
 		c.fatal(err)

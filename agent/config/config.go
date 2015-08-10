@@ -25,7 +25,7 @@ type CLIConfigType struct {
 	FunctionHelpName    string
 }
 
-const AgentVersion = "2.2.3"
+const AgentVersion = "2.2.4"
 
 var CLIConfig CLIConfigType
 
@@ -42,9 +42,8 @@ func banner() {
 func init() {
 	gotelemetry.UserAgentString = "Telemetry Agent v " + AgentVersion
 
-	return
-
 	banner()
+
 	app := kingpin.New("telemetry_agent", "The Telemetry Agent")
 
 	app.Version(AgentVersion)

@@ -326,7 +326,6 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 		return err
 	}
 
-	context.Begin()
 	defer context.Close()
 
 	hasData := false

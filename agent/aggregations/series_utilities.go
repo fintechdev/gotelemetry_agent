@@ -1,9 +1,10 @@
 package aggregations
 
 import (
-	"code.google.com/p/go-sqlite/go1/sqlite3"
+	"database/sql"
 	"errors"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
 
@@ -34,30 +35,14 @@ func (s *Series) prepQuery(query string) string {
 	return strings.Replace(query, "??", `"`+s.Name+`"`, -1)
 }
 
-func (s *Series) query(query string, values ...interface{}) (*sqlite3.Stmt, error) {
+func (s *Series) query(query string, values ...interface{}) (*sql.Rows, error) {
 	return s.context.conn.Query(s.prepQuery(query), values...)
 }
 
 func (s *Series) exec(query string, values ...interface{}) error {
-	return s.context.conn.Exec(s.prepQuery(query), values...)
-}
+	_, err := s.context.conn.Exec(s.prepQuery(query), values...)
 
-func (s *Series) fetchRow(query string, values ...interface{}) (sqlite3.RowMap, error) {
-	result := sqlite3.RowMap{}
-
-	rs, err := s.query(query, values...)
-
-	if err != nil {
-		return result, err
-	}
-
-	if rs != nil {
-		defer rs.Close()
-	}
-
-	rs.Scan(result)
-
-	return result, nil
+	return err
 }
 
 func (s *Series) createTable() error {

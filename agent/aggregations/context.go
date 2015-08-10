@@ -1,16 +1,16 @@
 package aggregations
 
 import (
-	"code.google.com/p/go-sqlite/go1/sqlite3"
+	"database/sql"
 	"errors"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/telemetryapp/gotelemetry"
 )
 
 type Context struct {
-	conn          *sqlite3.Conn
-	hasError      bool
-	inTransaction bool
+	conn     *sql.DB
+	hasError bool
 }
 
 func GetContext() (*Context, error) {
@@ -18,7 +18,7 @@ func GetContext() (*Context, error) {
 		return nil, errors.New("No data context is available. Did you set the `data.path` property in the Agent's configuration file?")
 	}
 
-	conn, err := sqlite3.Open(manager.path)
+	conn, err := sql.Open("sqlite3", manager.path)
 
 	if err != nil {
 		return nil, err
@@ -61,56 +61,10 @@ func (c *Context) SetError() {
 
 // Data
 
-func (c *Context) fetchRow(query string, values ...interface{}) (sqlite3.RowMap, error) {
-	result := sqlite3.RowMap{}
-
-	rs, err := c.conn.Query(query, values...)
-
-	if err != nil {
-		return result, err
-	}
-
-	if rs != nil {
-		defer rs.Close()
-	}
-
-	rs.Scan(result)
-
-	return result, nil
-}
-
-// Transactions
-
-func (c *Context) Begin() error {
-	c.inTransaction = true
-
-	return c.conn.Begin()
-}
-
-func (c *Context) Commit() error {
-	c.inTransaction = false
-
-	return c.conn.Commit()
-}
-
-func (c *Context) Rollback() error {
-	c.inTransaction = false
-
-	return c.conn.Rollback()
+func (c *Context) query(query string, values ...interface{}) (*sql.Rows, error) {
+	return c.conn.Query(query, values...)
 }
 
 func (c *Context) Close() error {
-	if c.inTransaction {
-		if c.hasError {
-			if err := c.conn.Rollback(); err != nil {
-				return err
-			}
-		} else {
-			if err := c.conn.Commit(); err != nil {
-				return err
-			}
-		}
-	}
-
 	return c.conn.Close()
 }

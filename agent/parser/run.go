@@ -21,7 +21,6 @@ func Run(notificationProvider executionContextNotificationProvider, jobSpawner e
 		}
 	}
 
-	ac.Commit()
 	ac.Close()
 
 	return ec.output, nil

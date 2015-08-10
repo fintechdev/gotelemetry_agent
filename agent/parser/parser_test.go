@@ -192,6 +192,7 @@ func TestSeries(t *testing.T) {
 	}
 
 	tests := map[string]parserTest{
+		"Series.push()":        {`a=10;series("cpu_load").push(value:10, timestamp:now())`, checkFloat},
 		"Series.last()":        {`a=series("cpu_load").last()+10`, checkFloat},
 		"Series.aggregate()":   {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`, checkArray(50)},
 		"Series.aggregate() 2": {`a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50).values.count()`, 50.0},
@@ -552,6 +553,16 @@ func TestGet(t *testing.T) {
 			return (a["status_code"] == 200.0 &&
 				len(a["body"].([]interface{})) == 1)
 		}},
+		"Get 3": {`$url = "http://jsonplaceholder.typicode.com/users"; a = get(url:$url, query:{id:2})`, func(res testR, errs testE) bool {
+			if len(errs) > 0 {
+				t.Errorf("Error retrieving url at Get 3: %s", errs[0].Error())
+				return false
+			}
+
+			a := res["a"].(map[string]interface{})
+			return (a["status_code"] == 200.0 &&
+				len(a["body"].([]interface{})) == 1)
+		}},
 	}
 
 	runParserTests(tests, t)
@@ -590,7 +601,7 @@ func testMemoryUsageInstanceRun(source string) []error {
 	}
 }
 
-func testMemoryUsageInstance(t *testing.T, source string) []error {
+func testMemoryUsageInstance(t *testing.T, source string, count int) (uint64, error) {
 	parserTestInitOnce.Do(func() {
 		l := "/tmp/agent.sqlite3"
 		ttl := "1h"
@@ -598,24 +609,49 @@ func testMemoryUsageInstance(t *testing.T, source string) []error {
 	})
 
 	var before, after runtime.MemStats
+
+	runtime.GC()
 	runtime.ReadMemStats(&before)
 
-	for index := 0; index < 40000; index++ {
+	for index := 0; index < count; index++ {
 		if errs := testMemoryUsageInstanceRun(source); errs != nil {
 			t.Errorf("%#v", errs[0].Error())
 
-			return errs
+			return 0, errs[0]
 		}
 	}
 
+	runtime.GC()
 	runtime.ReadMemStats(&after)
 
-	t.Logf("Before: %#v", before.HeapAlloc)
-	t.Logf("After: %#v (growth %d)", after.HeapAlloc, (after.HeapAlloc - before.HeapAlloc))
+	return after.HeapAlloc - before.HeapAlloc, nil
+}
 
-	return nil
+func testMemoryUsageCase(t *testing.T, name string, source string) bool {
+	run1, err := testMemoryUsageInstance(t, source, 10)
+
+	if err != nil {
+		return false
+	}
+
+	run2, err := testMemoryUsageInstance(t, source, 100)
+
+	if err != nil {
+		return false
+	}
+
+	if run1 < run2 {
+		t.Errorf("Possible memory leak in case %s: %d bytes gained", name, run2-run1)
+		return false
+	}
+
+	return true
 }
 
 func TestMemoryUsage(t *testing.T) {
-	testMemoryUsageInstance(t, `a=123`)
+	testMemoryUsageCase(t, "Number assignment", `a=123`)
+	testMemoryUsageCase(t, "String assignment", `a="Test123"`)
+	testMemoryUsageCase(t, "Aggregation (last)", `$a= series("cpu_load"); a= $a.last()`)
+	testMemoryUsageCase(t, "Aggregation (aggregate)", `a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`)
+	testMemoryUsageCase(t, "Aggregation (trim)", `a=series("cpu_load").trim(count:100)`)
 }

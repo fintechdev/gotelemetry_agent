@@ -17,6 +17,10 @@ type stringExpression struct {
 }
 
 func newStringExpression(value interface{}, line, position int) expression {
+	if v, ok := value.(*stringExpression); ok {
+		value = v.value
+	}
+
 	result := &stringExpression{
 		value: fmt.Sprintf("%v", value),
 		l:     line,
