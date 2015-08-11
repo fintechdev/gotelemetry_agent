@@ -125,7 +125,7 @@ func (l *lexer) emitGhost(v terminal) {
 }
 
 func (l *lexer) emit(v terminal) {
-	if l.pos > l.start {
+	if l.pos >= l.start {
 		l.out <- token{terminal: v, line: l.lineNumber(), start: l.start, source: l.source[l.start:l.pos]}
 		l.start = l.pos
 	}

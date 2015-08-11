@@ -95,9 +95,18 @@ func runParserTests(tests map[string]parserTest, t *testing.T) {
 	}
 }
 
+func TestEmptyString(t *testing.T) {
+	tests := map[string]parserTest{
+		"Empty string (AG-16)": {`a=""`, ""},
+	}
+
+	runParserTests(tests, t)
+}
+
 func TestBasicExpressions(t *testing.T) {
 	tests := map[string]parserTest{
 		"Comment":                  {`/* Test 1 2 3 * 3 */ a=123`, 123.0},
+		"Empty string":             {`a=""`, ""},
 		"Numeric expression":       {"a=123", 123.0},
 		"Addition":                 {"a=123+10", 133.0},
 		"Multiplication":           {"a=10*10", 100.0},
