@@ -3,7 +3,6 @@ package parser
 import (
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"runtime"
 	"sync"
 	"testing"
 )
@@ -32,7 +31,7 @@ func testRunAndReturnErrors(s string) (map[string]interface{}, *dummyNotificatio
 	parserTestInitOnce.Do(func() {
 		l := "/tmp/agent.sqlite3"
 		ttl := "1h"
-		aggregations.Init(&l, &ttl, make(chan error, 99999))
+		aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
 	})
 
 	commands, errs := Parse("test", s)
@@ -365,7 +364,7 @@ func TestArrayIteration(t *testing.T) {
 	parserTestInitOnce.Do(func() {
 		l := "/tmp/agent.sqlite3"
 		ttl := "1h"
-		aggregations.Init(&l, &ttl, make(chan error, 99999))
+		aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
 	})
 
 	commands, errs := Parse("test", script)
@@ -594,73 +593,10 @@ func TestPost(t *testing.T) {
 	runParserTests(tests, t)
 }
 
-func testMemoryUsageInstanceRun(source string) []error {
-	np := newDummyNotificationProvider()
-
-	commands, errs := Parse("test", source)
-
-	if len(errs) > 0 {
-		return errs
+func TestStorage(t *testing.T) {
+	tests := map[string]parserTest{
+		"Storage": {`storage().set(key:"test", value:{a:10}); a = storage().get("test").item("a")`, 10.0},
 	}
 
-	if _, err := Run(np, nil, map[string]interface{}{"test": 10.0}, commands); err == nil {
-		return nil
-	} else {
-		return []error{err}
-	}
-}
-
-func testMemoryUsageInstance(t *testing.T, source string, count int) (uint64, error) {
-	parserTestInitOnce.Do(func() {
-		l := "/tmp/agent.sqlite3"
-		ttl := "1h"
-		aggregations.Init(&l, &ttl, make(chan error, 99999))
-	})
-
-	var before, after runtime.MemStats
-
-	runtime.GC()
-	runtime.ReadMemStats(&before)
-
-	for index := 0; index < count; index++ {
-		if errs := testMemoryUsageInstanceRun(source); errs != nil {
-			t.Errorf("%#v", errs[0].Error())
-
-			return 0, errs[0]
-		}
-	}
-
-	runtime.GC()
-	runtime.ReadMemStats(&after)
-
-	return after.HeapAlloc - before.HeapAlloc, nil
-}
-
-func testMemoryUsageCase(t *testing.T, name string, source string) bool {
-	run1, err := testMemoryUsageInstance(t, source, 10)
-
-	if err != nil {
-		return false
-	}
-
-	run2, err := testMemoryUsageInstance(t, source, 100)
-
-	if err != nil {
-		return false
-	}
-
-	if run1 < run2 {
-		t.Errorf("Possible memory leak in case %s: %d bytes gained", name, run2-run1)
-		return false
-	}
-
-	return true
-}
-
-func TestMemoryUsage(t *testing.T) {
-	testMemoryUsageCase(t, "Number assignment", `a=123`)
-	testMemoryUsageCase(t, "String assignment", `a="Test123"`)
-	testMemoryUsageCase(t, "Aggregation (last)", `$a= series("cpu_load"); a= $a.last()`)
-	testMemoryUsageCase(t, "Aggregation (aggregate)", `a=series("cpu_load").aggregate(func:"avg",interval:"10s",count:50)`)
-	testMemoryUsageCase(t, "Aggregation (trim)", `a=series("cpu_load").trim(count:100)`)
+	runParserTests(tests, t)
 }

@@ -38,6 +38,9 @@ func (g *globalExpression) evaluate(c *executionContext) (interface{}, error) {
 type globalProperty func(g *globalExpression) expression
 
 var globalProperties = map[string]globalProperty{
+	"storage": func(g *globalExpression) expression {
+		return g.storage()
+	},
 	"counter": func(g *globalExpression) expression {
 		return g.counter()
 	},
@@ -83,6 +86,18 @@ var globalProperties = map[string]globalProperty{
 	"random": func(g *globalExpression) expression {
 		return g.random()
 	},
+}
+
+func (g *globalExpression) storage() expression {
+	return newCallableExpression(
+		"storage",
+		func(c *executionContext, args map[string]interface{}) (expression, error) {
+			return newStorageExpression(g.l, g.p), nil
+		},
+		map[string]callableArgument{},
+		g.l,
+		g.p,
+	)
 }
 
 func (g *globalExpression) now() expression {

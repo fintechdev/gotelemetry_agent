@@ -14,7 +14,7 @@ type Manager struct {
 
 var manager *Manager = nil
 
-func Init(location *string, ttlString *string, errorChannel chan error) error {
+func Init(listen, location, ttlString *string, errorChannel chan error) error {
 	if location != nil {
 		manager = &Manager{
 			path:         *location,
@@ -44,6 +44,11 @@ func Init(location *string, ttlString *string, errorChannel chan error) error {
 		}
 
 		c.Debugf("Writing data layer database to %s", manager.path)
+
+		if listen != nil {
+			InitStorage()
+			InitServer(*listen, errorChannel)
+		}
 
 		return nil
 	}

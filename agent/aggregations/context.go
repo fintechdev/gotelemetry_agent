@@ -74,6 +74,12 @@ func (c *Context) SetError() {
 
 // Data
 
+func (c *Context) Exec(query string, values ...interface{}) error {
+	_, err := c.conn.Exec(query, values...)
+
+	return err
+}
+
 func (c *Context) query(query string, values ...interface{}) (*sql.Rows, error) {
 	return c.conn.Query(query, values...)
 }

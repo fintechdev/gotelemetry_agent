@@ -8,6 +8,7 @@ graphite:
 data:
     path: /tmp/agent.sqlite3
     ttl: 1h
+    listen: ":8000"
 jobs:
     - id: Test Me
       url: tpl://set_test_flow.asl

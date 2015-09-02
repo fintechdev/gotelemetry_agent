@@ -9,7 +9,6 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 
 	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
@@ -69,7 +68,7 @@ Done:
 }
 
 func run() {
-	if err := aggregations.Init(configFile.DataConfig().DataLocation, configFile.DataConfig().TTL, errorChannel); err != nil {
+	if err := aggregations.Init(configFile.DataConfig().Listen, configFile.DataConfig().DataLocation, configFile.DataConfig().TTL, errorChannel); err != nil {
 		log.Fatalf("Initialization error: %s", err)
 	}
 
