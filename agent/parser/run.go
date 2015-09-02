@@ -6,12 +6,14 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 )
 
-func Run(notificationProvider executionContextNotificationProvider, jobSpawner executionContextJobSpawner, args map[string]interface{}, commands []command) (map[string]interface{}, error) {
+func Run(notificationProvider executionContextNotificationProvider, jobSpawner executionContextJobSpawner, args map[string]interface{}, commands []Command) (map[string]interface{}, error) {
 	ac, err := aggregations.GetContext()
 
 	if err != nil {
 		return nil, err
 	}
+
+	defer ac.Close()
 
 	ec := newExecutionContext(ac, notificationProvider, jobSpawner, args)
 
@@ -20,8 +22,6 @@ func Run(notificationProvider executionContextNotificationProvider, jobSpawner e
 			return nil, errors.New(fmt.Sprintf("Runtime error: %s", err))
 		}
 	}
-
-	ac.Close()
 
 	return ec.output, nil
 }

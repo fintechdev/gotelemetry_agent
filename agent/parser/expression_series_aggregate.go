@@ -14,13 +14,11 @@ type seriesResultAggregateExpression struct {
 }
 
 func newSeriesResultAggregateExpression(values []interface{}, line, position int) expression {
-	result := &seriesResultAggregateExpression{
+	return &seriesResultAggregateExpression{
 		values: values,
 		l:      line,
 		p:      position,
 	}
-
-	return result
 }
 
 func (s *seriesResultAggregateExpression) extract(c *executionContext, property string) (expression, error) {

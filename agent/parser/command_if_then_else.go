@@ -2,11 +2,11 @@ package parser
 
 type ifThenElseCommand struct {
 	condition    expression
-	thenCommands []command
-	elseCommands []command
+	thenCommands []Command
+	elseCommands []Command
 }
 
-func newIfThenElseCommand(condition expression, thenCommands, elseCommands []command) command {
+func newIfThenElseCommand(condition expression, thenCommands, elseCommands []Command) Command {
 	return &ifThenElseCommand{condition, thenCommands, elseCommands}
 }
 

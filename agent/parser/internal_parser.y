@@ -12,8 +12,8 @@
 %}
 
 %union {
-	cmds []command
-	cmd command
+	cmds []Command
+	cmd Command
 	ex expression
 	exa []expression
 	exl map[string]expression
@@ -52,7 +52,7 @@
 %%
 
 command_list		: 
-									{ $$ = []command{} }
+									{ $$ = []Command{} }
 								|	commands
 									{ 
 										for _, cmd := range $$ {
@@ -66,7 +66,7 @@ command_list		:
 commands				: commands command 
 									{ if $2 != nil { $$ = append($$, $2) } }
 								| command
-									{ if $1 != nil { $$ = []command{$1} } else { $$ = []command{} } }
+									{ if $1 != nil { $$ = []Command{$1} } else { $$ = []Command{} } }
 								| command_block
 									{ $$ = $1 }
 								;
@@ -207,7 +207,7 @@ named_param			: T_IDENTIFIER T_COLON expr
 								;
 
 if_then_else		: T_IF expr command_block
-										{ $$ = newIfThenElseCommand($2, $3, []command{}) }
+										{ $$ = newIfThenElseCommand($2, $3, []Command{}) }
 								| T_IF expr command_block T_ELSE command_block
 										{ $$ = newIfThenElseCommand($2, $3, $5) }
 								;

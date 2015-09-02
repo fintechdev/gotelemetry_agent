@@ -55,7 +55,6 @@ type GraphiteConfig struct {
 type ConfigInterface interface {
 	APIURL() string
 	APIToken() (string, error)
-	ListenAddress() string
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
 	SubmissionInterval() time.Duration
@@ -125,10 +124,6 @@ func (c *ConfigFile) DataConfig() DataConfig {
 
 func (c *ConfigFile) GraphiteConfig() GraphiteConfig {
 	return c.Graphite
-}
-
-func (c *ConfigFile) ListenAddress() string {
-	return c.Listen
 }
 
 func (c *ConfigFile) SubmissionInterval() time.Duration {

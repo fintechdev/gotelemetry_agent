@@ -2,10 +2,10 @@ package parser
 
 type whileLoopCommand struct {
 	condition expression
-	commands  []command
+	commands  []Command
 }
 
-func newWhileLoopCommand(condition expression, commands []command) command {
+func newWhileLoopCommand(condition expression, commands []Command) Command {
 	return &whileLoopCommand{condition, commands}
 }
 

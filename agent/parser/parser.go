@@ -1,7 +1,7 @@
 //go:generate go tool yacc -o internal_parser.go -p parser internal_parser.y
 package parser
 
-func Parse(name, source string) ([]command, []error) {
+func Parse(name, source string) ([]Command, []error) {
 	lexer := newASLLexer(lexASL(name, source))
 
 	parserParse(lexer)

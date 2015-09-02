@@ -5,7 +5,7 @@ type outputCommand struct {
 	expr     expression
 }
 
-func newOutputCommand(property token, expr expression) command {
+func newOutputCommand(property token, expr expression) Command {
 	return &outputCommand{property, expr}
 }
 

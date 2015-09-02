@@ -4,7 +4,7 @@ type evaluateCommand struct {
 	expr expression
 }
 
-func newEvaluateCommand(expr expression) command {
+func newEvaluateCommand(expr expression) Command {
 	return &evaluateCommand{expr}
 }
 

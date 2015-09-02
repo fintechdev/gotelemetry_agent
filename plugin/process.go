@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"github.com/telemetryapp/gotelemetry_agent/agent/functions"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/parser"
 	"io/ioutil"
@@ -320,56 +318,18 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 		response = strings.TrimPrefix(response, "REPLACE\n")
 	}
 
-	context, err := aggregations.GetContext()
-
-	if err != nil {
-		return err
-	}
-
-	defer context.Close()
-
-	hasData := false
 	data := map[string]interface{}{}
 
 	for _, command := range strings.Split(response, "\n") {
-		commandData := map[string]interface{}{}
-
 		command = strings.TrimSpace(command)
 
 		if command == "" {
 			continue
 		}
 
-		err := json.Unmarshal([]byte(command), &commandData)
-
-		if err != nil {
-			context.SetError()
+		if err := json.Unmarshal([]byte(command), &data); err != nil {
 			return err
 		}
-
-		if d, err := functions.Parse(context, commandData); err == nil {
-			switch d.(type) {
-			case map[string]interface{}:
-				if hasData {
-					return errors.New("Multiple data-bearing commands detected.")
-				}
-
-				data = d.(map[string]interface{})
-				hasData = true
-
-			default:
-				// Do nothing
-			}
-
-		} else {
-			context.SetError()
-			return err
-		}
-	}
-
-	if !hasData {
-		j.Debugf("No data-bearing command found. Skipping API operations")
-		return nil
 	}
 
 	if p.batch {
@@ -425,19 +385,32 @@ func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
 	return string(out), nil
 }
 
+var templateCache = map[string][]parser.Command{}
+
 func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 	j.Debugf("Retrieving expression from template `%s`", p.templateFile)
 
-	source, err := ioutil.ReadFile(p.templateFile)
+	var commands []parser.Command
+	var ok bool
 
-	if err != nil {
-		return "", err
-	}
+	if commands, ok = templateCache[p.templateFile]; !ok {
+		j.Debugf("Script `%s` is not cached.", p.templateFile)
 
-	commands, errs := parser.Parse(j.ID, string(source))
+		source, err := ioutil.ReadFile(p.templateFile)
 
-	if len(errs) > 0 {
-		return "", errs[0]
+		if err != nil {
+			return "", err
+		}
+
+		commands, errs := parser.Parse(j.ID, string(source))
+
+		if len(errs) > 0 {
+			return "", errs[0]
+		}
+
+		templateCache[p.templateFile] = commands
+	} else {
+		j.Debugf("Script `%s` is cached.", p.templateFile)
 	}
 
 	output, err := parser.Run(j, j, p.scriptArgs, commands)

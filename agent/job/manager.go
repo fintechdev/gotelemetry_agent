@@ -93,7 +93,7 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 	}
 
 	if len(result.jobs) == 0 {
-		errorChannel <- gotelemetry.NewLogError("No jobs are being scheduled. If the server is active, the Agent will run in server mode only.")
+		errorChannel <- gotelemetry.NewLogError("No jobs are being scheduled.")
 		return nil, nil
 	}
 

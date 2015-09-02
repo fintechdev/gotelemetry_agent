@@ -5,7 +5,7 @@ type assignCommand struct {
 	expr     expression
 }
 
-func newAssignCommand(variable token, expr expression) command {
+func newAssignCommand(variable token, expr expression) Command {
 	return &assignCommand{variable, expr}
 }
 

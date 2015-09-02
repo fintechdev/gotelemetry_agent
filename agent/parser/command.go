@@ -1,5 +1,5 @@
 package parser
 
-type command interface {
+type Command interface {
 	execute(c *executionContext) error
 }

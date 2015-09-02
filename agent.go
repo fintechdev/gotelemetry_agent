@@ -5,12 +5,11 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"github.com/telemetryapp/gotelemetry_agent/agent/functions"
 	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
-	"github.com/telemetryapp/gotelemetry_agent/agent/server"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 
 	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
@@ -21,11 +20,6 @@ var errorChannel chan error
 var completionChannel chan bool
 
 func main() {
-	if config.CLIConfig.WantsFunctionHelp {
-		functions.PrintHelp(config.CLIConfig.FunctionHelpName)
-		return
-	}
-
 	var err error
 
 	configFile, err = config.NewConfigFile()
@@ -34,8 +28,8 @@ func main() {
 		log.Fatalf("Initialization error: %s", err)
 	}
 
-	errorChannel = make(chan error, 0)
-	completionChannel = make(chan bool, 0)
+	errorChannel = make(chan error, 1)
+	completionChannel = make(chan bool, 1)
 
 	go run()
 
@@ -94,12 +88,6 @@ func run() {
 	} else if config.CLIConfig.IsNotifying {
 		agent.ProcessNotificationRequest(configFile, errorChannel, completionChannel, config.CLIConfig.NotificationChannel, config.CLIConfig.NotificationFlow, config.CLIConfig.Notification)
 	} else {
-		if configFile.ListenAddress() != "" {
-			if err := server.Init(configFile, errorChannel); err != nil {
-				log.Fatal("Web server initialization error: %s", err)
-			}
-		}
-
 		_, err := job.NewJobManager(configFile, errorChannel, completionChannel)
 
 		if err != nil {

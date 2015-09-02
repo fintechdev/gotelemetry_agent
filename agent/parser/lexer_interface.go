@@ -8,19 +8,19 @@ import (
 type aslLexer struct {
 	out      chan token
 	current  token
-	commands []command
+	commands []Command
 	errors   []error
 }
 
 func newASLLexer(out chan token) *aslLexer {
 	return &aslLexer{
 		out:      out,
-		commands: []command{},
+		commands: []Command{},
 		errors:   []error{},
 	}
 }
 
-func (a *aslLexer) AddCommand(cmd command) {
+func (a *aslLexer) AddCommand(cmd Command) {
 	if cmd == nil {
 		return
 	}

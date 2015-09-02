@@ -61,12 +61,12 @@ func setupUDPListener(listen string, errorChannel chan error) {
 
 	conn, err := net.ListenUDP("udp", addr)
 
-	errorChannel <- gotelemetry.NewLogError("Graphite => Listening for UDP plaintext messages on %s", conn.LocalAddr())
-
 	if err != nil {
 		errorChannel <- err
 		return
 	}
+
+	errorChannel <- gotelemetry.NewLogError("Graphite => Listening for UDP plaintext messages on %s", conn.LocalAddr())
 
 	context, err := aggregations.GetContext()
 
