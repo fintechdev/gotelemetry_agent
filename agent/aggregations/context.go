@@ -29,7 +29,7 @@ func GetContext() (*Context, error) {
 	}
 
 	conn.Exec(`
-		PRAGMA busy_timeout = 10
+		PRAGMA busy_timeout = 10000;
     PRAGMA automatic_index = ON;
     PRAGMA cache_size = 32768;
     PRAGMA cache_spill = OFF;

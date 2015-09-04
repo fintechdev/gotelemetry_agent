@@ -42,7 +42,7 @@ func banner() {
 func init() {
 	gotelemetry.UserAgentString = "Telemetry Agent v " + AgentVersion
 	banner()
-
+	return
 	app := kingpin.New("telemetry_agent", "The Telemetry Agent")
 
 	app.Version(AgentVersion)
