@@ -1,6 +1,7 @@
 package aggregations
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,7 +27,7 @@ type Counter struct {
 var counters = map[string]*Counter{}
 var counterLock = sync.Mutex{}
 
-func GetCounter(context *Context, name string) (*Counter, bool, error) {
+func GetCounter(name string) (*Counter, bool, error) {
 	counterLock.Lock()
 
 	defer counterLock.Unlock()
@@ -35,44 +36,59 @@ func GetCounter(context *Context, name string) (*Counter, bool, error) {
 		return counter, false, nil
 	}
 
-	if _, err := context.conn.Exec("INSERT OR IGNORE INTO _counters (name, rollover_last) VALUES (?, ?)", name, time.Now().Unix()); err != nil {
+	if err := manager.exec("INSERT OR IGNORE INTO _counters (name, rollover_last) VALUES (?, ?)", name, time.Now().Unix()); err != nil {
 		return nil, false, err
 	}
 
-	rows, err := context.query("SELECT coalesce(value, 0), coalesce(rollover_last, 0), coalesce(rollover_interval, 0), coalesce(rollover_expression, '') FROM _counters WHERE name = ?", name)
+	var counter *Counter
 
-	if err == nil && rows.Next() {
-		var value int64
-		var rollover_interval int64
-		var rollover_last int64
-		var rollover_expression string
+	err := manager.query(
 
-		if err := rows.Scan(&value, &rollover_last, &rollover_interval, &rollover_expression); err == nil {
-			counter := &Counter{
-				Name:             name,
-				value:            &value,
-				rolloverLast:     rollover_last,
-				rolloverInterval: rollover_interval,
-				lock:             &sync.Mutex{},
-			}
+		func(rs *sql.Rows) error {
+			var value int64
+			var rollover_interval int64
+			var rollover_last int64
+			var rollover_expression string
 
-			if rollover_expression != "" {
-				if err := json.Unmarshal([]byte(rollover_expression), &counter.rolloverExpression); err != nil {
-					return nil, false, err
+			if rs.Next() {
+				if err := rs.Scan(&value, &rollover_last, &rollover_interval, &rollover_expression); err == nil {
+					counter = &Counter{
+						Name:             name,
+						value:            &value,
+						rolloverLast:     rollover_last,
+						rolloverInterval: rollover_interval,
+						lock:             &sync.Mutex{},
+					}
+
+					if rollover_expression != "" {
+						if err := json.Unmarshal([]byte(rollover_expression), &counter.rolloverExpression); err != nil {
+							return err
+						}
+					}
+
+					counters[name] = counter
+
+					counter.lock.Lock()
+					counter.scheduleRollover()
+					counter.lock.Unlock()
+				} else {
+					return err
 				}
 			}
 
-			counters[name] = counter
+			return nil
+		},
 
-			counter.lock.Lock()
-			counter.scheduleRollover()
-			counter.lock.Unlock()
+		"SELECT coalesce(value, 0), coalesce(rollover_last, 0), coalesce(rollover_interval, 0), coalesce(rollover_expression, '') FROM _counters WHERE name = ?",
 
-			return counter, true, nil
-		}
+		name,
+	)
+
+	if err != nil {
+		return nil, false, err
 	}
 
-	return nil, false, err
+	return counter, true, nil
 }
 
 func (c *Counter) fatal(err error) {
@@ -172,20 +188,13 @@ func (c *Counter) save() {
 	c.debug("Saving counter %s", c.Name)
 
 	v := c.GetValue()
-	context, err := GetContext()
-
-	if err != nil {
-		c.fatal(err)
-		return
-	}
-
 	expr, err := json.Marshal(c.rolloverExpression)
 
 	if err != nil {
 		c.fatal(err)
 	}
 
-	_, err = context.conn.Exec("UPDATE _counters SET value = ?, rollover_last = ?, rollover_interval = ?, rollover_expression = ?", v, c.rolloverLast, c.rolloverInterval, expr)
+	err = manager.exec("UPDATE _counters SET value = ?, rollover_last = ?, rollover_interval = ?, rollover_expression = ?", v, c.rolloverLast, c.rolloverInterval, expr)
 
 	if err != nil {
 		c.fatal(err)

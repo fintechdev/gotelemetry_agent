@@ -1,21 +1,14 @@
 package aggregations
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"strings"
 )
 
 func InitStorage() {
-	c, err := GetContext()
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer c.Close()
-
-	if err := c.Exec(`CREATE TABLE IF NOT EXISTS "buckets" (key VARCHAR PRIMARY KEY, value VARCHAR)`); err != nil {
+	if err := manager.exec(`CREATE TABLE IF NOT EXISTS "buckets" (key VARCHAR PRIMARY KEY, value VARCHAR)`); err != nil {
 		panic(err)
 	}
 }
@@ -27,13 +20,11 @@ func WriteStorage(key string, value interface{}) error {
 		return errors.New("Invalid key")
 	}
 
-	c, err := GetContext()
-
-	if err != nil {
-		return err
+	if _, ok := value.(map[string]interface{}); !ok {
+		if _, ok := value.([]interface{}); !ok {
+			return errors.New("Only key/value maps or arrays can be written to structured storage.")
+		}
 	}
-
-	defer c.Close()
 
 	data, err := json.Marshal(value)
 
@@ -41,41 +32,33 @@ func WriteStorage(key string, value interface{}) error {
 		return err
 	}
 
-	return c.Exec(`UPDATE "buckets" SET value = ? WHERE key = ?; INSERT INTO "buckets" (key, value) SELECT ?, ? WHERE changes() = 0`, data, key, key, data)
+	return manager.exec(`UPDATE "buckets" SET value = ? WHERE key = ?; INSERT INTO "buckets" (key, value) SELECT ?, ? WHERE changes() = 0`, data, key, key, data)
 }
 
 func ReadStorage(key string) (map[string]interface{}, error) {
-	c, err := GetContext()
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer c.Close()
-
-	rs, err := c.query(`SELECT value from "buckets" WHERE key = ?`, key)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if rs != nil {
-		defer rs.Close()
-	}
-
 	res := map[string]interface{}{}
 
-	if rs.Next() {
-		var s string
+	err := manager.query(
+		func(rs *sql.Rows) error {
+			if rs.Next() {
+				var s string
 
-		if err = rs.Scan(&s); err != nil {
-			return nil, err
-		}
+				if err := rs.Scan(&s); err != nil {
+					return err
+				}
 
-		if err = json.Unmarshal([]byte(s), &res); err != nil {
-			return nil, err
-		}
-	}
+				if err := json.Unmarshal([]byte(s), &res); err != nil {
+					return err
+				}
+			}
 
-	return res, nil
+			return nil
+		},
+
+		`SELECT value from "buckets" WHERE key = ?`,
+
+		key,
+	)
+
+	return res, err
 }

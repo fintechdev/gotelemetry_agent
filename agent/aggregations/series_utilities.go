@@ -1,7 +1,6 @@
 package aggregations
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
@@ -16,10 +15,9 @@ func validateSeriesName(name string) error {
 	return errors.New(fmt.Sprintf("Invalid series name `%s`. Series names must start with a letter or underscore and can only contain letters, underscores, and digits.", name))
 }
 
-func createSeries(context *Context, name string) error {
+func createSeries(name string) error {
 	result := &Series{
-		context: context,
-		Name:    name,
+		Name: name,
 	}
 
 	if err := result.createTable(); err != nil {
@@ -32,17 +30,15 @@ func createSeries(context *Context, name string) error {
 }
 
 func (s *Series) prepQuery(query string) string {
-	return strings.Replace(query, "??", `"`+s.Name+`"`, -1)
-}
-
-func (s *Series) query(query string, values ...interface{}) (*sql.Rows, error) {
-	return s.context.conn.Query(s.prepQuery(query), values...)
+	return strings.Replace(query, "??", `"`+s.Name+`_series"`, -1)
 }
 
 func (s *Series) exec(query string, values ...interface{}) error {
-	_, err := s.context.conn.Exec(s.prepQuery(query), values...)
+	return manager.exec(s.prepQuery(query), values...)
+}
 
-	return err
+func (s *Series) query(closure queryClosure, query string, values ...interface{}) error {
+	return manager.query(closure, s.prepQuery(query), values...)
 }
 
 func (s *Series) createTable() error {

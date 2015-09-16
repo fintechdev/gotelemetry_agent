@@ -7,6 +7,7 @@ import (
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
+	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
 	"github.com/telemetryapp/gotelemetry_agent/agent/parser"
 	"io/ioutil"
 	"net/http"
@@ -193,7 +194,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 			return errors.New("File " + p.path + " does not exist.")
 		}
 
-		if path.Ext(p.path) == ".asl" {
+		if path.Ext(p.path) == ".asl" || path.Ext(p.path) == ".lua" {
 			p.url = "tpl://" + p.path
 			p.path = ""
 		} else {
@@ -254,6 +255,10 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	} else {
 		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, 0)
+	}
+
+	if p.expiration > 0 && p.expiration < time.Second*60 {
+		p.expiration = time.Second * 60
 	}
 
 	switch c["expiration"].(type) {
@@ -387,7 +392,7 @@ func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
 
 var templateCache = map[string][]parser.Command{}
 
-func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
+func (p *ProcessPlugin) performTemplateTaskASL(j *job.Job) (string, error) {
 	j.Debugf("Retrieving expression from template `%s`", p.templateFile)
 
 	var commands []parser.Command
@@ -426,6 +431,36 @@ func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 	out, err := json.Marshal(config.MapFromYaml(output))
 
 	return string(out), err
+}
+
+func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
+	source, err := ioutil.ReadFile(p.templateFile)
+
+	if err != nil {
+		return "", err
+	}
+
+	output, err := lua.Exec(string(source), j, p.scriptArgs)
+
+	if err != nil {
+		return "", err
+	}
+
+	out, err := json.Marshal(config.MapFromYaml(output))
+
+	return string(out), err
+}
+
+func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
+	if strings.HasSuffix(p.templateFile, ".asl") {
+		return p.performTemplateTaskASL(j)
+	}
+
+	if strings.HasSuffix(p.templateFile, ".lua") {
+		return p.performTemplateTaskLua(j)
+	}
+
+	return "", fmt.Errorf("Unknown script type for file `%s`", p.templateFile)
 }
 
 func (p *ProcessPlugin) performAllTasks(j *job.Job) {

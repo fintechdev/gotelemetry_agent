@@ -1,6 +1,7 @@
 package aggregations
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -45,28 +46,26 @@ func AggregationFunctionTypeFromName(name string) (FunctionType, error) {
 }
 
 type Series struct {
-	context *Context
-	Name    string
+	Name string
 }
 
 var cachedSeries = map[string]*Series{}
 
 var seriesNameRegex = regexp.MustCompile(`^[A-Za-z\-][A-Za-z0-9_.\-]*$`)
 
-func GetSeries(context *Context, name string) (*Series, bool, error) {
+func GetSeries(name string) (*Series, bool, error) {
 	if err := validateSeriesName(name); err != nil {
 		return nil, false, err
 	}
 
 	result := &Series{
-		context: context,
-		Name:    name,
+		Name: name,
 	}
 
 	created := false
 
 	if _, ok := cachedSeries[name]; !ok {
-		if err := createSeries(context, name); err != nil {
+		if err := createSeries(name); err != nil {
 			return nil, false, err
 		}
 
@@ -85,6 +84,32 @@ func GetSeries(context *Context, name string) (*Series, bool, error) {
 	return result, created, nil
 }
 
+func FindSeries(search string) ([]string, error) {
+	res := []string{}
+
+	err := manager.query(
+		func(rs *sql.Rows) error {
+			var name string
+
+			for rs.Next() {
+				if err := rs.Scan(&name); err != nil {
+					return err
+				}
+
+				res = append(res, strings.TrimSuffix(name, "_series"))
+			}
+
+			return rs.Err()
+		},
+
+		"SELECT name FROM sqlite_master WHERE type='table' AND name LIKE ?",
+
+		search+"_series",
+	)
+
+	return res, err
+}
+
 func (s *Series) deleteOldData() {
 	s.exec("DELETE FROM ?? WHERE ts < ?", int(time.Now().Add(-manager.ttl).Unix()))
 }
@@ -99,34 +124,38 @@ func (s *Series) Push(timestamp *time.Time, value float64) error {
 }
 
 func (s *Series) last() (map[string]interface{}, error) {
-	rs, err := s.query("SELECT rowid, ts, value FROM ?? ORDER BY ts DESC LIMIT 1")
+	var result map[string]interface{}
+
+	err := s.query(
+		func(rs *sql.Rows) error {
+			if rs.Next() {
+				var rowid, ts int
+				var value float64
+
+				err := rs.Scan(&rowid, &ts, &value)
+
+				if err != nil {
+					return err
+				}
+
+				result = map[string]interface{}{
+					"rowid": rowid,
+					"ts":    ts,
+					"value": value,
+				}
+			}
+
+			return nil
+		},
+
+		"SELECT rowid, ts, value FROM ?? ORDER BY ts DESC LIMIT 1",
+	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if rs != nil {
-		defer rs.Close()
-	}
-
-	if rs.Next() {
-		var rowid, ts int
-		var value float64
-
-		err := rs.Scan(&rowid, &ts, &value)
-
-		if err != nil {
-			return nil, nil
-		}
-
-		return map[string]interface{}{
-			"rowid": rowid,
-			"ts":    ts,
-			"value": value,
-		}, nil
-	}
-
-	return nil, nil
+	return result, nil
 }
 
 func (s *Series) Last() (map[string]interface{}, error) {
@@ -201,31 +230,30 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 		*end = time.Now()
 	}
 
-	rows, err := s.query("SELECT COALESCE(CAST("+operation+" AS FLOAT), 0.0) AS result FROM ?? WHERE ts BETWEEN ? AND ?", *start, *end)
-
-	if err != nil {
-		return 0.0, err
-	}
-
-	if rows != nil {
-		defer rows.Close()
-	}
-
 	var result = 0.0
 
-	if rows.Next() {
-		if err := rows.Scan(&result); err != nil {
-			return 0.0, err
-		}
+	err := s.query(
+		func(rs *sql.Rows) error {
+			if rs.Next() {
+				if err := rs.Scan(&result); err != nil {
+					return err
+				}
 
-		if functionType == StdDev {
-			return math.Sqrt(result), nil
-		} else {
-			return result, nil
-		}
-	}
+				if functionType == StdDev {
+					result = math.Sqrt(result)
+				}
+			}
 
-	return 0.0, nil
+			return nil
+		},
+
+		"SELECT COALESCE(CAST("+operation+" AS FLOAT), 0.0) AS result FROM ?? WHERE ts BETWEEN ? AND ?",
+
+		(*start).Unix(),
+		(*end).Unix(),
+	)
+
+	return result, err
 }
 
 func (s *Series) Aggregate(functionType FunctionType, interval, count int, endTimePtr *time.Time) (interface{}, error) {
@@ -260,31 +288,37 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int, endTi
 
 	start := int(endTime.Add(-time.Duration(interval*count)*time.Second).Unix()) / interval * interval
 
-	rs, err := s.query("SELECT (ts - ?) / ? * ? AS interval, "+operation+"(value) AS result FROM ?? WHERE ts >= ? GROUP BY interval", start, interval, interval, start)
+	rows := map[int]float64{}
+
+	err := s.query(
+
+		func(rs *sql.Rows) error {
+			for rs.Next() {
+				var index int
+				var value float64
+
+				err := rs.Scan(&index, &value)
+
+				if err != nil {
+					return err
+				}
+
+				rows[index] = value
+			}
+
+			return nil
+		},
+
+		"SELECT (ts - ?) / ? * ? AS interval, "+operation+"(value) AS result FROM ?? WHERE ts >= ? GROUP BY interval",
+
+		start,
+		interval,
+		interval,
+		start,
+	)
 
 	if err != nil && err != io.EOF {
 		return nil, err
-	}
-
-	if rs != nil {
-		defer rs.Close()
-	}
-
-	rows := map[int]float64{}
-
-	if err != io.EOF {
-		for rs.Next() {
-			var index int
-			var value float64
-
-			err := rs.Scan(&index, &value)
-
-			if err != nil {
-				return nil, err
-			}
-
-			rows[index] = value
-		}
 	}
 
 	output := []interface{}{}
@@ -304,31 +338,34 @@ func (s *Series) Aggregate(functionType FunctionType, interval, count int, endTi
 }
 
 func (s *Series) Items(count int) (interface{}, error) {
-	rs, err := s.query("SELECT ts, value FROM ?? WHERE rowid IN (SELECT rowid FROM ?? ORDER BY ts DESC LIMIT ?) ORDER BY ts", count)
+	output := []interface{}{}
+
+	err := s.query(
+
+		func(rs *sql.Rows) error {
+			for rs.Next() {
+				var ts int
+				var value float64
+
+				err := rs.Scan(&ts, &value)
+
+				if err != nil {
+					return err
+				}
+
+				output = append(output, map[string]interface{}{"ts": ts, "value": value})
+			}
+
+			return nil
+		},
+
+		"SELECT ts, value FROM ?? WHERE rowid IN (SELECT rowid FROM ?? ORDER BY ts DESC LIMIT ?) ORDER BY ts",
+
+		count,
+	)
 
 	if err != nil && err != io.EOF {
 		return nil, err
-	}
-
-	if rs != nil {
-		defer rs.Close()
-	}
-
-	output := []interface{}{}
-
-	if err != io.EOF {
-		for rs.Next() {
-			var ts int
-			var value float64
-
-			err := rs.Scan(&ts, &value)
-
-			if err != nil {
-				return err, nil
-			}
-
-			output = append(output, map[string]interface{}{"ts": ts, "value": value})
-		}
 	}
 
 	return output, nil

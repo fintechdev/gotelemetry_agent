@@ -68,27 +68,13 @@ func setupUDPListener(listen string, errorChannel chan error) {
 
 	errorChannel <- gotelemetry.NewLogError("Graphite => Listening for UDP plaintext messages on %s", conn.LocalAddr())
 
-	context, err := aggregations.GetContext()
-
-	defer context.Close()
-
-	if err != nil {
-		errorChannel <- gotelemetry.NewErrorWithFormat(
-			500, "Graphite => [UDP] Unable to obtain data context: %s",
-			nil,
-			err.Error(),
-		)
-
-		return
-	}
-
 	buf := make([]byte, 2048)
 
 	for {
 		if n, addr, err := conn.ReadFromUDP(buf); err == nil {
 			remoteAddress := addr.String() + ", UDP"
 
-			if err := parseRequest(context, remoteAddress, string(buf[0:n]), errorChannel); err != nil {
+			if err := parseRequest(remoteAddress, string(buf[0:n]), errorChannel); err != nil {
 				errorChannel <- gotelemetry.NewErrorWithFormat(400, "Graphite => [%s, UDP] Error %s while receving data", nil, addr, err)
 			}
 		} else {
@@ -99,7 +85,7 @@ func setupUDPListener(listen string, errorChannel chan error) {
 
 var splitter = regexp.MustCompile(" +")
 
-func parseTraditionalRequest(context *aggregations.Context, remoteAddress string, line []string, errorChannel chan error) error {
+func parseTraditionalRequest(remoteAddress string, line []string, errorChannel chan error) error {
 	seriesName := line[0]
 
 	value, err := strconv.ParseFloat(line[1], 64)
@@ -126,7 +112,7 @@ func parseTraditionalRequest(context *aggregations.Context, remoteAddress string
 		)
 	}
 
-	series, isCreated, err := aggregations.GetSeries(context, seriesName)
+	series, isCreated, err := aggregations.GetSeries(seriesName)
 
 	if err != nil {
 		return gotelemetry.NewErrorWithFormat(
@@ -167,7 +153,7 @@ func parseTraditionalRequest(context *aggregations.Context, remoteAddress string
 	return nil
 }
 
-func parseCounterRequest(context *aggregations.Context, remoteAddress string, line []string, errorChannel chan error) error {
+func parseCounterRequest(remoteAddress string, line []string, errorChannel chan error) error {
 	counterName := line[0]
 	valueString := line[1]
 
@@ -189,7 +175,7 @@ func parseCounterRequest(context *aggregations.Context, remoteAddress string, li
 		)
 	}
 
-	counter, isCreated, err := aggregations.GetCounter(context, counterName)
+	counter, isCreated, err := aggregations.GetCounter(counterName)
 
 	if isCreated {
 		errorChannel <- gotelemetry.NewLogError("Graphite => Started receiving graphite data for '%s'", counterName)
@@ -214,7 +200,7 @@ func parseCounterRequest(context *aggregations.Context, remoteAddress string, li
 	return nil
 }
 
-func parseRequest(context *aggregations.Context, remoteAddress, request string, errorChannel chan error) error {
+func parseRequest(remoteAddress, request string, errorChannel chan error) error {
 	request = strings.TrimSpace(request)
 
 	if request == "" {
@@ -225,10 +211,10 @@ func parseRequest(context *aggregations.Context, remoteAddress, request string, 
 
 	switch len(line) {
 	case 2:
-		return parseCounterRequest(context, remoteAddress, line, errorChannel)
+		return parseCounterRequest(remoteAddress, line, errorChannel)
 
 	case 3:
-		return parseTraditionalRequest(context, remoteAddress, line, errorChannel)
+		return parseTraditionalRequest(remoteAddress, line, errorChannel)
 
 	default:
 		return gotelemetry.NewErrorWithFormat(
@@ -249,25 +235,8 @@ func handleTCPRequest(conn net.Conn, errorChannel chan error, closeOnError bool)
 
 	r := bufio.NewScanner(conn)
 
-	context, err := aggregations.GetContext()
-
-	defer context.Close()
-
-	if err != nil {
-		errorChannel <- gotelemetry.NewErrorWithFormat(
-			500, "Graphite => [%s] Unable to obtain data context: %s",
-			nil,
-			remoteAddress,
-			err.Error(),
-		)
-
-		if closeOnError {
-			return
-		}
-	}
-
 	for r.Scan() {
-		if err := parseRequest(context, remoteAddress, r.Text(), errorChannel); err != nil {
+		if err := parseRequest(remoteAddress, r.Text(), errorChannel); err != nil {
 			errorChannel <- err
 
 			if closeOnError {

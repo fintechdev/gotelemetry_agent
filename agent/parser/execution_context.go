@@ -2,7 +2,6 @@ package parser
 
 import (
 	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 )
 
 type executionContextNotificationProvider interface {
@@ -14,7 +13,6 @@ type executionContextJobSpawner interface {
 }
 
 type executionContext struct {
-	aggregationContext   *aggregations.Context
 	variables            map[string]interface{}
 	arguments            map[string]interface{}
 	output               map[string]interface{}
@@ -22,9 +20,8 @@ type executionContext struct {
 	jobSpawner           executionContextJobSpawner
 }
 
-func newExecutionContext(ac *aggregations.Context, np executionContextNotificationProvider, js executionContextJobSpawner, args map[string]interface{}) *executionContext {
+func newExecutionContext(np executionContextNotificationProvider, js executionContextJobSpawner, args map[string]interface{}) *executionContext {
 	return &executionContext{
-		aggregationContext:   ac,
 		variables:            map[string]interface{}{},
 		arguments:            args,
 		output:               map[string]interface{}{},
