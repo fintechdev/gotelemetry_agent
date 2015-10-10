@@ -59,7 +59,7 @@ $(BUILD_LIST_WIN): %_build_win: %_fmt
 
 $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 	@echo "Building Linux AMD64..."
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-amd64/usr/bin/telemetry_agent
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) --ldflags '-extldflags "-static"' -tags release -o bin/linux-amd64/usr/bin/telemetry_agent
 	@echo "Building complete."
 	@echo Building DEB and RPM files
 	@rm -Rf /tmp/telemetry_agent
@@ -74,7 +74,7 @@ $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 
 $(BUILD_LIST_LINUX_386): %_build_linux_386: %_fmt
 	@echo "Building Linux 386..."
-	@GOOS=linux GOARCH=386 CGO_ENABLED=1 CC="gcc" $(GOBUILD) -tags release -o bin/linux-386/usr/bin/telemetry_agent
+	@GOOS=linux GOARCH=386 CGO_ENABLED=1 CC="gcc" $(GOBUILD) --ldflags '-extldflags "-static"' -tags release -o bin/linux-386/usr/bin/telemetry_agent
 	@echo "Building complete."
 	@echo Building DEB and RPM files
 	@rm -Rf /tmp/telemetry_agent
