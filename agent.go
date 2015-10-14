@@ -64,7 +64,7 @@ func main() {
 
 Done:
 
-	log.Println("No more jobs to run; exiting.\n")
+	log.Println("No more jobs to run; exiting.")
 }
 
 func run() {

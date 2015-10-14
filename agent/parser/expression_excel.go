@@ -95,7 +95,7 @@ func (x *excelExpression) cells() expression {
 					result[index] = newStringExpression(cell.String(), x.l, x.p)
 
 				default:
-					return nil, errors.New(fmt.Sprintf("Unable to handle value of type %s", cell.Type()))
+					return nil, errors.New(fmt.Sprintf("Unable to handle value of type %d", cell.Type()))
 				}
 			}
 

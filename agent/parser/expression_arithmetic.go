@@ -101,7 +101,6 @@ func (a *arithmeticExpression) evaluate(c *executionContext) (interface{}, error
 
 	default:
 		panic("Unknown operator " + a.operator.String())
-		return 0, nil
 	}
 }
 

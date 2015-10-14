@@ -139,7 +139,7 @@ func (p *ExcelPlugin) performAllTasks(j *job.Job) {
 			data = append(data, c.String())
 
 		default:
-			j.ReportError(errors.New(fmt.Sprintf("Unable to handle value of type %s", c.Type())))
+			j.ReportError(errors.New(fmt.Sprintf("Unable to handle value of type %d", c.Type())))
 		}
 	}
 

@@ -42,5 +42,4 @@ func (w *whileLoopCommand) execute(c *executionContext) error {
 		}
 	}
 
-	return nil
 }

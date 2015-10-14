@@ -146,7 +146,7 @@ func (e *callableExpression) call(c *executionContext, arguments map[string]inte
 				}
 
 			default:
-				return nil, errors.New(fmt.Sprintf("%s: unknown argument type `%s` for argument `%s` on line %d:%d", e, argumentType, index, e.l, e.p))
+				return nil, errors.New(fmt.Sprintf("%s: unknown argument type `%s` on line %d:%d", e, index, e.l, e.p))
 			}
 		} else {
 			if !argumentType.isOptional() {

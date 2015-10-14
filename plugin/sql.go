@@ -178,7 +178,7 @@ func (p *SQLPlugin) performAllTasks(j *job.Job) {
 		for index, col := range row {
 			c := *(col.(*interface{}))
 
-			j.Logf("%#T", c)
+			j.Logf("%T", c)
 
 			switch c.(type) {
 			case []uint8:

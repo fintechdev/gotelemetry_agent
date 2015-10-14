@@ -96,7 +96,7 @@ func init() {
 		CLIConfig.LogLevel = gotelemetry.LogLevelError
 
 	default:
-		log.Fatalf("Invalid verbosity level `%s`", logLevel)
+		log.Fatalf("Invalid verbosity level `%s`", *logLevel)
 	}
 
 	rx, err := regexp.Compile(*filter)

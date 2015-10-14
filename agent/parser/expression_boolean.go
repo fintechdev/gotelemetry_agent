@@ -63,5 +63,5 @@ func (b *booleanExpression) position() int {
 }
 
 func (b *booleanExpression) String() string {
-	return fmt.Sprintf("Boolean(%f)", b.value)
+	return fmt.Sprintf("Boolean(%t)", b.value)
 }

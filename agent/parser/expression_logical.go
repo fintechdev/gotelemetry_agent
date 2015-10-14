@@ -164,7 +164,6 @@ func (x *logicalExpression) evaluate(c *executionContext) (interface{}, error) {
 
 	default:
 		panic("Unknown operator " + x.operator.String())
-		return 0, nil
 	}
 }
 

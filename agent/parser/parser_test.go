@@ -189,7 +189,7 @@ func TestSeries(t *testing.T) {
 
 				for _, rr := range r {
 					if index, ok := rr.(float64); !ok {
-						t.Errorf("Value %d in returned data is not a float.", index)
+						t.Errorf("Value %g in returned data is not a float.", index)
 						return false
 					}
 				}
