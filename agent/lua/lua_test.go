@@ -117,7 +117,7 @@ func TestRunScript(t *testing.T) {
 			{"Run a script", `output.test = "123"`, map[string]interface{}{"test": "123"}},
 			{"Attempt to overwrite a global", `output = "123"`, shouldError},
 			{"Access args", `output.out = args.test`, map[string]interface{}{"out": 123}},
-			{"Output an array", `output.out = { 1 , 2 , 3 }`, map[string]interface{}{"out": []interface{}{1, 2, 3}}},
+			{"Output an array", `output.out = { 1 , 2 , 3 }`, map[string]interface{}{"out": map[string]interface{}{"1": 1, "2": 2, "3": 3}}},
 		},
 	)
 }
