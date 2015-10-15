@@ -21,6 +21,8 @@ var completionChannel chan bool
 func main() {
 	var err error
 
+	config.Init()
+
 	configFile, err = config.NewConfigFile()
 
 	if err != nil {

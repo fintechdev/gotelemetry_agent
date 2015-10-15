@@ -39,7 +39,7 @@ func banner() {
 	println()
 }
 
-func init() {
+func Init() {
 	gotelemetry.UserAgentString = "Telemetry Agent v " + AgentVersion
 	banner()
 
