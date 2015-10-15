@@ -1,7 +1,7 @@
 package lua
 
 import (
-	"github.com/Shopify/go-lua"
+	"github.com/mtabini/go-lua"
 	"github.com/telemetryapp/gotelemetry"
 	"time"
 )

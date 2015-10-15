@@ -2,7 +2,7 @@ package lua
 
 import (
 	"encoding/json"
-	"github.com/Shopify/go-lua"
+	"github.com/mtabini/go-lua"
 	"github.com/mtabini/goluago/util"
 )
 

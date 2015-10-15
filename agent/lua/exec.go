@@ -2,7 +2,7 @@ package lua
 
 import (
 	"errors"
-	"github.com/Shopify/go-lua"
+	"github.com/mtabini/go-lua"
 	"github.com/mtabini/goluago"
 	"github.com/mtabini/goluago/util"
 )

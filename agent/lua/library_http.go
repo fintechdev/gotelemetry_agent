@@ -2,7 +2,7 @@ package lua
 
 import (
 	"bytes"
-	"github.com/Shopify/go-lua"
+	"github.com/mtabini/go-lua"
 	"github.com/mtabini/goluago/util"
 	"io/ioutil"
 	"net/http"
