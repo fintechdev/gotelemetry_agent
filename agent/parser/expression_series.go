@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/araddon/dateparse"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"io"
 	"time"
 )
@@ -200,13 +201,13 @@ func (s *seriesExpression) trim() expression {
 			}
 
 			if ok1 {
-				d, err := time.ParseDuration(since)
+				d, err := config.ParseTimeInterval(since)
 
 				if err != nil {
 					return nil, err
 				}
 
-				return nil, s.series.TrimSince(time.Now().Add(d))
+				return nil, s.series.TrimSince(time.Now().Sub(d))
 			}
 
 			if ok2 {
