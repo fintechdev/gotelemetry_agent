@@ -29,7 +29,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 					panic("unreachable")
 				}
 
-				since := time.Unix(int64(int(time.Now().Unix())-int(duration/time.Second)), 0)
+				since := time.Now().Add(-duration)
 
 				if err = s.TrimSince(since); err != nil {
 					lua.Errorf(l, "%s", err)
