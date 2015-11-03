@@ -207,7 +207,7 @@ func (s *seriesExpression) trim() expression {
 					return nil, err
 				}
 
-				return nil, s.series.TrimSince(time.Now().Sub(d))
+				return nil, s.series.TrimSince(time.Now().Add(-d))
 			}
 
 			if ok2 {

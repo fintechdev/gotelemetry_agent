@@ -142,7 +142,7 @@ func pushSeries(l *lua.State, name string) {
 	series, _, err := aggregations.GetSeries(name)
 
 	if err != nil {
-		lua.Errorf(l, "%s", err)
+		lua.Errorf(l, "%s", err.Error())
 		panic("unreachable")
 	}
 

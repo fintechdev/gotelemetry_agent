@@ -213,3 +213,29 @@ func TestNotifications(t *testing.T) {
 		},
 	)
 }
+
+func TestErrors(t *testing.T) {
+
+	source := `
+
+	local a;
+
+	invalid code
+
+	`
+
+	source2 := `
+
+	local st = require("telemetry/storage")
+	st.series(11)
+
+	`
+
+	runTests(
+		t,
+		[]test{
+			{"Syntax errors", source, shouldError},
+			{"Runtime errors", source2, shouldError},
+		},
+	)
+}

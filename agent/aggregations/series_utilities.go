@@ -34,10 +34,18 @@ func (s *Series) prepQuery(query string) string {
 }
 
 func (s *Series) exec(query string, values ...interface{}) error {
+	if manager == nil {
+		return errors.New("The storage subsystem has not been initialized. Please specify a storage location in your configuration file.")
+	}
+
 	return manager.exec(s.prepQuery(query), values...)
 }
 
 func (s *Series) query(closure queryClosure, query string, values ...interface{}) error {
+	if manager == nil {
+		return errors.New("The storage subsystem has not been initialized. Please specify a storage location in your configuration file.")
+	}
+
 	return manager.query(closure, s.prepQuery(query), values...)
 }
 
