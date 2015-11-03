@@ -2,10 +2,11 @@ package lua
 
 import (
 	"fmt"
-	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"testing"
 	"time"
+
+	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 )
 
 type expectsError bool
@@ -157,6 +158,9 @@ func TestSeries(t *testing.T) {
 			{"Series", `local st = require("telemetry/storage"); st.series("test")`, shouldNotError},
 			{"Series name", `local st = require("telemetry/storage"); output.out = st.series("test").name()`, map[string]interface{}{"out": "test"}},
 			{"Series find", `local st = require("telemetry/storage"); st.series("tab1"); st.series("tab2"); ss = st.series_find("tab%"); count = 0; for _ in pairs(ss) do count = count + 1 end; output.out = count`, map[string]interface{}{"out": 2}},
+			{"Series trim since by timestamp", `local st = require("telemetry/storage"); st.series("test").trimSince(os.time() - (60 * 2))`, shouldNotError},
+			{"Series trim since by duration", `local st = require("telemetry/storage"); st.series("test").trimSince("2m")`, shouldNotError},
+			{"Series trim by count", `local st = require("telemetry/storage"); st.series("test").trimCount(30)`, shouldNotError},
 			{"Series push", `local st = require("telemetry/storage"); st.series("test").push(123)`, shouldNotError},
 			{"Series pop", `local st = require("telemetry/storage"); s = st.series("test"); s.push(125, "` + tss + `"); output.out = s.pop(true)`, map[string]interface{}{"out": map[string]interface{}{"value": 125, "ts": ts}}},
 			{"Series last", `local st = require("telemetry/storage"); s = st.series("test"); s.push(126, "` + tss + `"); output.out = s.last()`, map[string]interface{}{"out": map[string]interface{}{"value": 126, "ts": ts}}},

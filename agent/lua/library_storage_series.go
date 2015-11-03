@@ -1,10 +1,12 @@
 package lua
 
 import (
+	"time"
+
 	"github.com/mtabini/go-lua"
 	"github.com/mtabini/goluago/util"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"time"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
 var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
@@ -13,6 +15,52 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 			util.DeepPush(l, s.Name)
 
 			return 1
+		}
+	},
+
+	"trimSince": func(s *aggregations.Series) lua.Function {
+		return func(l *lua.State) int {
+
+			if l.TypeOf(1) == lua.TypeString {
+				duration, err := config.ParseTimeInterval(lua.CheckString(l, 1))
+
+				if err != nil {
+					lua.Errorf(l, "%s", err)
+					panic("unreachable")
+				}
+
+				since := time.Now().Add(-duration)
+
+				if err = s.TrimSince(since); err != nil {
+					lua.Errorf(l, "%s", err)
+					panic("unreachable")
+				}
+
+				return 0
+			}
+
+			err := s.TrimSince(time.Unix(int64(lua.CheckInteger(l, 1)), 0))
+
+			if err != nil {
+				lua.Errorf(l, "%s", err)
+				panic("unreachable")
+			}
+
+			return 0
+		}
+	},
+
+	"trimCount": func(s *aggregations.Series) lua.Function {
+		return func(l *lua.State) int {
+
+			count := lua.CheckInteger(l, 1)
+
+			if err := s.TrimCount(count); err != nil {
+				lua.Errorf(l, "%s", err)
+				panic("unreachable")
+			}
+
+			return 0
 		}
 	},
 
