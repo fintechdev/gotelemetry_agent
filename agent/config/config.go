@@ -10,6 +10,7 @@ import (
 
 type CLIConfigType struct {
 	APIURL              string
+	ChannelTag          string
 	ConfigFileLocation  string
 	LogLevel            gotelemetry.LogLevel
 	Filter              *regexp.Regexp
@@ -56,11 +57,12 @@ func Init() {
 	once := app.Command("once", "Run all jobs exactly once and exit.")
 
 	pipe := app.Command("pipe", "Accept a Rails-style HTTP PATCH Telemetry payload from stdin, send it to the API, and then exit.")
+	pipe.Flag("channel", "The tag of the channel to which the update is sent.").StringVar(&CLIConfig.ChannelTag)
 	pipe.Flag("jsonpatch", "With --pipe, submit the package as a JSON-Patch request instead. Ignored otherwise.").BoolVar(&CLIConfig.UseJSONPatch)
 	pipe.Flag("post", "With --pipe, submit the package as a POST request instead. Ignored otherwise.").BoolVar(&CLIConfig.UsePOST)
 
 	notify := app.Command("notify", "Send a channel notification.")
-	notify.Flag("channel", "The ID of the channel to which the notification is sent. Either channel or flow is required.").StringVar(&CLIConfig.NotificationChannel)
+	notify.Flag("channel", "The tag of the channel to which the notification is sent. Either channel or flow is required.").StringVar(&CLIConfig.NotificationChannel)
 	notify.Flag("flow", "The Tag of the Flow to whose channel the notification is sent. Either channel or flow is required.").StringVar(&CLIConfig.NotificationFlow)
 	notify.Flag("title", "The title of the notification.").Required().StringVar(&CLIConfig.Notification.Title)
 	notify.Flag("message", "The message to be displayed in the notification.").Required().StringVar(&CLIConfig.Notification.Message)

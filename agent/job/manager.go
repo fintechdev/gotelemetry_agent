@@ -8,7 +8,7 @@ import (
 
 type JobManager struct {
 	credentials          gotelemetry.Credentials
-	accountStream        *gotelemetry.BatchStream
+	accountStreams       map[string]*gotelemetry.BatchStream
 	jobs                 map[string]*Job
 	completionChannel    chan bool
 	jobCompletionChannel chan string
@@ -58,13 +58,7 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 		errorChannel <- gotelemetry.NewLogError("Submission interval set to %ds", submissionInterval/time.Second)
 	}
 
-	accountStream, err := gotelemetry.NewBatchStream(credentials, submissionInterval, errorChannel)
-
-	if err != nil {
-		return nil, err
-	}
-
-	result.accountStream = accountStream
+	result.accountStreams = map[string]*gotelemetry.BatchStream{}
 
 	for _, jobDescription := range jobConfig.Jobs() {
 		jobId := jobDescription.ID()
@@ -79,6 +73,22 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 
 		if config.CLIConfig.ForceRunOnce {
 			delete(jobDescription, "refresh")
+		}
+
+		channelTag := jobDescription.ChannelTag()
+
+		accountStream, ok := result.accountStreams[channelTag]
+
+		if !ok {
+			var err error
+
+			accountStream, err = gotelemetry.NewBatchStream(credentials, channelTag, submissionInterval, errorChannel)
+
+			if err != nil {
+				return nil, err
+			}
+
+			result.accountStreams[channelTag] = accountStream
 		}
 
 		job, err := createJob(result, credentials, accountStream, errorChannel, jobDescription, result.jobCompletionChannel, false)
@@ -119,7 +129,9 @@ func (m *JobManager) monitorDoneChannel() {
 			delete(m.jobs, id)
 
 			if len(m.jobs) == 0 {
-				m.accountStream.Flush()
+				for _, accountStream := range m.accountStreams {
+					accountStream.Flush()
+				}
 
 				m.completionChannel <- true
 				return

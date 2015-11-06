@@ -60,7 +60,7 @@ func ProcessPipeRequest(configFile *config.ConfigFile, errorChannel chan error, 
 		b.SetData(tag, update)
 	}
 
-	err = b.Publish(credentials, submissionType)
+	err = b.Publish(credentials, configFile.ChannelTag(), submissionType)
 
 	if err != nil {
 		errorChannel <- err

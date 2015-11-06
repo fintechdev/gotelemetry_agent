@@ -37,6 +37,14 @@ func (j Job) Plugin() string {
 	return "com.telemetryapp.process"
 }
 
+func (j Job) ChannelTag() string {
+	if result, ok := j["channel_tag"].(string); ok {
+		return result
+	}
+
+	return ""
+}
+
 type ServerConfig struct {
 	APIToken              string      `yaml:"api_token" toml:"api_token"`
 	RawSubmissionInterval interface{} `yaml:"submission_interval" toml:"submission_interval"`
@@ -56,6 +64,7 @@ type GraphiteConfig struct {
 type ConfigInterface interface {
 	APIURL() string
 	APIToken() (string, error)
+	ChannelTag() string
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
 	SubmissionInterval() time.Duration
@@ -117,6 +126,10 @@ func (c *ConfigFile) APIToken() (string, error) {
 
 func (c *ConfigFile) APIURL() string {
 	return CLIConfig.APIURL
+}
+
+func (c *ConfigFile) ChannelTag() string {
+	return CLIConfig.ChannelTag
 }
 
 func (c *ConfigFile) DataConfig() DataConfig {
