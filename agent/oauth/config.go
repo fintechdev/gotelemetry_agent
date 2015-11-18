@@ -33,7 +33,7 @@ func configForEntryWithName(name string) (*oauth2.Config, error) {
 			AuthURL:  entry.AuthorizationURL,
 			TokenURL: entry.TokenURL,
 		},
-		RedirectURL: "http://www.example.org/oauth2",
+		RedirectURL: "https://qa-www.telemetryapp.com/oauth_response",
 	}
 
 	return res, nil
@@ -94,8 +94,6 @@ func RunCommand(cfg config.CLIConfigType, errorChannel chan error, completionCha
 			errorChannel <- err
 			break
 		}
-
-		log.Printf("%#v", token)
 
 		if err := writeTokenForEntryWithName(cfg.OAuthName, token); err != nil {
 			errorChannel <- err
