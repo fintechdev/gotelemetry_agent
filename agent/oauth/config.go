@@ -7,7 +7,6 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"golang.org/x/oauth2"
-	"log"
 )
 
 var entries map[string]config.OAuthConfigEntry
