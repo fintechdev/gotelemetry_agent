@@ -8,6 +8,18 @@ import (
 	"regexp"
 )
 
+type OAuthCommand string
+
+var OAuthCommands = struct {
+	None     OAuthCommand
+	Request  OAuthCommand
+	Exchange OAuthCommand
+}{
+	None:     "",
+	Request:  "request",
+	Exchange: "exchange",
+}
+
 type CLIConfigType struct {
 	APIURL              string
 	ChannelTag          string
@@ -24,9 +36,12 @@ type CLIConfigType struct {
 	Notification        gotelemetry.Notification
 	WantsFunctionHelp   bool
 	FunctionHelpName    string
+	OAuthCommand        OAuthCommand
+	OAuthName           string
+	OAuthCode           string
 }
 
-const AgentVersion = "2.2.5"
+const AgentVersion = "2.3.0"
 
 var CLIConfig CLIConfigType
 
@@ -70,6 +85,13 @@ func Init() {
 	notify.Flag("duration", "The amount of seconds for which the notification must be displayed.").Default("1").IntVar(&CLIConfig.Notification.Duration)
 	notify.Flag("sound", "A URL to a notification sound (use `default` for Telemetry's default notification sound).").StringVar(&CLIConfig.Notification.SoundURL)
 
+	oauthRequest := app.Command("oauth-request", "Request an oAuth authorization token")
+	oauthRequest.Flag("name", "The name of the oAuth entry").Short('n').StringVar(&CLIConfig.OAuthName)
+
+	oauthExchange := app.Command("oauth-exchange", "Exchange an oAuth authorization code")
+	oauthExchange.Flag("name", "The name of the oAuth entry").Short('n').StringVar(&CLIConfig.OAuthName)
+	oauthExchange.Flag("code", "The authorization code received from the provider").Short('c').StringVar(&CLIConfig.OAuthCode)
+
 	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.")
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
@@ -81,6 +103,12 @@ func Init() {
 
 	case notify.FullCommand():
 		CLIConfig.IsNotifying = true
+
+	case oauthRequest.FullCommand():
+		CLIConfig.OAuthCommand = OAuthCommands.Request
+
+	case oauthExchange.FullCommand():
+		CLIConfig.OAuthCommand = OAuthCommands.Exchange
 
 	case run.FullCommand():
 	default:

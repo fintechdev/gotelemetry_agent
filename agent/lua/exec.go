@@ -19,6 +19,7 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 	lua.OpenLibraries(l)
 	goluago.Open(l)
 
+	openOAuthLibrary(l)
 	openJSONLibrary(l)
 	openHTTPLibrary(l)
 	openStorageLibrary(l)

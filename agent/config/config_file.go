@@ -61,6 +61,15 @@ type GraphiteConfig struct {
 	UDPListenPort string `yaml:"listen_udp" toml:"listen_udp"`
 }
 
+type OAuthConfigEntry struct {
+	Version          int      `yaml:"version" toml:"version"`
+	ClientID         string   `yaml:"client_id" toml:"client_id"`
+	ClientSecret     string   `yaml:"client_secret" toml:"client_secret"`
+	AuthorizationURL string   `yaml:"authorization_url" toml:"authorization_url"`
+	TokenURL         string   `yaml:"token_url" toml:"token_url"`
+	Scopes           []string `yaml:"scopes" toml:"scopes"`
+}
+
 type ConfigInterface interface {
 	APIURL() string
 	APIToken() (string, error)
@@ -68,17 +77,21 @@ type ConfigInterface interface {
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
 	SubmissionInterval() time.Duration
+	OAuthConfig() map[string]OAuthConfigEntry
 	Jobs() []Job
 }
 
 type ConfigFile struct {
-	Server    ServerConfig   `yaml:"server" toml:"server"`
-	Graphite  GraphiteConfig `yaml:"graphite" toml:"graphite"`
-	Data      DataConfig     `yaml:"data" toml:"data"`
-	Listen    string         `yaml:"listen" toml:"listen"`
-	JobsField []Job          `yaml:"jobs" toml:"jobs"`
-	FlowField []Job          `yaml:"flows" toml:"flow"`
+	Server    ServerConfig                `yaml:"server" toml:"server"`
+	Graphite  GraphiteConfig              `yaml:"graphite" toml:"graphite"`
+	Data      DataConfig                  `yaml:"data" toml:"data"`
+	Listen    string                      `yaml:"listen" toml:"listen"`
+	JobsField []Job                       `yaml:"jobs" toml:"jobs"`
+	FlowField []Job                       `yaml:"flows" toml:"flow"`
+	OAuth     map[string]OAuthConfigEntry `yaml:"oauth" toml:"oauth"`
 }
+
+var _ ConfigInterface = &ConfigFile{}
 
 func NewConfigFile() (*ConfigFile, error) {
 	source, err := ioutil.ReadFile(CLIConfig.ConfigFileLocation)
@@ -158,4 +171,8 @@ func (c *ConfigFile) SubmissionInterval() time.Duration {
 
 func (c *ConfigFile) Jobs() []Job {
 	return c.JobsField
+}
+
+func (c *ConfigFile) OAuthConfig() map[string]OAuthConfigEntry {
+	return c.OAuth
 }
