@@ -7,9 +7,11 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
+	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
 	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
 )
@@ -18,25 +20,16 @@ var configFile *config.ConfigFile
 var errorChannel chan error
 var completionChannel chan bool
 
-func main() {
-	var err error
-
-	config.Init()
-
-	configFile, err = config.NewConfigFile()
-
-	if err != nil {
-		log.Fatalf("Initialization error: %s", err)
-	}
-
-	errorChannel = make(chan error, 1)
-	completionChannel = make(chan bool, 1)
-
-	go run()
+func handleErrors(errorChannel chan error, wg *sync.WaitGroup) {
+	defer wg.Done()
 
 	for {
 		select {
-		case err := <-errorChannel:
+		case err, ok := <-errorChannel:
+			if !ok {
+				return
+			}
+
 			if e, ok := err.(*gotelemetry.Error); ok {
 				logLevel := e.GetLogLevel()
 
@@ -58,13 +51,45 @@ func main() {
 			}
 
 			log.Printf("Error: %s", err.Error())
+		}
+	}
+}
 
+func main() {
+	var err error
+
+	config.Init()
+
+	configFile, err = config.NewConfigFile()
+
+	if err != nil {
+		log.Fatalf("Initialization error: %s", err)
+	}
+
+	errorChannel = make(chan error, 0)
+	completionChannel = make(chan bool, 1)
+
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+
+	go handleErrors(errorChannel, wg)
+	go run()
+
+	for {
+		select {
 		case <-completionChannel:
 			goto Done
 		}
 	}
 
 Done:
+
+	for len(errorChannel) > 0 {
+	}
+
+	close(errorChannel)
+	wg.Wait()
 
 	log.Println("No more jobs to run; exiting.")
 }
@@ -78,6 +103,8 @@ func run() {
 		log.Fatalf("Initialization error: %s", err)
 	}
 
+	oauth.Init(configFile.OAuthConfig())
+
 	if config.CLIConfig.IsPiping {
 		payload, err := ioutil.ReadAll(os.Stdin)
 
@@ -88,6 +115,8 @@ func run() {
 		agent.ProcessPipeRequest(configFile, errorChannel, completionChannel, payload)
 	} else if config.CLIConfig.IsNotifying {
 		agent.ProcessNotificationRequest(configFile, errorChannel, completionChannel, config.CLIConfig.NotificationChannel, config.CLIConfig.NotificationFlow, config.CLIConfig.Notification)
+	} else if config.CLIConfig.OAuthCommand != config.OAuthCommands.None {
+		oauth.RunCommand(config.CLIConfig, errorChannel, completionChannel)
 	} else {
 		_, err := job.NewJobManager(configFile, errorChannel, completionChannel)
 
