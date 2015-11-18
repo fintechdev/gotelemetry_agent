@@ -41,7 +41,7 @@ type CLIConfigType struct {
 	OAuthCode           string
 }
 
-const AgentVersion = "2.2.5"
+const AgentVersion = "2.3.0"
 
 var CLIConfig CLIConfigType
 
