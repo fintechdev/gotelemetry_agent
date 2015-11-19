@@ -90,7 +90,7 @@ func Init() {
 
 	oauthExchange := app.Command("oauth-exchange", "Exchange an oAuth authorization code")
 	oauthExchange.Flag("name", "The name of the oAuth entry").Short('n').StringVar(&CLIConfig.OAuthName)
-	oauthExchange.Flag("code", "The authorization code received from the provider").Short('c').StringVar(&CLIConfig.OAuthCode)
+	oauthExchange.Flag("code", "The authorization code received from the provider").Short('o').StringVar(&CLIConfig.OAuthCode)
 
 	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.")
 
