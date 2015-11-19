@@ -32,7 +32,7 @@ func configForEntryWithName(name string) (*oauth2.Config, error) {
 			AuthURL:  entry.AuthorizationURL,
 			TokenURL: entry.TokenURL,
 		},
-		RedirectURL: "https://qa-www.telemetryapp.com/oauth_response",
+		RedirectURL: "https://telemetryapp.com/oauth_response",
 	}
 
 	return res, nil
