@@ -7,6 +7,8 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
+const TelemetryOAuthClientResponseURL = "https://telemetryapp.com/oauth_response"
+
 var entries map[string]config.OAuthConfigEntry
 
 func Init(e map[string]config.OAuthConfigEntry) {
@@ -24,7 +26,7 @@ func clientForEntryWithName(name string) (Client, error) {
 
 	switch entry.Version {
 	case 1:
-		return nil, fmt.Errorf("Unknown oAuth version %d", entry.Version)
+		return getV1Client(name, entry)
 
 	case 2:
 		return getV2Client(name, entry)

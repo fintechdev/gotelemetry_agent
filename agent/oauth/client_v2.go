@@ -27,7 +27,7 @@ func getV2Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		ClientSecret: entry.ClientSecret,
 		Scopes:       entry.Scopes,
 		Endpoint:     endpoint,
-		RedirectURL:  "https://telemetryapp.com/oauth_response",
+		RedirectURL:  TelemetryOAuthClientResponseURL,
 	}
 
 	res := &v2Client{
