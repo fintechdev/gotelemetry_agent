@@ -62,12 +62,14 @@ type GraphiteConfig struct {
 }
 
 type OAuthConfigEntry struct {
-	Version          int      `yaml:"version" toml:"version"`
-	ClientID         string   `yaml:"client_id" toml:"client_id"`
-	ClientSecret     string   `yaml:"client_secret" toml:"client_secret"`
-	AuthorizationURL string   `yaml:"authorization_url" toml:"authorization_url"`
-	TokenURL         string   `yaml:"token_url" toml:"token_url"`
-	Scopes           []string `yaml:"scopes" toml:"scopes"`
+	Version          int               `yaml:"version" toml:"version"`
+	ClientID         string            `yaml:"client_id" toml:"client_id"`
+	ClientSecret     string            `yaml:"client_secret" toml:"client_secret"`
+	CredentialURL    string            `yaml:"credential_url" toml:"credential_url"`
+	AuthorizationURL string            `yaml:"authorization_url" toml:"authorization_url"`
+	TokenURL         string            `yaml:"token_url" toml:"token_url"`
+	Scopes           []string          `yaml:"scopes" toml:"scopes"`
+	Header           map[string]string `yaml:"header" toml:"header"`
 }
 
 type ConfigInterface interface {

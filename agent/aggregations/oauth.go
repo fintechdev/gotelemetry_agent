@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"golang.org/x/oauth2"
 	"strings"
 )
 
@@ -14,7 +13,7 @@ func InitOAuthStorage() {
 	}
 }
 
-func WriteOAuthToken(key string, token *oauth2.Token) error {
+func WriteOAuthToken(key string, token interface{}) error {
 	key = strings.TrimSpace(key)
 
 	if key == "" {
@@ -30,10 +29,8 @@ func WriteOAuthToken(key string, token *oauth2.Token) error {
 	return manager.exec(`UPDATE "oauth_buckets" SET value = ? WHERE key = ?; INSERT INTO "oauth_buckets" (key, value) SELECT ?, ? WHERE changes() = 0`, data, key, key, data)
 }
 
-func ReadOAuthToken(key string) (*oauth2.Token, error) {
-	res := &oauth2.Token{}
-
-	err := manager.query(
+func ReadOAuthToken(key string, dest interface{}) error {
+	return manager.query(
 		func(rs *sql.Rows) error {
 			if rs.Next() {
 				var s string
@@ -42,7 +39,7 @@ func ReadOAuthToken(key string) (*oauth2.Token, error) {
 					return err
 				}
 
-				if err := json.Unmarshal([]byte(s), &res); err != nil {
+				if err := json.Unmarshal([]byte(s), &dest); err != nil {
 					return err
 				}
 			}
@@ -54,6 +51,4 @@ func ReadOAuthToken(key string) (*oauth2.Token, error) {
 
 		key,
 	)
-
-	return res, err
 }
