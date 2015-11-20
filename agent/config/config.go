@@ -63,7 +63,7 @@ func Init() {
 
 	app.Version(AgentVersion)
 
-	app.Flag("config", "Path to the configuration file for this agent.").Short('c').Default("./gotelemetry_agent.yaml").StringVar(&CLIConfig.ConfigFileLocation)
+	app.Flag("config", "Path to the configuration file for this agent.").Short('c').Default("./config.toml").StringVar(&CLIConfig.ConfigFileLocation)
 
 	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetryapp.com").StringVar(&CLIConfig.APIURL)
 	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")

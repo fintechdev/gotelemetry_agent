@@ -218,6 +218,15 @@ func TestNotifications(t *testing.T) {
 	)
 }
 
+func TestExcel(t *testing.T) {
+	runTests(
+		t,
+		[]test{
+			{"Excel", `local excel = require("telemetry/excel"); output.out = tonumber(excel.import("excel_test.xlsx")[1][4][1])`, map[string]interface{}{"out": 10}},
+		},
+	)
+}
+
 func TestErrors(t *testing.T) {
 
 	source := `
