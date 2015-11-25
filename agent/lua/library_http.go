@@ -32,7 +32,7 @@ var httpLibrary = []lua.RegistryFunction{
 				panic("unreachable")
 			}
 
-			defer req.Body.Close()
+			defer resp.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -75,7 +75,7 @@ var httpLibrary = []lua.RegistryFunction{
 				panic("unreachable")
 			}
 
-			defer req.Body.Close()
+			defer resp.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -129,7 +129,7 @@ var httpLibrary = []lua.RegistryFunction{
 				panic("unreachable")
 			}
 
-			defer req.Body.Close()
+			defer resp.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
