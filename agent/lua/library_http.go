@@ -32,6 +32,8 @@ var httpLibrary = []lua.RegistryFunction{
 				panic("unreachable")
 			}
 
+			defer req.Body.Close()
+
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				lua.Errorf(l, "%s", err)
@@ -126,6 +128,8 @@ var httpLibrary = []lua.RegistryFunction{
 				lua.Errorf(l, "%s", err)
 				panic("unreachable")
 			}
+
+			defer req.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
