@@ -111,6 +111,30 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 	"compute": func(s *aggregations.Series) lua.Function {
 		return func(l *lua.State) int {
 			functionType := lua.CheckInteger(l, 1)
+
+			if l.TypeOf(2) == lua.TypeString {
+				duration, err := config.ParseTimeInterval(lua.CheckString(l, 2))
+
+				if err != nil {
+					lua.Errorf(l, "%s", err)
+					panic("unreachable")
+				}
+
+				curTime := time.Now()
+				timeSince := curTime.Add(-duration)
+
+				res, err := s.Compute(aggregations.FunctionType(functionType), &timeSince, &curTime)
+
+				if err != nil {
+					lua.Errorf(l, "%s", err)
+					panic("unreachable")
+				}
+
+				util.DeepPush(l, res)
+
+				return 1
+			}
+
 			start := time.Unix(int64(lua.CheckInteger(l, 2)), 0)
 			end := time.Unix(int64(lua.CheckInteger(l, 3)), 0)
 
@@ -130,9 +154,22 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 	"aggregate": func(s *aggregations.Series) lua.Function {
 		return func(l *lua.State) int {
 			functionType := lua.CheckInteger(l, 1)
-			interval := lua.CheckInteger(l, 2)
+			interval := 0
 			count := lua.CheckInteger(l, 3)
-			end := time.Unix(int64(lua.CheckInteger(l, 4)), 0)
+			end := time.Unix(int64(lua.OptInteger(l, 4, int(time.Now().Unix()))), 0)
+
+			if l.TypeOf(2) == lua.TypeString {
+				duration, err := config.ParseTimeInterval(lua.CheckString(l, 2))
+
+				if err != nil {
+					lua.Errorf(l, "%s", err)
+					panic("unreachable")
+				}
+
+				interval = int(duration.Seconds())
+			} else {
+				interval = lua.CheckInteger(l, 2)
+			}
 
 			res, err := s.Aggregate(aggregations.FunctionType(functionType), interval, count, &end)
 

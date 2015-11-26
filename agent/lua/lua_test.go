@@ -117,8 +117,8 @@ func TestRunScript(t *testing.T) {
 		[]test{
 			{"Run a script", `output.test = "123"`, map[string]interface{}{"test": "123"}},
 			{"Attempt to overwrite a global", `output = "123"`, shouldError},
-			{"Access args", `output.out = args.test`, map[string]interface{}{"out": 123}},
-			{"Output an array", `output.out = { 1 , 2 , 3 }`, map[string]interface{}{"out": map[string]interface{}{"1": 1, "2": 2, "3": 3}}},
+			{"Access args", `output.out = args.test`, map[string]interface{}{"out": 123.0}},
+			{"Output an array", `output.out = { 1 , 2 , 3 }`, map[string]interface{}{"out": map[string]interface{}{"1": 1.0, "2": 2.0, "3": 3.0}}},
 		},
 	)
 }
@@ -129,7 +129,7 @@ func TestJSON(t *testing.T) {
 		[]test{
 			{"JSON Encode String", `local json = require("telemetry/json"); output.out = json.encode("Test 1 2 3")`, map[string]interface{}{"out": `"Test 1 2 3"`}},
 			{"JSON Encode Table", `local json = require("telemetry/json"); output.out = json.encode({a = 123})`, map[string]interface{}{"out": `{"a":123}`}},
-			{"JSON Decode", `local json = require("telemetry/json"); output.out = json.decode("{\"a\":123}")`, map[string]interface{}{"out": map[string]interface{}{"a": 123}}},
+			{"JSON Decode", `local json = require("telemetry/json"); output.out = json.decode("{\"a\":123}")`, map[string]interface{}{"out": map[string]interface{}{"a": 123.0}}},
 		},
 	)
 }
@@ -152,23 +152,30 @@ func TestSeries(t *testing.T) {
 	ttl := "1h"
 	aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
 
-	ts := int(time.Now().Unix() + 10)
-	tss := fmt.Sprintf("%d", ts)
+	ts := float64(time.Now().Unix() + 10)
+	tss := fmt.Sprintf("%g", ts)
 
 	runTests(
 		t,
 		[]test{
 			{"Series", `local st = require("telemetry/storage"); st.series("test")`, shouldNotError},
 			{"Series name", `local st = require("telemetry/storage"); output.out = st.series("test").name()`, map[string]interface{}{"out": "test"}},
-			{"Series find", `local st = require("telemetry/storage"); st.series("tab1"); st.series("tab2"); ss = st.series_find("tab%"); count = 0; for _ in pairs(ss) do count = count + 1 end; output.out = count`, map[string]interface{}{"out": 2}},
+			{"Series find", `local st = require("telemetry/storage"); st.series("tab1"); st.series("tab2"); ss = st.series_find("tab%"); count = 0; for _ in pairs(ss) do count = count + 1 end; output.out = count`, map[string]interface{}{"out": 2.0}},
 			{"Series trim since by timestamp", `local st = require("telemetry/storage"); st.series("test").trimSince(os.time() - (60 * 2))`, shouldNotError},
 			{"Series trim since by duration", `local st = require("telemetry/storage"); st.series("test").trimSince("2m")`, shouldNotError},
 			{"Series trim by count", `local st = require("telemetry/storage"); st.series("test").trimCount(30)`, shouldNotError},
 			{"Series push", `local st = require("telemetry/storage"); st.series("test").push(123)`, shouldNotError},
-			{"Series pop", `local st = require("telemetry/storage"); s = st.series("test"); s.push(125, "` + tss + `"); output.out = s.pop(true)`, map[string]interface{}{"out": map[string]interface{}{"value": 125, "ts": ts}}},
-			{"Series last", `local st = require("telemetry/storage"); s = st.series("test"); s.push(126, "` + tss + `"); output.out = s.last()`, map[string]interface{}{"out": map[string]interface{}{"value": 126, "ts": ts}}},
-			{"Series compute", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").compute(st.Functions.SUM, os.time() - 10000000, os.time() + 10000)`, shouldNotError},
+			{"Series pop", `local st = require("telemetry/storage"); s = st.series("test"); s.push(125, "` + tss + `"); output.out = s.pop(true)`, map[string]interface{}{"out": map[string]interface{}{"value": 125.0, "ts": ts}}},
+			{"Series last", `local st = require("telemetry/storage"); s = st.series("test"); s.push(126, "` + tss + `"); output.out = s.last()`, map[string]interface{}{"out": map[string]interface{}{"value": 126.0, "ts": ts}}},
+			{"Series compute by timestamp", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").compute(st.Functions.SUM, os.time() - 10000000, os.time() + 10000)`, shouldNotError},
+			{"Series compute by interval", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").compute(st.Functions.SUM, "6m")`, shouldNotError},
 			{"Series aggregate", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").aggregate(st.Functions.SUM, 60, 10, os.time())`, resultValidator(func(t *testing.T, err error, res map[string]interface{}) bool {
+				return err == nil && len(res["out"].([]interface{})) == 10
+			})},
+			{"Series aggregate no end time", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").aggregate(st.Functions.SUM, 60, 10)`, resultValidator(func(t *testing.T, err error, res map[string]interface{}) bool {
+				return err == nil && len(res["out"].([]interface{})) == 10
+			})},
+			{"Series aggregate string interval", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").aggregate(st.Functions.SUM, "1m", 10)`, resultValidator(func(t *testing.T, err error, res map[string]interface{}) bool {
 				return err == nil && len(res["out"].([]interface{})) == 10
 			})},
 			{"Series values", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").aggregate(st.Functions.SUM, 60, 10, os.time()).values()`, resultValidator(func(t *testing.T, err error, res map[string]interface{}) bool {
@@ -191,8 +198,8 @@ func TestCounter(t *testing.T) {
 		[]test{
 			{"Counter", `local st = require("telemetry/storage"); st.counter("test")`, shouldNotError},
 			{"Counter Value", `local st = require("telemetry/storage"); output.out = st.counter("test").value()`, shouldNotError},
-			{"Counter Set", `local st = require("telemetry/storage"); c = st.counter("test"); c.set(10); output.out = st.counter("test").value()`, map[string]interface{}{"out": 10}},
-			{"Counter Increment", `local st = require("telemetry/storage"); c = st.counter("test"); c.set(10); c.increment(1); output.out = st.counter("test").value()`, map[string]interface{}{"out": 11}},
+			{"Counter Set", `local st = require("telemetry/storage"); c = st.counter("test"); c.set(10); output.out = st.counter("test").value()`, map[string]interface{}{"out": 10.0}},
+			{"Counter Increment", `local st = require("telemetry/storage"); c = st.counter("test"); c.set(10); c.increment(1); output.out = st.counter("test").value()`, map[string]interface{}{"out": 11.0}},
 		},
 	)
 }
@@ -207,7 +214,7 @@ func TestStructuredStorage(t *testing.T) {
 		t,
 		[]test{
 			{"Storage", `local st = require("telemetry/storage"); st.storage()`, shouldNotError},
-			{"Storage Set & Get", `local st = require("telemetry/storage"); s = st.storage(); s.test = {a = 123}; output.out = s.test`, map[string]interface{}{"out": map[string]interface{}{"a": 123}}},
+			{"Storage Set & Get", `local st = require("telemetry/storage"); s = st.storage(); s.test = {a = 123}; output.out = s.test`, map[string]interface{}{"out": map[string]interface{}{"a": 123.0}}},
 		},
 	)
 }
@@ -225,7 +232,7 @@ func TestExcel(t *testing.T) {
 	runTests(
 		t,
 		[]test{
-			{"Excel", `local excel = require("telemetry/excel"); output.out = tonumber(excel.import("excel_test.xlsx")[1][4][1])`, map[string]interface{}{"out": 10}},
+			{"Excel", `local excel = require("telemetry/excel"); output.out = tonumber(excel.import("excel_test.xlsx")[1][4][1])`, map[string]interface{}{"out": 10.0}},
 		},
 	)
 }
