@@ -26,6 +26,7 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 	openExcelLibrary(l)
 	openNotificationsLibrary(l, np)
 	openSQLLibrary(l)
+	openMongoLibrary(l)
 
 	util.DeepPush(l, args)
 

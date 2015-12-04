@@ -52,10 +52,7 @@ var sqlInstanceFunctions = map[string]func(c *sqlx.DB) lua.Function{
 
 			l.CreateTable(len(result), 0)
 
-			l.NewTable()
-			l.PushBoolean(true)
-			l.SetField(-2, arrayMarkerField)
-			l.SetMetaTable(-2)
+			pushArray(l)
 
 			for index, value := range result {
 				for i, v := range value {
