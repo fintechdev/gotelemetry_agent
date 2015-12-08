@@ -27,6 +27,7 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 	openNotificationsLibrary(l, np)
 	openSQLLibrary(l)
 	openMongoLibrary(l)
+	openXMLLibrary(l)
 
 	util.DeepPush(l, args)
 
@@ -40,6 +41,11 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 
 	if err != nil {
 		matches := errorRegex.FindStringSubmatch(lua.CheckString(l, -1))
+
+		if len(matches) != 3 {
+			return nil, err
+		}
+
 		return nil, fmt.Errorf("Parse error on line %s: %s", matches[1], matches[2])
 	}
 
@@ -47,6 +53,11 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 
 	if err != nil {
 		matches := errorRegex.FindStringSubmatch(lua.CheckString(l, -1))
+
+		if len(matches) != 3 {
+			return nil, err
+		}
+
 		return nil, fmt.Errorf("Runtime error on line %s: %s", matches[1], matches[2])
 	}
 

@@ -159,14 +159,25 @@ func TestJSON(t *testing.T) {
 	)
 }
 
+func TestXML(t *testing.T) {
+	runTests(
+		t,
+		[]test{
+			{"XML Encode String", `local xml = require("telemetry/xml"); output.out = xml.encode("Test 1 2 3")`, shouldError},
+			{"XML Encode Table", `local xml = require("telemetry/xml"); output.out = xml.encode({a = 123})`, map[string]interface{}{"out": "<a>123</a>"}},
+			{"XML Decode", `local xml = require("telemetry/xml"); output.out = xml.decode("<note type=\"123\"><to>Tove</to><from>Jani</from><heading>Reminder</heading><body>Don't forget me this weekend!</body></note>")`, map[string]interface{}{"out": map[string]interface{}{"note": map[string]interface{}{"body": "Don't forget me this weekend!", "to": "Tove", "from": "Jani", "heading": "Reminder"}}}},
+		},
+	)
+}
+
 func TestHTTP(t *testing.T) {
 	runTests(
 		t,
 		[]test{
 			{"HTTP GET", `local http = require("telemetry/http"); output.out = http.get("https://raw.githubusercontent.com/telemetryapp/gotelemetry_agent/6efa4be88b4072a72f4a0d47cb15ca4e15263663/VERSION")`, map[string]interface{}{"out": "2.2.4"}},
 			{"HTTP POST", `local http = require("telemetry/http"); output.out = http.post("http://jsonplaceholder.typicode.com/posts", "{\"title\":\"blah\",\"body\":\"foobar\",\"userId\":1}", {["Content-Type"] = "application/json"})`, map[string]interface{}{"out": "{\n  \"title\": \"blah\",\n  \"body\": \"foobar\",\n  \"userId\": 1,\n  \"id\": 101\n}"}},
-			{"HTTP Authenticated GET", `local http = require("telemetry/http"); output.out = http.get("https://httpbin.org/basic-auth/atestusr/secretpass", "atestusr", "secretpass")`, map[string]interface{}{"out":"{\n  \"authenticated\": true, \n  \"user\": \"atestusr\"\n}\n"}},
-			{"HTTP Authenticated Custom GET", `local http = require("telemetry/http"); output.out = http.custom("GET", "https://httpbin.org/basic-auth/atestusr/secretpass", "", "atestusr", "secretpass")`, map[string]interface{}{"out":"{\n  \"authenticated\": true, \n  \"user\": \"atestusr\"\n}\n"}},
+			{"HTTP Authenticated GET", `local http = require("telemetry/http"); output.out = http.get("https://httpbin.org/basic-auth/atestusr/secretpass", "atestusr", "secretpass")`, map[string]interface{}{"out": "{\n  \"authenticated\": true, \n  \"user\": \"atestusr\"\n}\n"}},
+			{"HTTP Authenticated Custom GET", `local http = require("telemetry/http"); output.out = http.custom("GET", "https://httpbin.org/basic-auth/atestusr/secretpass", "", "atestusr", "secretpass")`, map[string]interface{}{"out": "{\n  \"authenticated\": true, \n  \"user\": \"atestusr\"\n}\n"}},
 			{"HTTP Custom POST", `local http = require("telemetry/http"); output.out = http.custom("POST", "http://jsonplaceholder.typicode.com/posts", "{\"title\":\"blah\",\"body\":\"foobar\",\"userId\":1}", {["Content-Type"] = "application/json"})`, map[string]interface{}{"out": "{\n  \"title\": \"blah\",\n  \"body\": \"foobar\",\n  \"userId\": 1,\n  \"id\": 101\n}"}},
 		},
 	)
