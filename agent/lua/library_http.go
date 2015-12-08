@@ -13,13 +13,33 @@ var httpLibrary = []lua.RegistryFunction{
 		"get",
 		func(l *lua.State) int {
 			url := lua.CheckString(l, 1)
-			username := lua.OptString(l, 2, "")
-			password := lua.OptString(l, 3, "")
 
 			req, err := http.NewRequest("GET", url, nil)
 			if err != nil {
 				lua.Errorf(l, "%s", err)
 				panic("unreachable")
+			}
+
+			argIndex := 2
+			username := ""
+			password := ""
+			if l.IsString(argIndex) {
+
+				username = lua.CheckString(l, argIndex)
+				argIndex++
+
+				if l.IsString(argIndex) {
+					password = lua.CheckString(l, argIndex)
+					argIndex++
+				}
+
+			}
+
+			if l.IsTable(argIndex) {
+				header, _ := util.PullStringTable(l, argIndex)
+				for key, value := range header {
+					req.Header.Set(key, value)
+				}
 			}
 
 			if len(username) > 0 || len(password) > 0 {
@@ -50,10 +70,7 @@ var httpLibrary = []lua.RegistryFunction{
 		"post",
 		func(l *lua.State) int {
 			url := lua.CheckString(l, 1)
-			contentType := lua.CheckString(l, 2)
-			body := lua.CheckString(l, 3)
-			username := lua.OptString(l, 4, "")
-			password := lua.OptString(l, 5, "")
+			body := lua.CheckString(l, 2)
 
 			req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(body)))
 			if err != nil {
@@ -61,8 +78,26 @@ var httpLibrary = []lua.RegistryFunction{
 				panic("unreachable")
 			}
 
-			if len(contentType) > 0 {
-				req.Header.Set("Content-Type", contentType)
+			argIndex := 3
+			username := ""
+			password := ""
+			if l.IsString(argIndex) {
+
+				username = lua.CheckString(l, argIndex)
+				argIndex++
+
+				if l.IsString(argIndex) {
+					password = lua.CheckString(l, argIndex)
+					argIndex++
+				}
+
+			}
+
+			if l.IsTable(argIndex) {
+				header, _ := util.PullStringTable(l, argIndex)
+				for key, value := range header {
+					req.Header.Set(key, value)
+				}
 			}
 
 			if len(username) > 0 || len(password) > 0 {
@@ -94,10 +129,7 @@ var httpLibrary = []lua.RegistryFunction{
 		func(l *lua.State) int {
 			method := lua.CheckString(l, 1)
 			url := lua.CheckString(l, 2)
-			contentType := lua.OptString(l, 3, "")
-			body := lua.OptString(l, 4, "")
-			username := lua.OptString(l, 5, "")
-			password := lua.OptString(l, 6, "")
+			body := lua.OptString(l, 3, "")
 
 			if len(method) == 0 {
 		    method = "POST"
@@ -115,8 +147,26 @@ var httpLibrary = []lua.RegistryFunction{
 				panic("unreachable")
 			}
 
-			if len(contentType) > 0 {
-				req.Header.Set("Content-Type", contentType)
+			argIndex := 4
+			username := ""
+			password := ""
+			if l.IsString(argIndex) {
+
+				username = lua.CheckString(l, argIndex)
+				argIndex++
+
+				if l.IsString(argIndex) {
+					password = lua.CheckString(l, argIndex)
+					argIndex++
+				}
+
+			}
+
+			if l.IsTable(argIndex) {
+				header, _ := util.PullStringTable(l, argIndex)
+				for key, value := range header {
+					req.Header.Set(key, value)
+				}
 			}
 
 			if len(username) > 0 || len(password) > 0 {
