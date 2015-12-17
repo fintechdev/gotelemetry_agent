@@ -108,6 +108,60 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
+	"items": func(s *aggregations.Series) lua.Function {
+		return func(l *lua.State) int {
+
+			res, err := s.Items(lua.CheckInteger(l, 1))
+
+			if err != nil {
+				lua.Errorf(l, "%s", err)
+				panic("unreachable")
+			}
+
+			if arr, ok := res.([]interface{}); ok {
+				l.CreateTable(len(arr), 0)
+
+				l.NewTable()
+				l.PushBoolean(true)
+				l.SetField(-2, arrayMarkerField)
+				l.SetMetaTable(-2)
+
+				extractor := func(field string) lua.Function {
+					return func(l *lua.State) int {
+						l.CreateTable(len(arr), 0)
+
+						l.NewTable()
+						l.PushBoolean(true)
+						l.SetField(-2, arrayMarkerField)
+						l.SetMetaTable(-2)
+
+						for index, value := range arr {
+							util.DeepPush(l, value.(map[string]interface{})[field])
+							l.RawSetInt(-2, index+1)
+						}
+
+						return 1
+					}
+				}
+
+				l.PushGoFunction(extractor("ts"))
+				l.SetField(-2, "ts")
+
+				l.PushGoFunction(extractor("value"))
+				l.SetField(-2, "values")
+
+				for index, value := range arr {
+					util.DeepPush(l, value)
+					l.RawSetInt(-2, index+1)
+				}
+			} else {
+				l.PushNil()
+			}
+
+			return 1
+		}
+	},
+
 	"compute": func(s *aggregations.Series) lua.Function {
 		return func(l *lua.State) int {
 			functionType := lua.CheckInteger(l, 1)

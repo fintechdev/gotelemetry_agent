@@ -205,6 +205,7 @@ func TestSeries(t *testing.T) {
 			{"Series last", `local st = require("telemetry/storage"); s = st.series("test"); s.push(126, "` + tss + `"); output.out = s.last()`, map[string]interface{}{"out": map[string]interface{}{"value": 126.0, "ts": ts}}},
 			{"Series compute by timestamp", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").compute(st.Functions.SUM, os.time() - 10000000, os.time() + 10000)`, shouldNotError},
 			{"Series compute by interval", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").compute(st.Functions.SUM, "6m")`, shouldNotError},
+			{"Series get raw items", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").items(10)`, shouldNotError},
 			{"Series aggregate", `local os = require("os"); local st = require("telemetry/storage"); output.out = st.series("test").aggregate(st.Functions.SUM, 60, 10, os.time())`, resultValidator(func(t *testing.T, err error, res map[string]interface{}) bool {
 				return err == nil && len(res["out"].([]interface{})) == 10
 			})},
