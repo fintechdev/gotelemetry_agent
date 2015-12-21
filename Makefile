@@ -2,7 +2,7 @@
 ALL_LIST = agent.go
 
 # Go parameters
-GOCMD=go
+GOCMD=gom
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test -race
 GOFMT=gofmt -w

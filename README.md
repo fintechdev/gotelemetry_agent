@@ -16,7 +16,7 @@ Full documentation is available on the [Telemetry Documentation website](http://
 
 In order to build the Agent, you will need a working install of Go 1.5 for each of the platforms you wish to target. You will also require a C/C++ build environment (GCC on Linux and BSD systems, and MinGW on Windows), since many of the Agent's dependencies require building external libraries.
 
-The Agent takes advantage of Go 1.5's experimental [vendoring support](https://github.com/golang/go/commit/183cc0cd41f06f83cb7a2490a499e3f9101befff), which is slated to become a mainstream feature with the release of 1.6. It currently uses [gom](https://github.com/mattn/gom) for building a directory of vendored dependencies that are pinned to specific commits to ensure that builds are reproducible.
+The Agent uses [gom](https://github.com/mattn/gom) for building a directory of vendored dependencies that are pinned to specific commits to ensure that builds are reproducible. Gom is also used to build the binaries.
 
 If you're building for Linux, you will also need to have a working copy of Jordan Sissel's [fpm](https://github.com/jordansissel/fpm) if you want to generate DEB or RPM files.
 
