@@ -1,9 +1,9 @@
 package lua
 
 import (
-	"github.com/tealeg/xlsx"
 	"github.com/mtabini/go-lua"
 	"github.com/mtabini/goluago/util"
+	"github.com/tealeg/xlsx"
 )
 
 var excelLibrary = []lua.RegistryFunction{
@@ -11,17 +11,17 @@ var excelLibrary = []lua.RegistryFunction{
 		"import",
 		func(l *lua.State) int {
 
-      path := lua.CheckString(l, 1)
+			path := lua.CheckString(l, 1)
 
-      res, err := xlsx.FileToSlice(path)
+			res, err := xlsx.FileToSlice(path)
 
-      if err != nil {
-        lua.Errorf(l, "%s", err)
-        panic("unreachable")
-      }
+			if err != nil {
+				lua.Errorf(l, "%s", err)
+				panic("unreachable")
+			}
 
-      util.DeepPush(l, res)
-      return 1
+			util.DeepPush(l, res)
+			return 1
 		},
 	},
 }

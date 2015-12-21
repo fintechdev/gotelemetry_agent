@@ -132,8 +132,8 @@ var httpLibrary = []lua.RegistryFunction{
 			body := lua.OptString(l, 3, "")
 
 			if len(method) == 0 {
-		    method = "POST"
-		  }
+				method = "POST"
+			}
 
 			var req *http.Request
 			var err error

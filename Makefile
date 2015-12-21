@@ -49,17 +49,17 @@ postbuild:
 
 $(BUILD_LIST_OSX): %_build_osx: %_fmt
 	@echo "Building Darwin AMD64..."
-	@GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 $(GOBUILD) -tags release -o bin/darwin-amd64/telemetry_agent
+	@GO15VENDOREXPERIMENT=1 GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 $(GOBUILD) -tags release -o bin/darwin-amd64/telemetry_agent
 	@echo "Building complete."
 
 $(BUILD_LIST_WIN): %_build_win: %_fmt
 	@echo "Building Windows 386..."
-	@GOARCH=386 CGO_ENABLED=1 GOOS=windows CC="i686-w64-mingw32-gcc -fno-stack-protector -D_FORTIFY_SOURCE=0 -lssp -D_localtime32=localtime" $(GOBUILD)  -tags release -o bin/windows-386/telemetry_agent.exe
+	@GO15VENDOREXPERIMENT=1 GOARCH=386 CGO_ENABLED=1 GOOS=windows CC="i686-w64-mingw32-gcc -fno-stack-protector -D_FORTIFY_SOURCE=0 -lssp -D_localtime32=localtime" $(GOBUILD)  -tags release -o bin/windows-386/telemetry_agent.exe
 	@echo "Building complete."
 
 $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 	@echo "Building Linux AMD64..."
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) --ldflags '-extldflags "-static"' -tags release -o bin/linux-amd64/usr/bin/telemetry_agent
+	@GO15VENDOREXPERIMENT=1 GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC="gcc" $(GOBUILD) --ldflags '-extldflags "-static"' -tags release -o bin/linux-amd64/usr/bin/telemetry_agent
 	@echo "Building complete."
 	@echo Building DEB and RPM files
 	@rm -Rf /tmp/telemetry_agent
@@ -68,13 +68,13 @@ $(BUILD_LIST_LINUX): %_build_linux: %_fmt
 	@chmod 755 /tmp/telemetry_agent/usr/bin/telemetry_agent
 	@cp VERSION /tmp/TELEMETRY_AGENT_VERSION
 	@cd /tmp/telemetry_agent && fpm -s dir -t deb -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
-	@cd /tmp/telemetry_agent/ && fpm -s dir -t rpm -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
+	@cd /tmp/telemetry_agent/ && fpm -s dir -t rpm -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` --rpm-sign usr
 	@cp /tmp/telemetry_agent/*rpm bin/linux-amd64
 	@cp /tmp/telemetry_agent/*deb bin/linux-amd64
 
 $(BUILD_LIST_LINUX_386): %_build_linux_386: %_fmt
 	@echo "Building Linux 386..."
-	@GOOS=linux GOARCH=386 CGO_ENABLED=1 CC="gcc" $(GOBUILD) --ldflags '-extldflags "-static"' -tags release -o bin/linux-386/usr/bin/telemetry_agent
+	@GO15VENDOREXPERIMENT=1 GOOS=linux GOARCH=386 CGO_ENABLED=1 CC="gcc" $(GOBUILD) --ldflags '-extldflags "-static"' -tags release -o bin/linux-386/usr/bin/telemetry_agent
 	@echo "Building complete."
 	@echo Building DEB and RPM files
 	@rm -Rf /tmp/telemetry_agent
@@ -83,9 +83,11 @@ $(BUILD_LIST_LINUX_386): %_build_linux_386: %_fmt
 	@chmod 755 /tmp/telemetry_agent/usr/bin/telemetry_agent
 	@cp VERSION /tmp/TELEMETRY_AGENT_VERSION
 	@cd /tmp/telemetry_agent && fpm -s dir -t deb -a i386 -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
-	@cd /tmp/telemetry_agent/ && fpm -s dir -t rpm -a i386 -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` usr
+	@cd /tmp/telemetry_agent/ && fpm -s dir -t rpm -a i386 -n "telemetry_agent" -v `cat ../TELEMETRY_AGENT_VERSION` --rpm-sign usr
 	@cp /tmp/telemetry_agent/*rpm bin/linux-386
 	@cp /tmp/telemetry_agent/*deb bin/linux-386
+
+
 
 $(TEST_LIST): %_test:
 	@echo "Running go test..."

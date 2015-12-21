@@ -183,6 +183,74 @@ func TestHTTP(t *testing.T) {
 	)
 }
 
+func TestRegex(t *testing.T) {
+	script := `
+	local regex = require("goluago/regexp")
+
+	function urlencode(str)
+		if (str) then
+
+			local res = ""
+
+			for i = 1, string.len(str) do 
+				local ch = string.sub(str, i, i)
+
+				if regex.match("[^A-Za-z0-9\\_.~]", ch) then
+					res = res .. string.format("%%%02X", string.byte(ch))
+				else
+					res = res .. ch
+				end
+			end
+
+			str = res
+		end
+
+		return str
+	end
+
+	output.test = urlencode("Test+Meé")
+	`
+
+	runTests(
+		t,
+		[]test{
+			{"Regex replace", script, map[string]interface{}{"test": "Test%2BMe%C3%A9"}},
+		},
+	)
+}
+
+func TestParseDate(t *testing.T) {
+	script := `
+		local regex = require("goluago/regexp")
+		local re = regex.compile("^([\\w]+) ([\\w]+) ([\\d]+) ([\\d]+):([\\d]+):([\\d]+) ([+\\d]+) (\\d+)$")
+		local months = {Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
+
+		function parseRFC822Time(str)
+			local parts = re.findSubmatch(str)
+			local data = { 
+				year = tonumber(parts[9]), 
+				month = months[parts[3]],
+				day = tonumber(parts[4]), 
+				hour = tonumber(parts[5]), 
+				min = tonumber(parts[6]), 
+				sec = tonumber(parts[7])
+			}
+			local t = os.time(data)
+
+			return t
+		end
+
+		output.parts = parseRFC822Time("Tue Dec 08 19:00:15 +0000 2015")
+	`
+
+	runTests(
+		t,
+		[]test{
+			{"Parse RFC822 date", script, map[string]interface{}{"parts": 1.2388179e+09}},
+		},
+	)
+}
+
 func TestSeries(t *testing.T) {
 	l := "/tmp/agent.sqlite3"
 	ttl := "1h"
