@@ -39,6 +39,8 @@ type CLIConfigType struct {
 	OAuthCommand        OAuthCommand
 	OAuthName           string
 	OAuthCode           string
+	OAuthVerifier				string
+	OAuthRealmID				string
 }
 
 const AgentVersion = "2.3.0"
@@ -91,6 +93,8 @@ func Init() {
 	oauthExchange := app.Command("oauth-exchange", "Exchange an oAuth authorization code")
 	oauthExchange.Flag("name", "The name of the oAuth entry").Short('n').StringVar(&CLIConfig.OAuthName)
 	oauthExchange.Flag("code", "The authorization code received from the provider").Short('o').StringVar(&CLIConfig.OAuthCode)
+	oauthExchange.Flag("verifier", "The verifier code received from the provider").Short('e').StringVar(&CLIConfig.OAuthVerifier)
+	oauthExchange.Flag("realm", "The realm ID received from the provider").Short('r').StringVar(&CLIConfig.OAuthRealmID)
 
 	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.")
 

@@ -61,7 +61,7 @@ func RunCommand(cfg config.CLIConfigType, errorChannel chan error, completionCha
 		errorChannel <- gotelemetry.NewLogError("When you are done, please run the agent with the oauth-exchange command to set the new token.\n\n")
 
 	case config.OAuthCommands.Exchange:
-		err := client.ExchangeToken(cfg.OAuthCode, "", "")
+		err := client.ExchangeToken(cfg.OAuthCode, cfg.OAuthVerifier, cfg.OAuthRealmID)
 
 		if err != nil {
 			errorChannel <- err
