@@ -17,11 +17,6 @@ func oauthRequest(l *lua.State, entryName, method, url string, body string) int 
 		panic("unreachable")
 	}
 
-	if req.URL.RawQuery != "" {
-		req.FormValue(req.URL.RawQuery)
-		req.URL.RawQuery = ""
-	}
-
 	res, err := oauth.Do(entryName, req)
 
 	if err != nil {
