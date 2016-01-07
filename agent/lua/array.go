@@ -1,7 +1,7 @@
 package lua
 
 import (
-	"github.com/mtabini/go-lua"
+	"github.com/telemetryapp/go-lua"
 )
 
 func pushArray(l *lua.State) {

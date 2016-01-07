@@ -3,8 +3,8 @@ package lua
 import (
 	"time"
 
-	"github.com/mtabini/go-lua"
-	"github.com/mtabini/goluago/util"
+	"github.com/telemetryapp/go-lua"
+	"github.com/telemetryapp/goluago/util"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )

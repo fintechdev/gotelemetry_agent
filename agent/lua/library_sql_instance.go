@@ -6,8 +6,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/mtabini/go-lua"
-	"github.com/mtabini/goluago/util"
+	"github.com/telemetryapp/go-lua"
+	"github.com/telemetryapp/goluago/util"
 )
 
 var sqlInstanceFunctions = map[string]func(c *sqlx.DB) lua.Function{

@@ -3,9 +3,9 @@ package lua
 import (
 	"errors"
 	"fmt"
-	"github.com/mtabini/go-lua"
-	"github.com/mtabini/goluago"
-	"github.com/mtabini/goluago/util"
+	"github.com/telemetryapp/go-lua"
+	"github.com/telemetryapp/goluago"
+	"github.com/telemetryapp/goluago/util"
 	"regexp"
 )
 

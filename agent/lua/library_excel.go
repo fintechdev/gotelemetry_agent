@@ -1,8 +1,8 @@
 package lua
 
 import (
-	"github.com/mtabini/go-lua"
-	"github.com/mtabini/goluago/util"
+	"github.com/telemetryapp/go-lua"
+	"github.com/telemetryapp/goluago/util"
 	"github.com/tealeg/xlsx"
 )
 
