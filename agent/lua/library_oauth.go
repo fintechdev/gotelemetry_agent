@@ -7,14 +7,26 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
-func oauthRequest(l *lua.State, entryName, method, url string, body string) int {
-	req, err := http.NewRequest(method, url, bytes.NewBuffer([]byte(body)))
+func oauthRequest(l *lua.State, entryName, method, urlString string, body string, query string) int {
+	req, err := http.NewRequest(method, urlString, bytes.NewBuffer([]byte(body)))
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
 		panic("unreachable")
+	}
+
+	if query != "" {
+		parsedQuery, err := url.ParseQuery(query)
+
+		if err != nil {
+			lua.Errorf(l, "%s", err.Error())
+			panic("unreachable")
+		}
+
+		req.Form = parsedQuery
 	}
 
 	res, err := oauth.Do(entryName, req)
@@ -48,6 +60,7 @@ var oauthLibrary = []lua.RegistryFunction{
 				"GET",
 				lua.CheckString(l, 2),
 				"",
+				lua.OptString(l, 4, ""),
 			)
 		},
 	},
@@ -61,6 +74,7 @@ var oauthLibrary = []lua.RegistryFunction{
 				"GET",
 				lua.CheckString(l, 2),
 				lua.CheckString(l, 3),
+				lua.OptString(l, 4, ""),
 			)
 		},
 	},
