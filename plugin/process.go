@@ -300,7 +300,7 @@ func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace 
 		}
 
 		fmt.Printf("\nPrinting the output results of \"%s\":\n", flowTag)
-		fmt.Print(string(jsonOutput))
+		fmt.Println(string(jsonOutput))
 		return
 	}
 
