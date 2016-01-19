@@ -31,6 +31,7 @@ type CLIConfigType struct {
 	UseJSONPatch        bool
 	UsePOST             bool
 	IsNotifying         bool
+	DebugMode           bool
 	NotificationChannel string
 	NotificationFlow    string
 	Notification        gotelemetry.Notification
@@ -50,7 +51,7 @@ var CLIConfig CLIConfigType
 func banner() {
 	println()
 	println("Telemetry Agent v " + AgentVersion)
-	println("Copyright © 2012-2015 Telemetry, Inc.")
+	println("Copyright © 2012-2016 Telemetry, Inc.")
 	println()
 	println("For license information, see the LICENSE file")
 	println("---------------------------------------------")
@@ -70,6 +71,7 @@ func Init() {
 	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetryapp.com").StringVar(&CLIConfig.APIURL)
 	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")
 	filter := app.Flag("filter", "Run only the jobs whose IDs (or tags if no ID is specified) match the given regular expression").Default(".").String()
+	app.Flag("debug", "Run scripts in debug mode. No API calls will be made. All output will be printed to the console.").BoolVar(&CLIConfig.DebugMode)
 
 	once := app.Command("once", "Run all jobs exactly once and exit.")
 

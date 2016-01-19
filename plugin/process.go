@@ -290,6 +290,20 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 }
 
 func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace bool, data map[string]interface{}) {
+
+	if config.CLIConfig.DebugMode == true {
+		// Debug Mode. Print data dump. Do not send API update
+		jsonOutput, err := json.MarshalIndent(data, "", "  ")
+
+		if err != nil {
+			return
+		}
+
+		fmt.Printf("\nPrinting the output results of \"%s\":\n", flowTag)
+		fmt.Print(string(jsonOutput))
+		return
+	}
+
 	if isReplace {
 		if p.expiration > 0 {
 			newExpiration := time.Now().Add(p.expiration)
