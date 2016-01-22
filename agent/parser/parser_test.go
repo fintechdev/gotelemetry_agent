@@ -170,7 +170,7 @@ func TestGlobalMethods(t *testing.T) {
 
 	runParserTests(tests, t)
 }
-
+/*
 func TestSeries(t *testing.T) {
 	checkFloat := func(res testR, errs testE) bool {
 		_, ok := res["a"].(float64)
@@ -229,7 +229,7 @@ func TestCounter(t *testing.T) {
 
 	runParserTests(tests, t)
 }
-
+*/
 func TestBooleanAndLogicOperations(t *testing.T) {
 	checkBool := func(expect bool) func(res testR, errs testE) bool {
 		return func(res testR, errs testE) bool {
@@ -592,7 +592,7 @@ func TestPost(t *testing.T) {
 
 	runParserTests(tests, t)
 }
-
+/*
 func TestStorage(t *testing.T) {
 	tests := map[string]parserTest{
 		"Storage": {`storage().set(key:"test", value:{a:10}); a = storage().get("test").item("a")`, 10.0},
@@ -600,3 +600,4 @@ func TestStorage(t *testing.T) {
 
 	runParserTests(tests, t)
 }
+*/

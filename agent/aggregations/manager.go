@@ -1,7 +1,6 @@
 package aggregations
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
@@ -14,7 +13,7 @@ type Manager struct {
 	path         string
 	ttl          time.Duration
 	errorChannel chan error
-	conn         *sql.DB
+	conn         string
 	mutex        sync.RWMutex
 }
 
@@ -23,32 +22,9 @@ var manager *Manager = nil
 func Init(listen, location, ttlString *string, errorChannel chan error) error {
 	if location != nil {
 
-		conn, err := sql.Open("sqlite3", *location)
-
-		if err != nil {
-			return err
-		}
-
-		conn.Exec(`
-			PRAGMA busy_timeout = 10;
-	    PRAGMA automatic_index = ON;
-	    PRAGMA cache_size = 32768;
-	    PRAGMA cache_spill = OFF;
-	    PRAGMA foreign_keys = ON;
-	    PRAGMA journal_size_limit = 67110000;
-	    PRAGMA locking_mode = NORMAL;
-	    PRAGMA page_size = 4096;
-	    PRAGMA recursive_triggers = ON;
-	    PRAGMA secure_delete = ON;
-	    PRAGMA synchronous = NORMAL;
-	    PRAGMA temp_store = MEMORY;
-	    PRAGMA journal_mode = WAL;
-	    PRAGMA wal_autocheckpoint = 16384;
-		`)
-
 		manager = &Manager{
 			errorChannel: errorChannel,
-			conn:         conn,
+			conn:         "",
 			mutex:        sync.RWMutex{},
 		}
 
@@ -60,10 +36,6 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 			manager.ttl = ttl
 		} else {
 			manager.ttl = 0
-		}
-
-		if err := manager.exec("CREATE TABLE IF NOT EXISTS _counters (name VARCHAR NOT NULL PRIMARY KEY, value INT NOT NULL DEFAULT(0), rollover_last INT NOT NULL, rollover_interval INT NOT NULL DEFAULT(0), rollover_expression VARCHAR)"); err != nil {
-			return err
 		}
 
 		manager.Debugf("Writing data layer database to %s", manager.path)
@@ -104,30 +76,21 @@ func (m *Manager) Errorf(format string, v ...interface{}) {
 
 // Data
 
-func (m *Manager) exec(query string, values ...interface{}) error {
-	// m.mutex.Lock()
+func (m *Manager) exec(bucket string, key string, value string) error {
 
-	// defer m.mutex.Unlock()
+	// Store some data
 
-	_, err := m.conn.Exec(query, values...)
 
-	return err
+	return nil
 }
 
-type queryClosure func(*sql.Rows) error
+func (m *Manager) query(bucket string, key string) ([]byte, error) {
 
-func (m *Manager) query(closure queryClosure, query string, values ...interface{}) error {
-	// m.mutex.RLock()
+	var val []byte
 
-	// defer m.mutex.RUnlock()
+	// retrieve the data
 
-	rs, err := m.conn.Query(query, values...)
 
-	if err != nil {
-		return err
-	}
+	return val, nil
 
-	defer rs.Close()
-
-	return closure(rs)
 }
