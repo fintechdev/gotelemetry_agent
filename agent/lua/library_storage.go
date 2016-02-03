@@ -16,39 +16,9 @@ var storageLibrary = []lua.RegistryFunction{
 	},
 
 	{
-		"series_find",
-		func(l *lua.State) int {
-			res, err := aggregations.FindSeries(lua.CheckString(l, 1))
-
-			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
-			}
-
-			pushArray(l)
-
-			for index, name := range res {
-				pushSeries(l, name)
-				l.RawSetInt(-2, index+1)
-			}
-
-			return 1
-		},
-	},
-
-	{
 		"counter",
 		func(l *lua.State) int {
 			pushCounter(l, lua.CheckString(l, 1))
-
-			return 1
-		},
-	},
-
-	{
-		"storage",
-		func(l *lua.State) int {
-			pushStorage(l)
 
 			return 1
 		},

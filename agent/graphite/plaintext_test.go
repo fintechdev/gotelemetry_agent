@@ -36,7 +36,7 @@ func BenchmarkGraphiteMemory(b *testing.B) {
 	}()
 
 	p := ":2000"
-	l := "/tmp/agent.sqlite3"
+	l := "/tmp/agent.bolt"
 	ttl := "1h"
 	aggregations.Init(&p, &l, &ttl, errorChannel)
 

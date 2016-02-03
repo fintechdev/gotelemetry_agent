@@ -44,7 +44,7 @@ type CLIConfigType struct {
 	OAuthRealmID				string
 }
 
-const AgentVersion = "2.3.0"
+const AgentVersion = "3.0.0beta"
 
 var CLIConfig CLIConfigType
 

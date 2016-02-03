@@ -8,7 +8,6 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
-	"github.com/telemetryapp/gotelemetry_agent/agent/parser"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -194,7 +193,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 			return errors.New("File " + p.path + " does not exist.")
 		}
 
-		if path.Ext(p.path) == ".asl" || path.Ext(p.path) == ".lua" {
+		if path.Ext(p.path) == ".lua" {
 			p.url = "tpl://" + p.path
 			p.path = ""
 		} else {
@@ -404,49 +403,6 @@ func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
 	return string(out), nil
 }
 
-var templateCache = map[string][]parser.Command{}
-
-func (p *ProcessPlugin) performTemplateTaskASL(j *job.Job) (string, error) {
-	j.Debugf("Retrieving expression from template `%s`", p.templateFile)
-
-	var commands []parser.Command
-	var ok bool
-
-	if commands, ok = templateCache[p.templateFile]; !ok {
-		j.Debugf("Script `%s` is not cached.", p.templateFile)
-
-		source, err := ioutil.ReadFile(p.templateFile)
-
-		if err != nil {
-			return "", err
-		}
-
-		commands, errs := parser.Parse(j.ID, string(source))
-
-		if len(errs) > 0 {
-			return "", errs[0]
-		}
-
-		templateCache[p.templateFile] = commands
-	} else {
-		j.Debugf("Script `%s` is cached.", p.templateFile)
-	}
-
-	output, err := parser.Run(j, j, p.scriptArgs, commands)
-
-	if err != nil {
-		return "", err
-	}
-
-	if len(output) == 0 {
-		return "", nil
-	}
-
-	out, err := json.Marshal(config.MapFromYaml(output))
-
-	return string(out), err
-}
-
 func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
 	source, err := ioutil.ReadFile(p.templateFile)
 
@@ -466,9 +422,6 @@ func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
 }
 
 func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
-	if strings.HasSuffix(p.templateFile, ".asl") {
-		return p.performTemplateTaskASL(j)
-	}
 
 	if strings.HasSuffix(p.templateFile, ".lua") {
 		return p.performTemplateTaskLua(j)

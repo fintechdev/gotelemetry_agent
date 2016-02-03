@@ -1,76 +1,115 @@
 package aggregations
 
 import (
-	"sync"
-	"time"
+	"github.com/telemetryapp/gotelemetry"
+	"fmt"
+	"errors"
+	"strconv"
+	"github.com/boltdb/bolt"
 )
 
-var Eval func(expr interface{}) (interface{}, error)
-
 type Counter struct {
-	Name               string
-	value              *int64
-	rolloverLast       int64
-	rolloverInterval   int64
-	rolloverExpression interface{}
-	rolloverTimer      *time.Timer
-	lock               *sync.Mutex
-	saveTimer          *time.Timer
+	Name string
 }
 
-var counters = map[string]*Counter{}
-var counterLock = sync.Mutex{}
-
 func GetCounter(name string) (*Counter, bool, error) {
-	//TODO APP-19
-	return nil, true, nil
+
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_counters"))
+
+		val := bucket.Get([]byte(name))
+		// Initialize a counter with a value of 0 if one does not already exist
+		if val == nil {
+			err := bucket.Put([]byte(name), []byte("0"))
+
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	counter := &Counter{
+		Name:             name,
+	}
+
+	return counter, true, nil
 }
 
 func (c *Counter) fatal(err error) {
-	//TODO APP-19
+	manager.errorChannel <- errors.New(fmt.Sprintf("Counter %s -> %s", c.Name, err))
 }
 
 func (c *Counter) log(format string, data ...interface{}) {
-	//TODO APP-19
+	manager.errorChannel <- gotelemetry.NewLogError("Counter %s -> %s", c.Name, fmt.Sprintf(format, data...))
 }
 
 func (c *Counter) debug(format string, data ...interface{}) {
-	//TODO APP-19
-}
-
-func (c *Counter) scheduleRollover() {
-	//TODO APP-19
-}
-
-func (c *Counter) runRollover() {
-	//TODO APP-19
-}
-
-func (c *Counter) performRollover() {
-	//TODO APP-19
-}
-
-func (c *Counter) SetRolloverMetadata(interval int64, expression interface{}) {
-	//TODO APP-19
+	manager.errorChannel <- gotelemetry.NewLogError("Counter %s -> %s", c.Name, fmt.Sprintf(format, data...))
 }
 
 func (c *Counter) GetValue() int64 {
-	//TODO APP-19
-	return 0
-}
 
-func (c *Counter) save() {
-	//TODO APP-19
-}
+	var value string
+	err := manager.conn.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_counters"))
+		value = string(bucket.Get([]byte(c.Name)))
 
-func (c *Counter) updateSaveTimer() {
-	//TODO APP-19
+		return nil
+	})
+
+	if err != nil {
+		c.fatal(err)
+	}
+
+	valueInt, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		c.fatal(err)
+	}
+
+	return valueInt
 }
 
 func (c *Counter) SetValue(newValue int64) {
-	//TODO APP-19
+
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_counters"))
+
+		err := bucket.Put([]byte(c.Name), []byte(strconv.FormatInt(newValue, 10)))
+
+		return err
+	})
+
+	if err != nil {
+		c.fatal(err)
+	}
+
 }
 
 func (c *Counter) Increment(delta int64) {
-	//TODO APP-19
+
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_counters"))
+
+		val := string(bucket.Get([]byte(c.Name)))
+
+		valueInt, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		incremenetedVal := valueInt + delta
+
+		err = bucket.Put([]byte(c.Name), []byte(strconv.FormatInt(incremenetedVal, 10)))
+
+		return err
+	})
+
+	if err != nil {
+		c.fatal(err)
+	}
+
 }

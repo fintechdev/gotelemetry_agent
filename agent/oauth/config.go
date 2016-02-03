@@ -3,18 +3,15 @@ package oauth
 import (
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-const TelemetryOAuthClientResponseURL = "https://telemetryapp.com/oauth_response"
+const TelemetryOAuthClientResponseURL = "https://telemetrytv.com/oauth_response"
 
 var entries map[string]config.OAuthConfigEntry
 
 func Init(e map[string]config.OAuthConfigEntry) {
 	entries = e
-
-	aggregations.InitOAuthStorage()
 }
 
 func clientForEntryWithName(name string) (Client, error) {

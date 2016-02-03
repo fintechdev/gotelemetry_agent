@@ -7,13 +7,15 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"sync"
 	"time"
+	"log"
+	"github.com/boltdb/bolt"
 )
 
 type Manager struct {
 	path         string
 	ttl          time.Duration
 	errorChannel chan error
-	conn         string
+	conn         *bolt.DB
 	mutex        sync.RWMutex
 }
 
@@ -22,9 +24,15 @@ var manager *Manager = nil
 func Init(listen, location, ttlString *string, errorChannel chan error) error {
 	if location != nil {
 
+		conn, err := bolt.Open(*location, 0644, nil)
+
+		if err != nil {
+			return err
+		}
+
 		manager = &Manager{
 			errorChannel: errorChannel,
-			conn:         "",
+			conn:         conn,
 			mutex:        sync.RWMutex{},
 		}
 
@@ -38,18 +46,27 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 			manager.ttl = 0
 		}
 
-		manager.Debugf("Writing data layer database to %s", manager.path)
+		// Create default buckets
+		err = conn.Update(func(tx *bolt.Tx) error {
 
-		InitStorage()
+			if _, err := tx.CreateBucketIfNotExists([]byte("_counters")); err != nil {
+				return err
+			}
 
-		if listen != nil {
-			InitServer(*listen, errorChannel)
-		}
+			if _, err := tx.CreateBucketIfNotExists([]byte("_series")); err != nil {
+				return err
+			}
 
-		return nil
+			if _, err := tx.CreateBucketIfNotExists([]byte("_oauth")); err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		return err
 	}
-
-	manager.Errorf("Data Manager -> No `data.path` property provided. The Data Manager will not run.")
+	log.Printf("Error: %s", "Data Manager -> No `data.path` property provided. The Data Manager will not run.")
 
 	return nil
 }
@@ -72,25 +89,4 @@ func (m *Manager) Errorf(format string, v ...interface{}) {
 	if m.errorChannel != nil {
 		m.errorChannel <- errors.New(fmt.Sprintf("Data Manager -> "+format, v...))
 	}
-}
-
-// Data
-
-func (m *Manager) exec(bucket string, key string, value string) error {
-
-	// Store some data
-
-
-	return nil
-}
-
-func (m *Manager) query(bucket string, key string) ([]byte, error) {
-
-	var val []byte
-
-	// retrieve the data
-
-
-	return val, nil
-
 }

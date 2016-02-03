@@ -71,7 +71,7 @@ type OAuthConfigEntry struct {
 	Scopes           []string          `yaml:"scopes" toml:"scopes"`
 	Header           map[string]string `yaml:"header" toml:"header"`
 	SignatureMethod  string            `yaml:"signature_method" toml:"signature_method"`
-	PrivateKey       string            `yaml:"private_key", toml:"private_key"`
+	PrivateKey       string            `yaml:"private_key" toml:"private_key"`
 }
 
 type ConfigInterface interface {
