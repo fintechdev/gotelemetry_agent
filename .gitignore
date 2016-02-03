@@ -24,7 +24,7 @@ _testmain.go
 *.test
 *.prof
 
-local_config.yaml
+.goxc.local.json
 .DS_Store
 bin
 _samples

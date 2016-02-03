@@ -2,10 +2,10 @@ package lua
 
 import (
 	"fmt"
-	"testing"
-	"time"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"testing"
+	"time"
 )
 
 type expectsError bool

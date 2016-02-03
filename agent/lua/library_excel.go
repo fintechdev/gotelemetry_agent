@@ -1,9 +1,9 @@
 package lua
 
 import (
+	"github.com/tealeg/xlsx"
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
-	"github.com/tealeg/xlsx"
 )
 
 var excelLibrary = []lua.RegistryFunction{

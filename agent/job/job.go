@@ -113,7 +113,7 @@ func (j *Job) GetOrCreateFlow(tag, variant string, template interface{}) (*gotel
 	}
 
 	if template != nil {
-		template = config.MapFromYaml(template)
+		template = config.MapTemplate(template)
 
 		if template, ok := template.(map[string]interface{}); ok {
 			f, err = j.CreateFlow(tag, variant, "gotelemetry_agent", "", "")

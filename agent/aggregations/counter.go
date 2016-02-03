@@ -1,11 +1,11 @@
 package aggregations
 
 import (
-	"github.com/telemetryapp/gotelemetry"
-	"fmt"
 	"errors"
-	"strconv"
+	"fmt"
 	"github.com/boltdb/bolt"
+	"github.com/telemetryapp/gotelemetry"
+	"strconv"
 )
 
 type Counter struct {
@@ -33,7 +33,7 @@ func GetCounter(name string) (*Counter, bool, error) {
 	}
 
 	counter := &Counter{
-		Name:             name,
+		Name: name,
 	}
 
 	return counter, true, nil

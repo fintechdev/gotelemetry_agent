@@ -1,10 +1,10 @@
 package aggregations
 
 import (
-	"strings"
+	"encoding/json"
 	"errors"
 	"github.com/boltdb/bolt"
-	"encoding/json"
+	"strings"
 )
 
 func WriteOAuthToken(key string, token interface{}) error {

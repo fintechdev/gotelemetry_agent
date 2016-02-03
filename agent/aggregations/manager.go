@@ -3,12 +3,12 @@ package aggregations
 import (
 	"errors"
 	"fmt"
+	"github.com/boltdb/bolt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"log"
 	"sync"
 	"time"
-	"log"
-	"github.com/boltdb/bolt"
 )
 
 type Manager struct {
