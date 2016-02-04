@@ -37,33 +37,37 @@ func validateSeriesName(name string) error {
 }
 
 func GetSeries(name string) (*Series, bool, error) {
+	isCreated := false
 
 	err := validateSeriesName(name)
 	if err != nil {
-		return nil, false, err
+		return nil, isCreated, err
 	}
 
 	// Get the requested key
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_series"))
 
-		_, err := bucket.CreateBucketIfNotExists([]byte(name))
-		if err != nil {
-			return err
+		if bucket.Bucket([]byte(name)) == nil {
+			_, err := bucket.CreateBucket([]byte(name))
+			if err != nil {
+				return err
+			}
+			isCreated = true
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		return nil, false, err
+		return nil, isCreated, err
 	}
 
 	series := &Series{
 		Name: name,
 	}
 
-	return series, true, nil
+	return series, isCreated, nil
 }
 
 func (s *Series) Push(timestamp *time.Time, value float64) error {
@@ -179,10 +183,15 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 		return 0.0, err
 	}
 
+	// Do not compute if there are not any items
+	count := float64(len(resultArray))
+	if count < 1 {
+		return 0.0, nil
+	}
+
 	var minValue float64
 	var maxValue float64
 	var sum float64
-	count := float64(len(resultArray))
 
 	for i, v := range resultArray {
 		if i == 0 {
@@ -214,6 +223,10 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 	case Count:
 		return count, nil
 	case StdDev:
+		// Standard deviation formula requies at least two values
+		if count < 2 {
+			return 0.0, nil
+		}
 		var StdDevSum float64
 		for _, v := range resultArray {
 			StdDevSum += math.Pow((v - avg), 2)
@@ -265,52 +278,61 @@ func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, agg
 				resultArray = append(resultArray, valueFloat)
 			}
 
-			var minValue float64
-			var maxValue float64
-			var sum float64
-			count := float64(len(resultArray))
-
-			for i, v := range resultArray {
-				if i == 0 {
-					maxValue = v
-					minValue = v
-				}
-
-				sum += v
-				if v > maxValue {
-					maxValue = v
-				}
-
-				if v < minValue {
-					minValue = v
-				}
-			}
-
-			avg := (sum / count)
-
 			var value float64
 
-			switch functionType {
-			case Sum:
-				value = sum
-			case Avg:
-				value = avg
-			case Min:
-				value = minValue
-			case Max:
-				value = maxValue
-			case Count:
-				value = count
-			case StdDev:
-				var StdDevSum float64
-				for _, v := range resultArray {
-					StdDevSum += math.Pow((v - avg), 2)
-				}
-				value = math.Sqrt(StdDevSum / (count - 1))
-			default:
-				return errors.New(fmt.Sprintf("Unknown operation %d", functionType))
-			}
+			// Only aggregate if there are items in the array
+			count := float64(len(resultArray))
+			if count > 0 {
+				var minValue float64
+				var maxValue float64
+				var sum float64
 
+				for i, v := range resultArray {
+					if i == 0 {
+						maxValue = v
+						minValue = v
+					}
+
+					sum += v
+					if v > maxValue {
+						maxValue = v
+					}
+
+					if v < minValue {
+						minValue = v
+					}
+				}
+
+				avg := (sum / count)
+
+				switch functionType {
+				case Sum:
+					value = sum
+				case Avg:
+					value = avg
+				case Min:
+					value = minValue
+				case Max:
+					value = maxValue
+				case Count:
+					value = count
+				case StdDev:
+					// Standard deviation formula requies at least two values
+					if count > 1 {
+						var StdDevSum float64
+						for _, v := range resultArray {
+							StdDevSum += math.Pow((v - avg), 2)
+						}
+						value = math.Sqrt(StdDevSum / (count - 1))
+					} else {
+						value = 0.0
+					}
+				default:
+					return errors.New(fmt.Sprintf("Unknown operation %d", functionType))
+				}
+			} else {
+				value = 0.0
+			}
 			output = append(output, map[string]interface{}{"ts": startTime, "value": value})
 		}
 		return nil
@@ -364,22 +386,26 @@ func (s *Series) Items(count int) (interface{}, error) {
 }
 
 func (s *Series) TrimSince(since time.Time) error {
-	min := []byte(strconv.FormatInt(since.Unix(), 10))
-	max := []byte(strconv.FormatInt(time.Now().Unix(), 10))
+	max := []byte(strconv.FormatInt(since.Unix(), 10))
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_series"))
-		c := bucket.Bucket([]byte(s.Name)).Cursor()
+		cursor := bucket.Bucket([]byte(s.Name)).Cursor()
 
-		// Iterate over the min/max range
-		for k, _ := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, _ = c.Next() {
+		// Start by finding the closest value to our trim target
+		cursor.Seek(max)
+		// Step backwards since we do not want to remove the target
+		k, _ := cursor.Prev()
 
-			err := c.Delete()
+		// Delete all items that take place before this point
+		for k != nil {
+			err := cursor.Delete()
 			if err != nil {
 				return err
 			}
-
+			k, _ = cursor.Prev()
 		}
+
 		return nil
 	})
 
@@ -392,17 +418,22 @@ func (s *Series) TrimCount(count int) error {
 		bucket := tx.Bucket([]byte("_series"))
 		cursor := bucket.Bucket([]byte(s.Name)).Cursor()
 
-		var k []byte
-		k, _ = cursor.Last()
+		k, _ := cursor.Last()
 
 		for i := 1; i <= count; i++ {
+			k, _ = cursor.Prev()
+			// We do nothing if we hit a nil value before the trim point
 			if k != nil {
-				err := cursor.Delete()
-				if err != nil {
-					return err
-				}
+				return nil
 			}
+		}
 
+		// Delete all items before the trim point
+		for k != nil {
+			err := cursor.Delete()
+			if err != nil {
+				return err
+			}
 			k, _ = cursor.Prev()
 		}
 

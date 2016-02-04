@@ -40,8 +40,8 @@ type CLIConfigType struct {
 	OAuthCommand        OAuthCommand
 	OAuthName           string
 	OAuthCode           string
-	OAuthVerifier				string
-	OAuthRealmID				string
+	OAuthVerifier       string
+	OAuthRealmID        string
 }
 
 const AgentVersion = "3.0.0beta"

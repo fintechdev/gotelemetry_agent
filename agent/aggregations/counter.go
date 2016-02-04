@@ -13,6 +13,7 @@ type Counter struct {
 }
 
 func GetCounter(name string) (*Counter, bool, error) {
+	isCreated := false
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_counters"))
@@ -21,7 +22,7 @@ func GetCounter(name string) (*Counter, bool, error) {
 		// Initialize a counter with a value of 0 if one does not already exist
 		if val == nil {
 			err := bucket.Put([]byte(name), []byte("0"))
-
+			isCreated = true
 			return err
 		}
 
@@ -36,7 +37,7 @@ func GetCounter(name string) (*Counter, bool, error) {
 		Name: name,
 	}
 
-	return counter, true, nil
+	return counter, isCreated, nil
 }
 
 func (c *Counter) fatal(err error) {

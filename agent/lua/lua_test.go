@@ -110,22 +110,6 @@ func runTests(t *testing.T, tests []test) {
 	}
 }
 
-/*
-func TestMongo(t *testing.T) {
-	runTests(
-		t,
-		[]test{
-			{"Connect to a Mongo database", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); session.close();`, map[string]interface{}{}},
-			{"Retrieve list of live servers", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); output.data = session.live_servers(); session.close();`, map[string]interface{}{"data": []interface{}{"localhost:27017"}}},
-			{"Get a DB", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); output.data = db.collections(); session.close();`, map[string]interface{}{"data": []interface{}{"startup_log", "system.indexes"}}},
-			{"Get a Collection name", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); local collection = db.collection("startup_log"); output.data = collection.name(); session.close();`, map[string]interface{}{"data": "startup_log"}},
-			{"Get a Collection and perform a search", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); local collection = db.collection("startup_log"); local query = {}; query["cmdLine.net.bindIp"] = "127.0.0.1"; output.data = #(collection.query(query, 0, 1)); session.close();`, map[string]interface{}{"data": 1.0}},
-			{"Perform a search and get a count", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); local collection = db.collection("startup_log"); local query = {}; query["cmdLine.net.bindIp"] = "127.0.0.1"; output.data = collection.count(query, 0, 10); session.close();`, map[string]interface{}{"data": 10.0}},
-			{"Run a command", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("admin"); output.data = db.command({ ping = 1 }); session.close();`, map[string]interface{}{"data": map[string]interface{}{"ok": 1.0}}},
-		},
-	)
-}
-*/
 func TestRunScript(t *testing.T) {
 	runTests(
 		t,

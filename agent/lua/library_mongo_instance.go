@@ -4,7 +4,6 @@ import (
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
 
-	// "github.com/telemetryapp/goluago/util"
 	"gopkg.in/mgo.v2"
 )
 

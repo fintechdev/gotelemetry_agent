@@ -1,6 +1,24 @@
 {
+	"Tasks": [
+		"go-fmt",
+		"default"
+	],
 	"BuildConstraints": "!plan9,!nacl,!solaris",
 	"PackageVersion": "3.0.0",
 	"PrereleaseInfo": "snapshot",
-	"ConfigVersion": "0.9"
+	"ConfigVersion": "0.9",
+	"TaskSettings": {
+		"go-install": {
+			"dir": "./..."
+		},
+		"go-fmt": {
+			"dir": "./..."
+		},
+		"go-vet": {
+			"dir": "./..."
+		},
+		"go-test": {
+			"dir": "./..."
+		}
+	}
 }
