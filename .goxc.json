@@ -1,5 +1,6 @@
 {
 	"Tasks": [
+		"interpolate-source",
 		"go-fmt",
 		"default"
 	],
@@ -19,6 +20,13 @@
 		},
 		"go-test": {
 			"dir": "./..."
+		}
+	},
+	"BuildSettings": {
+		"LdFlags": "-s",
+		"LdFlagsXVars": {
+			"TimeNow": "main.BUILD_DATE",
+			"Version": "main.VERSION"
 		}
 	}
 }
