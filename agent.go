@@ -16,6 +16,9 @@ import (
 	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
 )
 
+var VERSION = "3.0.0"
+var SOURCE_DATE = "2016-02-09T17:53:32-08:00"
+
 var configFile *config.ConfigFile
 var errorChannel chan error
 var completionChannel chan bool
@@ -58,7 +61,7 @@ func handleErrors(errorChannel chan error, wg *sync.WaitGroup) {
 func main() {
 	var err error
 
-	config.Init()
+	config.Init(VERSION, SOURCE_DATE)
 
 	configFile, err = config.NewConfigFile()
 

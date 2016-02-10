@@ -8,7 +8,6 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
-	"github.com/telemetryapp/gotelemetry_agent/agent/parser"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -122,10 +121,10 @@ type ProcessPlugin struct {
 //
 //   If `url` is specified and points to a resource with the special prefix `tpl`, the plugin will load
 //   the expression payload from the corresponding file and interpret it, once again expecting the
-//   same kind of input it would receive from a process, with one exception: if the resource ends in `.yaml`,
-//   the template can be specified in YAML instead of JSON. For example, you could store a
-//   template locally in the file `update_timeseries.yaml`, and point to it by providing the value
-//   `tpl://./update_timeseries.yaml` for the job's `url` property.
+//   same kind of input it would receive from a process, with one exception: if the resource ends in `.toml`,
+//   the template can be specified in TOML instead of JSON. For example, you could store a
+//   template locally in the file `update_timeseries.toml`, and point to it by providing the value
+//   `tpl://./update_timeseries.toml` for the job's `url` property.
 //
 //   It is a user error to specify both a `url` and `exec` property, or to provide an `args` property
 //   without a `exec` property.
@@ -184,7 +183,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 			}
 		}
 	} else if args, ok := c["args"].(map[interface{}]interface{}); ok {
-		p.scriptArgs = config.MapFromYaml(args).(map[string]interface{})
+		p.scriptArgs = config.MapTemplate(args).(map[string]interface{})
 	} else if args, ok := c["args"].(map[string]interface{}); ok {
 		p.scriptArgs = args
 	}
@@ -194,7 +193,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 			return errors.New("File " + p.path + " does not exist.")
 		}
 
-		if path.Ext(p.path) == ".asl" || path.Ext(p.path) == ".lua" {
+		if path.Ext(p.path) == ".lua" {
 			p.url = "tpl://" + p.path
 			p.path = ""
 		} else {
@@ -404,49 +403,6 @@ func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
 	return string(out), nil
 }
 
-var templateCache = map[string][]parser.Command{}
-
-func (p *ProcessPlugin) performTemplateTaskASL(j *job.Job) (string, error) {
-	j.Debugf("Retrieving expression from template `%s`", p.templateFile)
-
-	var commands []parser.Command
-	var ok bool
-
-	if commands, ok = templateCache[p.templateFile]; !ok {
-		j.Debugf("Script `%s` is not cached.", p.templateFile)
-
-		source, err := ioutil.ReadFile(p.templateFile)
-
-		if err != nil {
-			return "", err
-		}
-
-		commands, errs := parser.Parse(j.ID, string(source))
-
-		if len(errs) > 0 {
-			return "", errs[0]
-		}
-
-		templateCache[p.templateFile] = commands
-	} else {
-		j.Debugf("Script `%s` is cached.", p.templateFile)
-	}
-
-	output, err := parser.Run(j, j, p.scriptArgs, commands)
-
-	if err != nil {
-		return "", err
-	}
-
-	if len(output) == 0 {
-		return "", nil
-	}
-
-	out, err := json.Marshal(config.MapFromYaml(output))
-
-	return string(out), err
-}
-
 func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
 	source, err := ioutil.ReadFile(p.templateFile)
 
@@ -460,15 +416,12 @@ func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
 		return "", err
 	}
 
-	out, err := json.Marshal(config.MapFromYaml(output))
+	out, err := json.Marshal(config.MapTemplate(output))
 
 	return string(out), err
 }
 
 func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
-	if strings.HasSuffix(p.templateFile, ".asl") {
-		return p.performTemplateTaskASL(j)
-	}
 
 	if strings.HasSuffix(p.templateFile, ".lua") {
 		return p.performTemplateTaskLua(j)

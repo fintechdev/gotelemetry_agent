@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
-	"path"
 	"time"
 )
 
@@ -46,32 +44,32 @@ func (j Job) ChannelTag() string {
 }
 
 type ServerConfig struct {
-	APIToken              string      `yaml:"api_token" toml:"api_token"`
-	RawSubmissionInterval interface{} `yaml:"submission_interval" toml:"submission_interval"`
+	APIToken              string      `toml:"api_token"`
+	RawSubmissionInterval interface{} `toml:"submission_interval"`
 }
 
 type DataConfig struct {
-	DataLocation *string `yaml:"path" toml:"path"`
-	TTL          *string `yaml:"ttl" toml:"ttl"`
-	Listen       *string `yaml:"listen" toml:"listen"`
+	DataLocation *string `toml:"path"`
+	TTL          *string `toml:"ttl"`
+	Listen       *string `toml:"listen"`
 }
 
 type GraphiteConfig struct {
-	TCPListenPort string `yaml:"listen_tcp" toml:"listen_tcp"`
-	UDPListenPort string `yaml:"listen_udp" toml:"listen_udp"`
+	TCPListenPort string `toml:"listen_tcp"`
+	UDPListenPort string `toml:"listen_udp"`
 }
 
 type OAuthConfigEntry struct {
-	Version          int               `yaml:"version" toml:"version"`
-	ClientID         string            `yaml:"client_id" toml:"client_id"`
-	ClientSecret     string            `yaml:"client_secret" toml:"client_secret"`
-	CredentialsURL   string            `yaml:"credentials_url" toml:"credentials_url"`
-	AuthorizationURL string            `yaml:"authorization_url" toml:"authorization_url"`
-	TokenURL         string            `yaml:"token_url" toml:"token_url"`
-	Scopes           []string          `yaml:"scopes" toml:"scopes"`
-	Header           map[string]string `yaml:"header" toml:"header"`
-	SignatureMethod  string            `yaml:"signature_method" toml:"signature_method"`
-	PrivateKey       string            `yaml:"private_key", toml:"private_key"`
+	Version          int               `toml:"version"`
+	ClientID         string            `toml:"client_id"`
+	ClientSecret     string            `toml:"client_secret"`
+	CredentialsURL   string            `toml:"credentials_url"`
+	AuthorizationURL string            `toml:"authorization_url"`
+	TokenURL         string            `toml:"token_url"`
+	Scopes           []string          `toml:"scopes"`
+	Header           map[string]string `toml:"header"`
+	SignatureMethod  string            `toml:"signature_method"`
+	PrivateKey       string            `toml:"private_key"`
 }
 
 type ConfigInterface interface {
@@ -86,13 +84,13 @@ type ConfigInterface interface {
 }
 
 type ConfigFile struct {
-	Server    ServerConfig                `yaml:"server" toml:"server"`
-	Graphite  GraphiteConfig              `yaml:"graphite" toml:"graphite"`
-	Data      DataConfig                  `yaml:"data" toml:"data"`
-	Listen    string                      `yaml:"listen" toml:"listen"`
-	JobsField []Job                       `yaml:"jobs" toml:"jobs"`
-	FlowField []Job                       `yaml:"flows" toml:"flow"`
-	OAuth     map[string]OAuthConfigEntry `yaml:"oauth" toml:"oauth"`
+	Server    ServerConfig                `toml:"server"`
+	Graphite  GraphiteConfig              `toml:"graphite"`
+	Data      DataConfig                  `toml:"data"`
+	Listen    string                      `toml:"listen"`
+	JobsField []Job                       `toml:"jobs"`
+	FlowField []Job                       `toml:"flow"`
+	OAuth     map[string]OAuthConfigEntry `toml:"oauth"`
 }
 
 var _ ConfigInterface = &ConfigFile{}
@@ -114,11 +112,7 @@ func NewConfigFile() (*ConfigFile, error) {
 
 	result := &ConfigFile{}
 
-	if path.Ext(CLIConfig.ConfigFileLocation) == ".toml" {
-		_, err = toml.Decode(string(source), result)
-	} else {
-		err = yaml.Unmarshal(source, result)
-	}
+	_, err = toml.Decode(string(source), result)
 
 	for _, job := range result.FlowField {
 		result.JobsField = append(result.JobsField, job)
@@ -179,4 +173,29 @@ func (c *ConfigFile) Jobs() []Job {
 
 func (c *ConfigFile) OAuthConfig() map[string]OAuthConfigEntry {
 	return c.OAuth
+}
+
+func MapTemplate(from interface{}) interface{} {
+	switch from.(type) {
+	case map[interface{}]interface{}:
+		result := map[string]interface{}{}
+
+		for index, value := range from.(map[interface{}]interface{}) {
+			result[index.(string)] = MapTemplate(value)
+		}
+
+		return result
+
+	case []interface{}:
+		f := from.([]interface{})
+
+		for index, value := range f {
+			f[index] = MapTemplate(value)
+		}
+
+		return f
+
+	default:
+		return from
+	}
 }

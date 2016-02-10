@@ -1,11 +1,12 @@
 package aggregations
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/boltdb/bolt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"log"
 	"sync"
 	"time"
 )
@@ -14,7 +15,7 @@ type Manager struct {
 	path         string
 	ttl          time.Duration
 	errorChannel chan error
-	conn         *sql.DB
+	conn         *bolt.DB
 	mutex        sync.RWMutex
 }
 
@@ -23,28 +24,11 @@ var manager *Manager = nil
 func Init(listen, location, ttlString *string, errorChannel chan error) error {
 	if location != nil {
 
-		conn, err := sql.Open("sqlite3", *location)
+		conn, err := bolt.Open(*location, 0644, nil)
 
 		if err != nil {
 			return err
 		}
-
-		conn.Exec(`
-			PRAGMA busy_timeout = 10;
-	    PRAGMA automatic_index = ON;
-	    PRAGMA cache_size = 32768;
-	    PRAGMA cache_spill = OFF;
-	    PRAGMA foreign_keys = ON;
-	    PRAGMA journal_size_limit = 67110000;
-	    PRAGMA locking_mode = NORMAL;
-	    PRAGMA page_size = 4096;
-	    PRAGMA recursive_triggers = ON;
-	    PRAGMA secure_delete = ON;
-	    PRAGMA synchronous = NORMAL;
-	    PRAGMA temp_store = MEMORY;
-	    PRAGMA journal_mode = WAL;
-	    PRAGMA wal_autocheckpoint = 16384;
-		`)
 
 		manager = &Manager{
 			errorChannel: errorChannel,
@@ -62,22 +46,27 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 			manager.ttl = 0
 		}
 
-		if err := manager.exec("CREATE TABLE IF NOT EXISTS _counters (name VARCHAR NOT NULL PRIMARY KEY, value INT NOT NULL DEFAULT(0), rollover_last INT NOT NULL, rollover_interval INT NOT NULL DEFAULT(0), rollover_expression VARCHAR)"); err != nil {
-			return err
-		}
+		// Create default buckets
+		err = conn.Update(func(tx *bolt.Tx) error {
 
-		manager.Debugf("Writing data layer database to %s", manager.path)
+			if _, err := tx.CreateBucketIfNotExists([]byte("_counters")); err != nil {
+				return err
+			}
 
-		InitStorage()
+			if _, err := tx.CreateBucketIfNotExists([]byte("_series")); err != nil {
+				return err
+			}
 
-		if listen != nil {
-			InitServer(*listen, errorChannel)
-		}
+			if _, err := tx.CreateBucketIfNotExists([]byte("_oauth")); err != nil {
+				return err
+			}
 
-		return nil
+			return nil
+		})
+
+		return err
 	}
-
-	manager.Errorf("Data Manager -> No `data.path` property provided. The Data Manager will not run.")
+	log.Printf("Error: %s", "Data Manager -> No `data.path` property provided. The Data Manager will not run.")
 
 	return nil
 }
@@ -100,34 +89,4 @@ func (m *Manager) Errorf(format string, v ...interface{}) {
 	if m.errorChannel != nil {
 		m.errorChannel <- errors.New(fmt.Sprintf("Data Manager -> "+format, v...))
 	}
-}
-
-// Data
-
-func (m *Manager) exec(query string, values ...interface{}) error {
-	// m.mutex.Lock()
-
-	// defer m.mutex.Unlock()
-
-	_, err := m.conn.Exec(query, values...)
-
-	return err
-}
-
-type queryClosure func(*sql.Rows) error
-
-func (m *Manager) query(closure queryClosure, query string, values ...interface{}) error {
-	// m.mutex.RLock()
-
-	// defer m.mutex.RUnlock()
-
-	rs, err := m.conn.Query(query, values...)
-
-	if err != nil {
-		return err
-	}
-
-	defer rs.Close()
-
-	return closure(rs)
 }

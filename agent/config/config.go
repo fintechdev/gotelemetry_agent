@@ -40,31 +40,31 @@ type CLIConfigType struct {
 	OAuthCommand        OAuthCommand
 	OAuthName           string
 	OAuthCode           string
-	OAuthVerifier				string
-	OAuthRealmID				string
+	OAuthVerifier       string
+	OAuthRealmID        string
 }
-
-const AgentVersion = "2.3.0"
 
 var CLIConfig CLIConfigType
 
-func banner() {
+func banner(VERSION string, SOURCE_DATE string) {
 	println()
-	println("Telemetry Agent v " + AgentVersion)
-	println("Copyright © 2012-2016 Telemetry, Inc.")
+	println("Telemetry Agent")
+	println("v" + VERSION + "-" + SOURCE_DATE)
+	println()
+	println("Copyright © 2012-2016 Telemetry Inc.")
 	println()
 	println("For license information, see the LICENSE file")
 	println("---------------------------------------------")
 	println()
 }
 
-func Init() {
-	gotelemetry.UserAgentString = "Telemetry Agent v " + AgentVersion
-	banner()
+func Init(VERSION string, SOURCE_DATE string) {
+	gotelemetry.UserAgentString = "Telemetry Agent v" + VERSION
+	banner(VERSION, SOURCE_DATE)
 
 	app := kingpin.New("telemetry_agent", "The Telemetry Agent")
 
-	app.Version(AgentVersion)
+	app.Version(VERSION)
 
 	app.Flag("config", "Path to the configuration file for this agent.").Short('c').Default("./config.toml").StringVar(&CLIConfig.ConfigFileLocation)
 

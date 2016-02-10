@@ -2,11 +2,10 @@ package lua
 
 import (
 	"fmt"
-	"testing"
-	"time"
-
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"testing"
+	"time"
 )
 
 type expectsError bool
@@ -111,31 +110,6 @@ func runTests(t *testing.T, tests []test) {
 	}
 }
 
-func TestSQL(t *testing.T) {
-	runTests(
-		t,
-		[]test{
-			{"Execute a SQL query without parameters", `local sql = require("telemetry/sql"); local db = sql.open("sqlite3", "test_db.sqlite"); output.test = db.query("SELECT COUNT(*) as cnt FROM TEST")`, map[string]interface{}{"test": []interface{}{map[string]interface{}{"cnt": 3.0}}}},
-			{"Execute a SQL query with parameters", `local sql = require("telemetry/sql"); local db = sql.open("sqlite3", "test_db.sqlite"); output.test = db.query("SELECT * FROM TEST WHERE name like :1", "Marco")`, map[string]interface{}{"test": []interface{}{map[string]interface{}{"name": "Marco", "value": 123.0}}}},
-		},
-	)
-}
-
-func TestMongo(t *testing.T) {
-	runTests(
-		t,
-		[]test{
-			{"Connect to a Mongo database", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); session.close();`, map[string]interface{}{}},
-			{"Retrieve list of live servers", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); output.data = session.live_servers(); session.close();`, map[string]interface{}{"data": []interface{}{"localhost:27017"}}},
-			{"Get a DB", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); output.data = db.collections(); session.close();`, map[string]interface{}{"data": []interface{}{"startup_log", "system.indexes"}}},
-			{"Get a Collection name", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); local collection = db.collection("startup_log"); output.data = collection.name(); session.close();`, map[string]interface{}{"data": "startup_log"}},
-			{"Get a Collection and perform a search", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); local collection = db.collection("startup_log"); local query = {}; query["cmdLine.net.bindIp"] = "127.0.0.1"; output.data = #(collection.query(query, 0, 1)); session.close();`, map[string]interface{}{"data": 1.0}},
-			{"Perform a search and get a count", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("local"); local collection = db.collection("startup_log"); local query = {}; query["cmdLine.net.bindIp"] = "127.0.0.1"; output.data = collection.count(query, 0, 10); session.close();`, map[string]interface{}{"data": 10.0}},
-			{"Run a command", `local mongo = require("telemetry/mongodb"); local session = mongo.open("mongodb://localhost:27017/local"); local db = session.db("admin"); output.data = db.command({ ping = 1 }); session.close();`, map[string]interface{}{"data": map[string]interface{}{"ok": 1.0}}},
-		},
-	)
-}
-
 func TestRunScript(t *testing.T) {
 	runTests(
 		t,
@@ -192,7 +166,7 @@ func TestRegex(t *testing.T) {
 
 			local res = ""
 
-			for i = 1, string.len(str) do 
+			for i = 1, string.len(str) do
 				local ch = string.sub(str, i, i)
 
 				if regex.match("[^A-Za-z0-9\\_.~]", ch) then
@@ -219,40 +193,8 @@ func TestRegex(t *testing.T) {
 	)
 }
 
-func TestParseDate(t *testing.T) {
-	script := `
-		local regex = require("goluago/regexp")
-		local re = regex.compile("^([\\w]+) ([\\w]+) ([\\d]+) ([\\d]+):([\\d]+):([\\d]+) ([+\\d]+) (\\d+)$")
-		local months = {Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
-
-		function parseRFC822Time(str)
-			local parts = re.findSubmatch(str)
-			local data = { 
-				year = tonumber(parts[9]), 
-				month = months[parts[3]],
-				day = tonumber(parts[4]), 
-				hour = tonumber(parts[5]), 
-				min = tonumber(parts[6]), 
-				sec = tonumber(parts[7])
-			}
-			local t = os.time(data)
-
-			return t
-		end
-
-		output.parts = parseRFC822Time("Tue Dec 08 19:00:15 +0000 2015")
-	`
-
-	runTests(
-		t,
-		[]test{
-			{"Parse RFC822 date", script, map[string]interface{}{"parts": 1.2388179e+09}},
-		},
-	)
-}
-
 func TestSeries(t *testing.T) {
-	l := "/tmp/agent.sqlite3"
+	l := "/tmp/agent.bolt"
 	ttl := "1h"
 	aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
 
@@ -264,7 +206,6 @@ func TestSeries(t *testing.T) {
 		[]test{
 			{"Series", `local st = require("telemetry/storage"); st.series("test")`, shouldNotError},
 			{"Series name", `local st = require("telemetry/storage"); output.out = st.series("test").name()`, map[string]interface{}{"out": "test"}},
-			{"Series find", `local st = require("telemetry/storage"); st.series("tab1"); st.series("tab2"); ss = st.series_find("tab%"); count = 0; for _ in pairs(ss) do count = count + 1 end; output.out = count`, map[string]interface{}{"out": 2.0}},
 			{"Series trim since by timestamp", `local st = require("telemetry/storage"); st.series("test").trimSince(os.time() - (60 * 2))`, shouldNotError},
 			{"Series trim since by duration", `local st = require("telemetry/storage"); st.series("test").trimSince("2m")`, shouldNotError},
 			{"Series trim by count", `local st = require("telemetry/storage"); st.series("test").trimCount(30)`, shouldNotError},
@@ -294,10 +235,6 @@ func TestSeries(t *testing.T) {
 }
 
 func TestCounter(t *testing.T) {
-	l := "/tmp/agent.sqlite3"
-	ttl := "1h"
-	aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
-
 	runTests(
 		t,
 		[]test{
@@ -305,21 +242,6 @@ func TestCounter(t *testing.T) {
 			{"Counter Value", `local st = require("telemetry/storage"); output.out = st.counter("test").value()`, shouldNotError},
 			{"Counter Set", `local st = require("telemetry/storage"); c = st.counter("test"); c.set(10); output.out = st.counter("test").value()`, map[string]interface{}{"out": 10.0}},
 			{"Counter Increment", `local st = require("telemetry/storage"); c = st.counter("test"); c.set(10); c.increment(1); output.out = st.counter("test").value()`, map[string]interface{}{"out": 11.0}},
-		},
-	)
-}
-
-func TestStructuredStorage(t *testing.T) {
-	l := "/tmp/agent.sqlite3"
-	ttl := "1h"
-	aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
-	aggregations.InitStorage()
-
-	runTests(
-		t,
-		[]test{
-			{"Storage", `local st = require("telemetry/storage"); st.storage()`, shouldNotError},
-			{"Storage Set & Get", `local st = require("telemetry/storage"); s = st.storage(); s.test = {a = 123}; output.out = s.test`, map[string]interface{}{"out": map[string]interface{}{"a": 123.0}}},
 		},
 	)
 }

@@ -80,7 +80,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 
 	"pop": func(s *aggregations.Series) lua.Function {
 		return func(l *lua.State) int {
-			res, err := s.Pop(l.ToBoolean(1))
+			res, err := s.Pop()
 
 			if err != nil {
 				lua.Errorf(l, "%s", err)

@@ -1,17 +1,11 @@
 package aggregations
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/boltdb/bolt"
 	"strings"
 )
-
-func InitOAuthStorage() {
-	if err := manager.exec(`CREATE TABLE IF NOT EXISTS "oauth_buckets" (key VARCHAR PRIMARY KEY, value VARCHAR)`); err != nil {
-		panic(err)
-	}
-}
 
 func WriteOAuthToken(key string, token interface{}) error {
 	key = strings.TrimSpace(key)
@@ -26,29 +20,36 @@ func WriteOAuthToken(key string, token interface{}) error {
 		return err
 	}
 
-	return manager.exec(`UPDATE "oauth_buckets" SET value = ? WHERE key = ?; INSERT INTO "oauth_buckets" (key, value) SELECT ?, ? WHERE changes() = 0`, data, key, key, data)
+	err = manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_oauth"))
+
+		err := bucket.Put([]byte(key), data)
+
+		return err
+	})
+
+	return err
 }
 
 func ReadOAuthToken(key string, dest interface{}) error {
-	return manager.query(
-		func(rs *sql.Rows) error {
-			if rs.Next() {
-				var s string
+	key = strings.TrimSpace(key)
 
-				if err := rs.Scan(&s); err != nil {
-					return err
-				}
+	if key == "" {
+		return errors.New("Invalid key")
+	}
 
-				if err := json.Unmarshal([]byte(s), &dest); err != nil {
-					return err
-				}
+	err := manager.conn.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_oauth"))
+
+		val := bucket.Get([]byte(key))
+		if val != nil {
+			if err := json.Unmarshal(val, &dest); err != nil {
+				return err
 			}
+		}
 
-			return nil
-		},
+		return nil
+	})
 
-		`SELECT value from "oauth_buckets" WHERE key = ?`,
-
-		key,
-	)
+	return err
 }
