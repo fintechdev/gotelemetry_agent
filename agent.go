@@ -16,8 +16,8 @@ import (
 	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
 )
 
-var VERSION = "3.0.0-snapshot"
-var SOURCE_DATE = "2016-02-04T17:49:57-08:00"
+var VERSION = "3.0.0"
+var SOURCE_DATE = "2016-02-09T17:53:32-08:00"
 
 var configFile *config.ConfigFile
 var errorChannel chan error

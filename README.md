@@ -16,6 +16,6 @@ Full documentation is available on the [Telemetry Documentation website](https:/
 
 You will need a working install of Go 1.5 and GIT on your local platform in order to build the Agent from source.
 
-The Agent is designed to cross compile using [goxc](https://github.com/laher/goxc/wiki/config) and includes a `.goxc.json` config file to produce a validated build for all compatible platorms.
+The Agent is designed to cross compile using [goxc](https://github.com/laher/goxc) and includes a `.goxc.json` config file to produce a validated build for all compatible platforms.
 
-You can also compile for your current platform by using the `go build` command. Ensure that your packages are up to date by running a `go get -u` prior to building.
+You can also compile for your current platform by using the `go build` command. Ensure that your packages are up to date by running `go get -u` prior to building.
