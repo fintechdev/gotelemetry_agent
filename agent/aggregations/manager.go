@@ -7,9 +7,9 @@ import (
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"log"
+	"strconv"
 	"sync"
 	"time"
-	"strconv"
 )
 
 type Manager struct {
@@ -94,7 +94,7 @@ func DatabaseCleanup() {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 
-		err := tx.ForEach(func (name []byte, b *bolt.Bucket) error {
+		err := tx.ForEach(func(name []byte, b *bolt.Bucket) error {
 
 			if string(string(name)[0]) != "_" {
 
@@ -123,7 +123,7 @@ func DatabaseCleanup() {
 	})
 
 	if err != nil {
-		manager.Errorf("Database Cleanup Error: ", err)
+		manager.Errorf("Database Cleanup Error: %s", err)
 	}
 
 }

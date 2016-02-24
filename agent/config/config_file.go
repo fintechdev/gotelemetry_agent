@@ -120,7 +120,7 @@ func NewConfigFile() (*ConfigFile, error) {
 
 	if result.DataConfig().TTL != nil {
 		storageJob := map[string]interface{}{
-			"id": "_database_cleanup",
+			"id":       "_database_cleanup",
 			"interval": *result.DataConfig().TTL,
 		}
 

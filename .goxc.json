@@ -6,26 +6,26 @@
 		"default"
 	],
 	"BuildConstraints": "!plan9,!nacl,!solaris",
-	"PackageVersion": "3.0.0",
-	"ConfigVersion": "0.9",
+	"PackageVersion": "3.0.1",
 	"TaskSettings": {
-		"go-install": {
-			"dir": "./..."
-		},
 		"go-fmt": {
 			"dir": "./..."
 		},
-		"go-vet": {
+		"go-install": {
 			"dir": "./..."
 		},
 		"go-test": {
 			"dir": "./..."
 		},
+		"go-vet": {
+			"dir": "./..."
+		},
 		"publish-github": {
+			"body": "- Data storage TTL now instantiates a dedicated job task. _database_cleanup runs on an interval based on TTL (will run at least every 24 hours) and trims all series data since the interval point. \n- Fixed a bug where flow-less jobs would throw an error.\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
 			"owner": "telemetryapp",
-			"repository": "gotelemetry_agent",
 			"prerelease": false,
-			"body": "-  \n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases."
+			"repository": "gotelemetry_agent"
 		}
-	}
+	},
+	"ConfigVersion": "0.9"
 }

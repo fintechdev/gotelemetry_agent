@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
@@ -16,7 +17,6 @@ import (
 	"path"
 	"strings"
 	"time"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 )
 
 // init() registers this plugin with the Plugin Manager.
@@ -137,17 +137,23 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 
 	var ok bool
 
-  if job.ID == "_database_cleanup" {
+	if job.ID == "_database_cleanup" {
 
 		if interval, ok := c["interval"].(string); ok {
 
-				timeInterval, err := config.ParseTimeInterval(interval)
+			timeInterval, err := config.ParseTimeInterval(interval)
 
-				if err != nil {
-					return err
-				}
+			if err != nil {
+				return err
+			}
 
-				p.PluginHelper.AddTaskWithClosure(p.databaseCleanup, timeInterval)
+			// The cleanup job should run at least once every 24 hours
+			oneDayInterval, _ := config.ParseTimeInterval("24h")
+			if timeInterval > oneDayInterval {
+				timeInterval = oneDayInterval
+			}
+
+			p.PluginHelper.AddTaskWithClosure(p.databaseCleanup, timeInterval)
 		}
 
 		return nil
