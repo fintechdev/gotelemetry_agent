@@ -118,6 +118,15 @@ func NewConfigFile() (*ConfigFile, error) {
 		result.JobsField = append(result.JobsField, job)
 	}
 
+	if result.DataConfig().TTL != nil {
+		storageJob := map[string]interface{}{
+			"id":       "_database_cleanup",
+			"interval": *result.DataConfig().TTL,
+		}
+
+		result.JobsField = append(result.JobsField, storageJob)
+	}
+
 	return result, err
 }
 

@@ -6,26 +6,26 @@
 		"default"
 	],
 	"BuildConstraints": "!plan9,!nacl,!solaris",
-	"PackageVersion": "3.0.0",
-	"ConfigVersion": "0.9",
+	"PackageVersion": "3.0.1",
 	"TaskSettings": {
-		"go-install": {
-			"dir": "./..."
-		},
 		"go-fmt": {
 			"dir": "./..."
 		},
-		"go-vet": {
+		"go-install": {
 			"dir": "./..."
 		},
 		"go-test": {
 			"dir": "./..."
 		},
+		"go-vet": {
+			"dir": "./..."
+		},
 		"publish-github": {
+			"body": "- Data storage TTL now instantiates a dedicated job task. _database_cleanup runs on an interval based on TTL (will run at least every 24 hours) and trims all series data since the interval point. \n- Fixed a bug where flow-less jobs would throw an error.\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
 			"owner": "telemetryapp",
-			"repository": "gotelemetry_agent",
 			"prerelease": false,
-			"body": "- ASL scripts are no longer supported in Agent v3.0.0 or later. Lua is now the only available embedded scripting language (external scripts such as those written in Ruby or Javascript are still supported). Please continue to use Agent v2.3.0 at this time if you have not yet converted your scripts to Lua.\n- The Agent now uses [BoltDB](https://github.com/boltdb/bolt) for internal storage. This replaces the the previous SQLite implementation. Config files must be updated to point to a `.db` extended path as opposed to `.sqlite3`.\n- Legacy support to YAML config files has been removed in favor of TOML configurations. All YAML examples have been removed from our documentation and repositories.\n- A new debugging mode has been added to the Agent. This can be activated by adding `--debug` as a command line switch.\n- The dependencies for compilation have been reduced. See the README file for more information. The Agent will now easily compile for most Linux, Windows, and OS X platforms from source simply by running the `go build` command.\n- Builds and releases now use [goxc](https://github.com/laher/goxc) for cross-compiling. A `.goxc.json` file is used for tracking version and build details."
+			"repository": "gotelemetry_agent"
 		}
-	}
+	},
+	"ConfigVersion": "0.9"
 }

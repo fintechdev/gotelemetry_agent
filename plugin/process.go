@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
@@ -135,6 +136,28 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	job.Debugf("The configuration is %#v", c)
 
 	var ok bool
+
+	if job.ID == "_database_cleanup" {
+
+		if interval, ok := c["interval"].(string); ok {
+
+			timeInterval, err := config.ParseTimeInterval(interval)
+
+			if err != nil {
+				return err
+			}
+
+			// The cleanup job should run at least once every 24 hours
+			oneDayInterval, _ := config.ParseTimeInterval("24h")
+			if timeInterval > oneDayInterval {
+				timeInterval = oneDayInterval
+			}
+
+			p.PluginHelper.AddTaskWithClosure(p.databaseCleanup, timeInterval)
+		}
+
+		return nil
+	}
 
 	p.flowTag, ok = c["flow_tag"].(string)
 
@@ -363,6 +386,10 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 	}
 
 	if p.flowTag == "" {
+		if j.ID != "" {
+			// Flow-less job
+			return nil
+		}
 		return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
 	}
 
@@ -472,4 +499,11 @@ func (p *ProcessPlugin) performAllTasks(j *job.Job) {
 	if err := p.analyzeAndSubmitProcessResponse(j, response); err != nil {
 		j.ReportError(errors.New("Unable to analyze process output: " + err.Error()))
 	}
+}
+
+func (p *ProcessPlugin) databaseCleanup(j *job.Job) {
+	j.Debugf("Starting database cleanup...")
+
+	defer p.PluginHelper.TrackTime(j, time.Now(), "Database cleanup completed in %s.")
+	aggregations.DatabaseCleanup()
 }
