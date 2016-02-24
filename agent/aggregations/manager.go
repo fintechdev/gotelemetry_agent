@@ -9,6 +9,7 @@ import (
 	"log"
 	"sync"
 	"time"
+	"strconv"
 )
 
 type Manager struct {
@@ -53,10 +54,6 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 				return err
 			}
 
-			if _, err := tx.CreateBucketIfNotExists([]byte("_series")); err != nil {
-				return err
-			}
-
 			if _, err := tx.CreateBucketIfNotExists([]byte("_oauth")); err != nil {
 				return err
 			}
@@ -89,4 +86,44 @@ func (m *Manager) Errorf(format string, v ...interface{}) {
 	if m.errorChannel != nil {
 		m.errorChannel <- errors.New(fmt.Sprintf("Data Manager -> "+format, v...))
 	}
+}
+
+func DatabaseCleanup() {
+	since := time.Now().Add(-manager.ttl)
+	max := []byte(strconv.FormatInt(since.Unix(), 10))
+
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+
+		err := tx.ForEach(func (name []byte, b *bolt.Bucket) error {
+
+			if string(string(name)[0]) != "_" {
+
+				cursor := b.Cursor()
+
+				// Start by finding the closest value to our trim target
+				cursor.Seek(max)
+				// Step backwards since we do not want to remove the target
+				k, _ := cursor.Prev()
+
+				// Delete all items that take place before this point
+				for k != nil {
+					err := cursor.Delete()
+					if err != nil {
+						return err
+					}
+					k, _ = cursor.Prev()
+				}
+
+			}
+
+			return nil
+		})
+
+		return err
+	})
+
+	if err != nil {
+		manager.Errorf("Database Cleanup Error: ", err)
+	}
+
 }

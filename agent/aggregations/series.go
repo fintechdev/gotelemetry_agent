@@ -46,10 +46,9 @@ func GetSeries(name string) (*Series, bool, error) {
 
 	// Get the requested key
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
 
-		if bucket.Bucket([]byte(name)) == nil {
-			_, err := bucket.CreateBucket([]byte(name))
+		if tx.Bucket([]byte(name)) == nil {
+			_, err := tx.CreateBucket([]byte(name))
 			if err != nil {
 				return err
 			}
@@ -72,14 +71,13 @@ func GetSeries(name string) (*Series, bool, error) {
 
 func (s *Series) Push(timestamp *time.Time, value float64) error {
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
 
 		if timestamp == nil {
 			timestamp = &time.Time{}
 			*timestamp = time.Now()
 		}
 
-		seriesBucket, err := bucket.CreateBucketIfNotExists([]byte(s.Name))
+		seriesBucket, err := tx.CreateBucketIfNotExists([]byte(s.Name))
 		if err != nil {
 			return err
 		}
@@ -97,8 +95,7 @@ func (s *Series) Last() (map[string]interface{}, error) {
 	var output map[string]interface{}
 
 	err := manager.conn.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		key, val := bucket.Bucket([]byte(s.Name)).Cursor().Last()
+		key, val := tx.Bucket([]byte(s.Name)).Cursor().Last()
 		value, err := strconv.ParseFloat(string(val), 64)
 		if err != nil {
 			return err
@@ -125,8 +122,7 @@ func (s *Series) Pop() (map[string]interface{}, error) {
 	var output map[string]interface{}
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		cursor := bucket.Bucket([]byte(s.Name)).Cursor()
+		cursor := tx.Bucket([]byte(s.Name)).Cursor()
 		key, val := cursor.Last()
 
 		value, err := strconv.ParseFloat(string(val), 64)
@@ -163,8 +159,7 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 	var resultArray []float64
 
 	err := manager.conn.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		c := bucket.Bucket([]byte(s.Name)).Cursor()
+		c := tx.Bucket([]byte(s.Name)).Cursor()
 
 		// Iterate over the min/max range
 		for k, v := c.Seek(min); k != nil && bytes.Compare(k, max) <= 0; k, v = c.Next() {
@@ -257,8 +252,7 @@ func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, agg
 	startTime = endTime - (interval * count)
 
 	err := manager.conn.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		c := bucket.Bucket([]byte(s.Name)).Cursor()
+		c := tx.Bucket([]byte(s.Name)).Cursor()
 
 		for i := 0; i < aggregateCount; i++ {
 
@@ -349,8 +343,7 @@ func (s *Series) Items(count int) (interface{}, error) {
 	items := []interface{}{}
 
 	err := manager.conn.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		cursor := bucket.Bucket([]byte(s.Name)).Cursor()
+		cursor := tx.Bucket([]byte(s.Name)).Cursor()
 
 		key, val := cursor.Last()
 
@@ -389,8 +382,7 @@ func (s *Series) TrimSince(since time.Time) error {
 	max := []byte(strconv.FormatInt(since.Unix(), 10))
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		cursor := bucket.Bucket([]byte(s.Name)).Cursor()
+		cursor := tx.Bucket([]byte(s.Name)).Cursor()
 
 		// Start by finding the closest value to our trim target
 		cursor.Seek(max)
@@ -415,8 +407,7 @@ func (s *Series) TrimSince(since time.Time) error {
 func (s *Series) TrimCount(count int) error {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("_series"))
-		cursor := bucket.Bucket([]byte(s.Name)).Cursor()
+		cursor := tx.Bucket([]byte(s.Name)).Cursor()
 
 		k, _ := cursor.Last()
 
