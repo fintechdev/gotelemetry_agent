@@ -1,9 +1,11 @@
 package job
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"time"
 )
 
 type JobManager struct {
@@ -14,20 +16,10 @@ type JobManager struct {
 	jobCompletionChannel chan string
 }
 
-func createJob(manager *JobManager, credentials gotelemetry.Credentials, accountStream *gotelemetry.BatchStream, errorChannel chan error, jobDescription config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
-	pluginFactory, err := GetPlugin(jobDescription.Plugin())
+var jobManager *JobManager
 
-	if err != nil {
-		return nil, err
-	}
-
-	pluginInstance := pluginFactory()
-
-	return newJob(manager, credentials, accountStream, jobDescription.ID(), jobDescription, pluginInstance, errorChannel, jobCompletionChannel, wait)
-}
-
-func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, completionChannel chan bool) (*JobManager, error) {
-	result := &JobManager{
+func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionChannel chan bool) error {
+	jobManager = &JobManager{
 		jobs:                 map[string]*Job{},
 		completionChannel:    completionChannel,
 		jobCompletionChannel: make(chan string),
@@ -36,18 +28,18 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 	apiToken, err := jobConfig.APIToken()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	credentials, err := gotelemetry.NewCredentials(apiToken, jobConfig.APIURL())
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	credentials.SetDebugChannel(errorChannel)
 
-	result.credentials = credentials
+	jobManager.credentials = credentials
 
 	submissionInterval := jobConfig.SubmissionInterval()
 
@@ -58,13 +50,13 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 		errorChannel <- gotelemetry.NewLogError("Submission interval set to %ds", submissionInterval/time.Second)
 	}
 
-	result.accountStreams = map[string]*gotelemetry.BatchStream{}
+	jobManager.accountStreams = map[string]*gotelemetry.BatchStream{}
 
 	for _, jobDescription := range jobConfig.Jobs() {
 		jobId := jobDescription.ID()
 
 		if jobId == "" {
-			return nil, gotelemetry.NewError(500, "Job ID missing and no `flow_tag` provided.")
+			return gotelemetry.NewError(500, "Job ID missing and no `flow_tag` provided.")
 		}
 
 		if !config.CLIConfig.Filter.MatchString(jobId) {
@@ -77,7 +69,7 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 
 		channelTag := jobDescription.ChannelTag()
 
-		accountStream, ok := result.accountStreams[channelTag]
+		accountStream, ok := jobManager.accountStreams[channelTag]
 
 		if !ok {
 			var err error
@@ -85,31 +77,43 @@ func NewJobManager(jobConfig config.ConfigInterface, errorChannel chan error, co
 			accountStream, err = gotelemetry.NewBatchStream(credentials, channelTag, submissionInterval, errorChannel)
 
 			if err != nil {
-				return nil, err
+				return err
 			}
 
-			result.accountStreams[channelTag] = accountStream
+			jobManager.accountStreams[channelTag] = accountStream
 		}
 
-		job, err := createJob(result, credentials, accountStream, errorChannel, jobDescription, result.jobCompletionChannel, false)
+		job, err := createJob(jobManager, credentials, accountStream, errorChannel, jobDescription, jobManager.jobCompletionChannel, false)
 
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		if err := result.addJob(job); err != nil {
-			return nil, err
+		if err := jobManager.addJob(job); err != nil {
+			return err
 		}
 	}
 
-	if len(result.jobs) == 0 {
+	if len(jobManager.jobs) == 0 {
 		errorChannel <- gotelemetry.NewLogError("No jobs are being scheduled.")
-		return nil, nil
+		return nil
 	}
 
-	go result.monitorDoneChannel()
+	go jobManager.monitorDoneChannel()
 
-	return result, nil
+	return nil
+}
+
+func createJob(manager *JobManager, credentials gotelemetry.Credentials, accountStream *gotelemetry.BatchStream, errorChannel chan error, jobDescription config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
+	pluginFactory, err := GetPlugin(jobDescription.Plugin())
+
+	if err != nil {
+		return nil, err
+	}
+
+	pluginInstance := pluginFactory()
+
+	return newJob(manager, credentials, accountStream, jobDescription.ID(), jobDescription, pluginInstance, errorChannel, jobCompletionChannel, wait)
 }
 
 func (m *JobManager) addJob(job *Job) error {
@@ -137,5 +141,12 @@ func (m *JobManager) monitorDoneChannel() {
 				return
 			}
 		}
+	}
+}
+
+func GetJobsList() {
+
+	for k, _ := range jobManager.jobs {
+		fmt.Println("Job ID:", k)
 	}
 }

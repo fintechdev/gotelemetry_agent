@@ -1,6 +1,12 @@
 package main
 
 import (
+	"io/ioutil"
+	"log"
+	"os"
+	"sync"
+
+	"github.com/gin-gonic/gin"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
@@ -8,10 +14,7 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
-	"io/ioutil"
-	"log"
-	"os"
-	"sync"
+	"github.com/telemetryapp/gotelemetry_agent/agent/routes"
 
 	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
 )
@@ -121,10 +124,14 @@ func run() {
 	} else if config.CLIConfig.OAuthCommand != config.OAuthCommands.None {
 		oauth.RunCommand(config.CLIConfig, errorChannel, completionChannel)
 	} else {
-		_, err := job.NewJobManager(configFile, errorChannel, completionChannel)
-
-		if err != nil {
+		if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
 			log.Fatalf("Initialization error: %s", err)
 		}
+
+		// Start gin test
+		g := gin.New()
+		routes.Init(g)
+		go g.Run()
+
 	}
 }
