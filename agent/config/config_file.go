@@ -9,38 +9,30 @@ import (
 	"time"
 )
 
-type Job map[string]interface{}
+// TODO remove below comment once struct verified working
+// type Job map[string]interface{}
+type Job struct {
+	Id         string      `toml:"id"`
+	Tag        string      `toml:"tag"`
+	Plugin     string      `toml:"plugin"`
+	ChannelTag string      `toml:"channel_tag"`
+	Batch      bool        `toml:"batch"`
+	Exec       string      `toml:"exec"`
+	Script     string      `toml:"script"`
+	Url        string      `toml:"url"`
+	Args       interface{} `toml:"args"`
+	Template   interface{} `toml:"template"`
+	Variant    string      `toml:"variant"`
+	Expiration interface{} `toml:"expiration"`
+	Interval   string      `toml:"interval"`
+}
 
 func (j Job) ID() string {
-	if result, success := j["id"].(string); success {
-		return result
+	if j.Id != "" {
+		return j.Id
 	}
 
-	if result, success := j["flow_tag"].(string); success {
-		return result
-	}
-
-	if result, success := j["tag"].(string); success {
-		return result
-	}
-
-	return ""
-}
-
-func (j Job) Plugin() string {
-	if result, success := j["plugin"].(string); success {
-		return result
-	}
-
-	return "com.telemetryapp.process"
-}
-
-func (j Job) ChannelTag() string {
-	if result, ok := j["channel_tag"].(string); ok {
-		return result
-	}
-
-	return ""
+	return j.Tag
 }
 
 type ServerConfig struct {
@@ -119,9 +111,9 @@ func NewConfigFile() (*ConfigFile, error) {
 	}
 
 	if result.DataConfig().TTL != nil {
-		storageJob := map[string]interface{}{
-			"id":       "_database_cleanup",
-			"interval": *result.DataConfig().TTL,
+		storageJob := Job{
+			Id:       "_database_cleanup",
+			Interval: *result.DataConfig().TTL,
 		}
 
 		result.JobsField = append(result.JobsField, storageJob)

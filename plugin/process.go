@@ -64,7 +64,7 @@ type ProcessPlugin struct {
 // 																executing an ASL script, a hash of key/value pairs that
 // 																will be accessible through the `arg()` global method
 //
-// - flow_tag                     The tag of the flow to populate
+// - tag                     The tag of the flow to populate
 //
 // - interval                     The number of seconds between subsequent executions of the
 //                                plugin. Default: never
@@ -91,44 +91,7 @@ type ProcessPlugin struct {
 // - Output a JSON payload, which is used to PATCH the payload of the flow using a simple top-level property replacement operation
 //
 // - Output the text REPLACE, followed by a newline, followed by a payload that is used to replace the contents of the flow.
-//
-// For example:
-//
-//  jobs:
-//    - id: Telemetry External
-//      plugin: com.telemetryapp.process
-//      config:
-//        interval: 86400
-//        exec: ./test.php
-//        args:
-//        	- value
-//        	- 1
-//        flow_tag: php_test
-//        variant: value
-//        template:
-//          color: white
-//          label: PHP Test
-//          value: 100
-//
-// test.php:
-//
-//   #!/usr/bin/php
-//   <?php
-//   echo json_encode(array('value' => $argv[1]));
-//
-//   If `url` is specified and points to an HTTP/S resource, the plugin will download the expression
-//   to be evaluated from the URL specified instead, expecting the same kind of output it would receive
-//   from an external process.
-//
-//   If `url` is specified and points to a resource with the special prefix `tpl`, the plugin will load
-//   the expression payload from the corresponding file and interpret it, once again expecting the
-//   same kind of input it would receive from a process, with one exception: if the resource ends in `.toml`,
-//   the template can be specified in TOML instead of JSON. For example, you could store a
-//   template locally in the file `update_timeseries.toml`, and point to it by providing the value
-//   `tpl://./update_timeseries.toml` for the job's `url` property.
-//
-//   It is a user error to specify both a `url` and `exec` property, or to provide an `args` property
-//   without a `exec` property.
+// TODO add example
 
 func (p *ProcessPlugin) Init(job *job.Job) error {
 	c := job.Config()
@@ -138,10 +101,8 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	var ok bool
 
 	if job.ID == "_database_cleanup" {
-
-		if interval, ok := c["interval"].(string); ok {
-
-			timeInterval, err := config.ParseTimeInterval(interval)
+		if c.Interval != "" {
+			timeInterval, err := config.ParseTimeInterval(c.Interval)
 
 			if err != nil {
 				return err
@@ -159,20 +120,16 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		return nil
 	}
 
-	p.flowTag, ok = c["flow_tag"].(string)
+	p.flowTag = c.Tag
 
-	if !ok {
-		p.flowTag, _ = c["tag"].(string)
-	}
-
-	p.batch, ok = c["batch"].(bool)
+	p.batch = c.Batch
 
 	if ok && p.flowTag != "" {
-		return errors.New("You cannot specify both `flow_tag` and `batch` properties.")
+		return errors.New("You cannot specify both `tag` and `batch` properties.")
 	}
 
-	exec, _ := c["exec"].(string)
-	script, _ := c["script"].(string)
+	exec := c.Exec
+	script := c.Script
 
 	if exec != "" && script != "" {
 		return errors.New("You cannot specify both `script` and `exec` properties.")
@@ -184,7 +141,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		p.path = script
 	}
 
-	p.url, _ = c["url"].(string)
+	p.url = c.Url
 
 	if p.path == "" && p.url == "" {
 		return errors.New("You must specify a `script`, `exec`, or `url` property.")
@@ -197,7 +154,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	p.args = []string{}
 	p.scriptArgs = map[string]interface{}{}
 
-	if args, ok := c["args"].([]interface{}); ok {
+	if args, ok := c.Args.([]interface{}); ok {
 		for _, arg := range args {
 			if a, ok := arg.(string); ok {
 				p.args = append(p.args, a)
@@ -205,9 +162,9 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 				p.args = append(p.args, fmt.Sprintf("%#v", arg))
 			}
 		}
-	} else if args, ok := c["args"].(map[interface{}]interface{}); ok {
+	} else if args, ok := c.Args.(map[interface{}]interface{}); ok {
 		p.scriptArgs = config.MapTemplate(args).(map[string]interface{})
-	} else if args, ok := c["args"].(map[string]interface{}); ok {
+	} else if args, ok := c.Args.(map[string]interface{}); ok {
 		p.scriptArgs = args
 	}
 
@@ -246,12 +203,12 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	}
 
-	template, templateOK := c["template"]
-	variant, variantOK := c["variant"].(string)
+	template := c.Template
+	variant := c.Variant
 
-	if variantOK && templateOK {
+	if variant != "" && template != nil {
 		if p.flowTag == "" {
-			return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
+			return errors.New("The required `tag` property (`string`) is either missing or of the wrong type.")
 		}
 
 		if f, err := job.GetOrCreateFlow(p.flowTag, variant, template); err != nil {
@@ -261,12 +218,8 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		}
 	}
 
-	if interval, ok := c["interval"].(int); ok {
-		p.expiration = time.Duration(interval*3) * time.Second
-
-		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, time.Duration(interval)*time.Second)
-	} else if interval, ok := c["interval"].(string); ok {
-		if timeInterval, err := config.ParseTimeInterval(interval); err == nil {
+	if c.Interval != "" {
+		if timeInterval, err := config.ParseTimeInterval(c.Interval); err == nil {
 			if p.expiration == 0 {
 				p.expiration = timeInterval * 3.0
 			}
@@ -283,15 +236,15 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		p.expiration = time.Second * 60
 	}
 
-	switch c["expiration"].(type) {
+	switch c.Expiration.(type) {
 	case int:
-		p.expiration = time.Duration(c["expiration"].(int)) * time.Second
+		p.expiration = time.Duration(c.Expiration.(int)) * time.Second
 
 	case int64:
-		p.expiration = time.Duration(c["expiration"].(int64)) * time.Second
+		p.expiration = time.Duration(c.Expiration.(int64)) * time.Second
 
 	case string:
-		if timeInterval, err := config.ParseTimeInterval(c["expiration"].(string)); err == nil {
+		if timeInterval, err := config.ParseTimeInterval(c.Expiration.(string)); err == nil {
 			p.expiration = timeInterval
 		} else {
 			return errors.New("Invalid expiration value. Must be either a number of seconds or a time interval string.")
@@ -390,7 +343,7 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 			// Flow-less job
 			return nil
 		}
-		return errors.New("The required `flow_tag` property (`string`) is either missing or of the wrong type.")
+		return errors.New("The required `tag` property (`string`) is either missing or of the wrong type.")
 	}
 
 	p.performDataUpdate(j, p.flowTag, isReplace, data)

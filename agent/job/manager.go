@@ -56,18 +56,14 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 		jobId := jobDescription.ID()
 
 		if jobId == "" {
-			return gotelemetry.NewError(500, "Job ID missing and no `flow_tag` provided.")
+			return gotelemetry.NewError(500, "Job ID missing and no `tag` provided.")
 		}
 
 		if !config.CLIConfig.Filter.MatchString(jobId) {
 			continue
 		}
 
-		if config.CLIConfig.ForceRunOnce {
-			delete(jobDescription, "refresh")
-		}
-
-		channelTag := jobDescription.ChannelTag()
+		channelTag := jobDescription.ChannelTag
 
 		accountStream, ok := jobManager.accountStreams[channelTag]
 
@@ -105,7 +101,7 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 }
 
 func createJob(manager *JobManager, credentials gotelemetry.Credentials, accountStream *gotelemetry.BatchStream, errorChannel chan error, jobDescription config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
-	pluginFactory, err := GetPlugin(jobDescription.Plugin())
+	pluginFactory, err := GetPlugin(jobDescription.Plugin)
 
 	if err != nil {
 		return nil, err

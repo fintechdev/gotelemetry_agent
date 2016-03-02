@@ -18,13 +18,13 @@ type Job struct {
 	stream            *gotelemetry.BatchStream // The batch stream used by the job. This is likewide not exposed to the plugin
 	instance          PluginInstance           // The plugin instance
 	errorChannel      chan error               // A channel to which all errors are funneled
-	config            map[string]interface{}   // The configuration associated with the job
+	config            config.Job               // The configuration associated with the job
 	completionChannel chan string              // To be pinged when the job has finished running, so that the manager knows when to quit
 	manager           *JobManager              // The manager that owns this job
 }
 
 // newJob creates and starts a new Job
-func newJob(manager *JobManager, credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config map[string]interface{}, instance PluginInstance, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
+func newJob(manager *JobManager, credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config config.Job, instance PluginInstance, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
 	result := &Job{
 		ID:                id,
 		credentials:       credentials,
@@ -66,7 +66,7 @@ func (j *Job) start(wait bool) {
 }
 
 // Retrieve the configuration data associated with this job
-func (j *Job) Config() map[string]interface{} {
+func (j *Job) Config() config.Job {
 	return j.config
 }
 
@@ -234,11 +234,11 @@ func (j *Job) Debugf(format string, v ...interface{}) {
 	}
 }
 
-func (j *Job) SpawnJob(id string, plugin string, cfg map[string]interface{}) error {
+// TODO improve spawn function for API use
+func (j *Job) SpawnJob(id string, plugin string, cfg config.Job) error {
 	j.Logf("Spawning new job %s", id)
-
-	cfg["id"] = id
-	cfg["plugin"] = plugin
+	cfg.Id = id
+	cfg.Plugin = plugin
 
 	jobDescriptor := config.Job(cfg)
 
