@@ -1,7 +1,6 @@
 package job
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/telemetryapp/gotelemetry"
@@ -9,18 +8,20 @@ import (
 )
 
 type JobManager struct {
+	Jobs                 map[string]*Job
 	credentials          gotelemetry.Credentials
 	accountStreams       map[string]*gotelemetry.BatchStream
-	jobs                 map[string]*Job
 	completionChannel    chan bool
 	jobCompletionChannel chan string
+	submissionInterval   time.Duration
+
 }
 
 var jobManager *JobManager
 
 func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionChannel chan bool) error {
 	jobManager = &JobManager{
-		jobs:                 map[string]*Job{},
+		Jobs:                 map[string]*Job{},
 		completionChannel:    completionChannel,
 		jobCompletionChannel: make(chan string),
 	}
@@ -50,47 +51,19 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 		errorChannel <- gotelemetry.NewLogError("Submission interval set to %ds", submissionInterval/time.Second)
 	}
 
+	jobManager.submissionInterval = submissionInterval
+
 	jobManager.accountStreams = map[string]*gotelemetry.BatchStream{}
 
 	for _, jobDescription := range jobConfig.Jobs() {
-		jobId := jobDescription.ID()
 
-		if jobId == "" {
-			return gotelemetry.NewError(500, "Job ID missing and no `tag` provided.")
-		}
-
-		if !config.CLIConfig.Filter.MatchString(jobId) {
-			continue
-		}
-
-		channelTag := jobDescription.ChannelTag
-
-		accountStream, ok := jobManager.accountStreams[channelTag]
-
-		if !ok {
-			var err error
-
-			accountStream, err = gotelemetry.NewBatchStream(credentials, channelTag, submissionInterval, errorChannel)
-
-			if err != nil {
-				return err
-			}
-
-			jobManager.accountStreams[channelTag] = accountStream
-		}
-
-		job, err := createJob(jobManager, credentials, accountStream, errorChannel, jobDescription, jobManager.jobCompletionChannel, false)
-
-		if err != nil {
+		if err := jobManager.CreateJob(jobDescription, false); err != nil {
 			return err
 		}
 
-		if err := jobManager.addJob(job); err != nil {
-			return err
-		}
 	}
 
-	if len(jobManager.jobs) == 0 {
+	if len(jobManager.Jobs) == 0 {
 		errorChannel <- gotelemetry.NewLogError("No jobs are being scheduled.")
 		return nil
 	}
@@ -100,25 +73,47 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 	return nil
 }
 
-func createJob(manager *JobManager, credentials gotelemetry.Credentials, accountStream *gotelemetry.BatchStream, errorChannel chan error, jobDescription config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
+func (m *JobManager) CreateJob(jobDescription config.Job, wait bool) error {
+	jobId := jobDescription.ID()
+
+	if jobId == "" {
+		return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
+	}
+
+	if _, found := m.Jobs[jobId]; found {
+		return gotelemetry.NewError(500, "Duplicate job `"+jobId+"`")
+	}
+
+	channelTag := jobDescription.ChannelTag
+
+	accountStream, ok := m.accountStreams[channelTag]
+
+	if !ok {
+		var err error
+
+		accountStream, err = gotelemetry.NewBatchStream(m.credentials, channelTag, m.submissionInterval, m.credentials.DebugChannel)
+
+		if err != nil {
+			return err
+		}
+
+		m.accountStreams[channelTag] = accountStream
+	}
+
 	pluginFactory, err := GetPlugin(jobDescription.Plugin)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	pluginInstance := pluginFactory()
 
-	return newJob(manager, credentials, accountStream, jobDescription.ID(), jobDescription, pluginInstance, errorChannel, jobCompletionChannel, wait)
-}
-
-func (m *JobManager) addJob(job *Job) error {
-	if _, found := m.jobs[job.ID]; found {
-		return gotelemetry.NewError(500, "Duplicate job `"+job.ID+"`")
+	job, err := newJob(m, m.credentials, accountStream, jobDescription.ID(), jobDescription, pluginInstance, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
+	if err != nil {
+		return err
 	}
 
-	m.jobs[job.ID] = job
-
+	m.Jobs[job.ID] = job
 	return nil
 }
 
@@ -126,9 +121,9 @@ func (m *JobManager) monitorDoneChannel() {
 	for {
 		select {
 		case id := <-m.jobCompletionChannel:
-			delete(m.jobs, id)
+			delete(m.Jobs, id)
 
-			if len(m.jobs) == 0 {
+			if len(m.Jobs) == 0 {
 				for _, accountStream := range m.accountStreams {
 					accountStream.Flush()
 				}
@@ -140,9 +135,6 @@ func (m *JobManager) monitorDoneChannel() {
 	}
 }
 
-func GetJobsList() {
-
-	for k, _ := range jobManager.jobs {
-		fmt.Println("Job ID:", k)
-	}
+func GetJobManager() JobManager {
+	return *jobManager
 }

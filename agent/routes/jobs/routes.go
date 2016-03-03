@@ -7,20 +7,41 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
+var jobManager job.JobManager
+
 func Setup(g *gin.Engine) {
 	g.GET("/jobs", Get)
+	g.GET("/jobs/:id", GetByID)
 	g.POST("/jobs", Post)
+	jobManager = job.GetJobManager()
 }
 
 func Get(g *gin.Context) {
-	job.GetJobsList()
+	for k, _ := range jobManager.Jobs {
+		fmt.Println("Job ID:", k)
+	}
+
 }
 
-type Job config.Job
-
-// TODO finish POST function
 func Post(g *gin.Context) {
-	var job Job
-	g.BindJSON(&job)
-	fmt.Println(job)
+	var jobConfig config.Job
+	g.BindJSON(&jobConfig)
+
+	err := jobManager.CreateJob(jobConfig, false)
+	if err != nil {
+	  fmt.Println("Created Job: ", jobConfig.ID())
+	}
+
+}
+
+func GetByID(g *gin.Context) {
+
+	id := g.Param("id")
+
+	if foundJob, found := jobManager.Jobs[id]; found {
+		fmt.Println(foundJob)
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+
 }

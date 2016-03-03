@@ -233,20 +233,3 @@ func (j *Job) Debugf(format string, v ...interface{}) {
 		j.errorChannel <- gotelemetry.NewDebugError("%s -> %#s", j.ID, fmt.Sprintf(format, v...))
 	}
 }
-
-// TODO improve spawn function for API use
-func (j *Job) SpawnJob(id string, plugin string, cfg config.Job) error {
-	j.Logf("Spawning new job %s", id)
-	cfg.Id = id
-	cfg.Plugin = plugin
-
-	jobDescriptor := config.Job(cfg)
-
-	newJob, err := createJob(j.manager, j.credentials, j.stream, j.errorChannel, jobDescriptor, j.completionChannel, false)
-
-	if err != nil {
-		return err
-	}
-
-	return j.manager.addJob(newJob)
-}
