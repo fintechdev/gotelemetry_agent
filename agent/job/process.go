@@ -1,13 +1,11 @@
-package plugin
+package job
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
 	"io/ioutil"
 	"net/http"
@@ -19,25 +17,12 @@ import (
 	"time"
 )
 
-// init() registers this plugin with the Plugin Manager.
-func init() {
-	job.RegisterPlugin("com.telemetryapp.process", ProcessPluginFactory)
-}
-
-// Func ProcessPluginFactory generates a blank instance of the
-// `com.telemetryapp.process` plugin
-func ProcessPluginFactory() job.PluginInstance {
-	return &ProcessPlugin{
-		PluginHelper: job.NewPluginHelper(),
-	}
-}
-
 // Struct ProcessPlugin allows the agent to execute an external process and use its
 // output as data that can be fed to the Telemetry API.
 //
 // For configuration parameters, see the Init() function
 type ProcessPlugin struct {
-	*job.PluginHelper
+	*PluginHelper
 	args         []string
 	batch        bool
 	expiration   time.Duration
@@ -50,89 +35,32 @@ type ProcessPlugin struct {
 	url          string
 }
 
-// Function Init initializes the plugin.
-//
-// The required configuration parameters are:
-//
-// - url													The URL from where to retrieve the data to evaluate
-//
-// - exec                         The path to an external executable
-//
-// - script												The path to an ASL script
-//
-// - args													An array of arguments that are sent to the executable or, if
-// 																executing an ASL script, a hash of key/value pairs that
-// 																will be accessible through the `arg()` global method
-//
-// - tag                     The tag of the flow to populate
-//
-// - interval                     The number of seconds between subsequent executions of the
-//                                plugin. Default: never
-//
-// - expiration										The number of seconds after which flow data is set to expire.
-//                                Default: interval * 3; 0 = never.
-//
-// - variant                      The variant of the flow
-//
-// - template                     A template that will be used to populate the flow when it is created
-//
-// - batch												Whether the output of this script should be considered a batch update
-//
-// If `variant` and `template` are both specified, the plugin will verify that the flow exists and is of the
-// correct variant on startup. In that case, if the flow is found but is of the wrong variant, an error is
-// output to log and the plugin is not allowed to run. If the flow does not exist, it is created using
-// the contents of `template`. If the creation fails, the plugin is not allowed to run.
-//
-// If `exec` is specified, the plugin will attempt to execute the file it points to, optionally passing
-// `args` if they are specified.
-//
-// In output, the process has two options:
-//
-// - Output a JSON payload, which is used to PATCH the payload of the flow using a simple top-level property replacement operation
-//
-// - Output the text REPLACE, followed by a newline, followed by a payload that is used to replace the contents of the flow.
-// TODO add example
+func newInstance(job *Job) (*ProcessPlugin, error) {
 
-func (p *ProcessPlugin) Init(job *job.Job) error {
+	p := &ProcessPlugin{
+		PluginHelper: NewPluginHelper(),
+	}
+
 	c := job.Config()
 
 	job.Debugf("The configuration is %#v", c)
 
 	var ok bool
 
-	if job.ID == "_database_cleanup" {
-		if c.Interval != "" {
-			timeInterval, err := config.ParseTimeInterval(c.Interval)
-
-			if err != nil {
-				return err
-			}
-
-			// The cleanup job should run at least once every 24 hours
-			oneDayInterval, _ := config.ParseTimeInterval("24h")
-			if timeInterval > oneDayInterval {
-				timeInterval = oneDayInterval
-			}
-
-			p.PluginHelper.AddTaskWithClosure(p.databaseCleanup, timeInterval)
-		}
-
-		return nil
-	}
-
 	p.flowTag = c.Tag
+	fmt.Println("sdfsdfsdfghehrjzzz")
 
 	p.batch = c.Batch
 
 	if ok && p.flowTag != "" {
-		return errors.New("You cannot specify both `tag` and `batch` properties.")
+		return nil, errors.New("You cannot specify both `tag` and `batch` properties.")
 	}
 
 	exec := c.Exec
 	script := c.Script
 
 	if exec != "" && script != "" {
-		return errors.New("You cannot specify both `script` and `exec` properties.")
+		return nil, errors.New("You cannot specify both `script` and `exec` properties.")
 	}
 
 	if exec != "" {
@@ -144,11 +72,11 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 	p.url = c.Url
 
 	if p.path == "" && p.url == "" {
-		return errors.New("You must specify a `script`, `exec`, or `url` property.")
+		return nil, errors.New("You must specify a `script`, `exec`, or `url` property.")
 	}
 
 	if p.path != "" && p.url != "" {
-		return errors.New("You cannot provide both `script` or `exec` and `url` properties.")
+		return nil, errors.New("You cannot provide both `script` or `exec` and `url` properties.")
 	}
 
 	p.args = []string{}
@@ -170,7 +98,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 
 	if p.path != "" {
 		if _, err := os.Stat(p.path); os.IsNotExist(err) {
-			return errors.New("File " + p.path + " does not exist.")
+			return nil, errors.New("File " + p.path + " does not exist.")
 		}
 
 		if path.Ext(p.path) == ".lua" {
@@ -178,27 +106,27 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 			p.path = ""
 		} else {
 			if len(p.scriptArgs) != 0 {
-				return errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
+				return nil, errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
 			}
 		}
 	}
 
 	if p.url != "" {
 		if len(p.args) != 0 {
-			return errors.New("You cannot specify an array of arguments when executing a template. Provide a key/value hash instead.")
+			return nil, errors.New("You cannot specify an array of arguments when executing a template. Provide a key/value hash instead.")
 		}
 
 		if strings.HasPrefix(p.url, "tpl://") {
 			URL, err := url.Parse(p.url)
 
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			p.templateFile = URL.Host + URL.Path
 
 			if _, err := os.Stat(p.templateFile); os.IsNotExist(err) {
-				return errors.New("Template " + p.templateFile + " does not exist.")
+				return nil, errors.New("Template " + p.templateFile + " does not exist.")
 			}
 		}
 	}
@@ -208,14 +136,15 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 
 	if variant != "" && template != nil {
 		if p.flowTag == "" {
-			return errors.New("The required `tag` property (`string`) is either missing or of the wrong type.")
+			return nil, errors.New("The required `tag` property (`string`) is either missing or of the wrong type.")
 		}
 
 		if f, err := job.GetOrCreateFlow(p.flowTag, variant, template); err != nil {
-			return err
+			return nil, err
 		} else {
 			p.flow = f
 		}
+
 	}
 
 	if c.Interval != "" {
@@ -226,7 +155,7 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 
 			p.PluginHelper.AddTaskWithClosure(p.performAllTasks, timeInterval)
 		} else {
-			return err
+			return nil, err
 		}
 	} else {
 		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, 0)
@@ -247,12 +176,12 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		if timeInterval, err := config.ParseTimeInterval(c.Expiration.(string)); err == nil {
 			p.expiration = timeInterval
 		} else {
-			return errors.New("Invalid expiration value. Must be either a number of seconds or a time interval string.")
+			return nil, errors.New("Invalid expiration value. Must be either a number of seconds or a time interval string.")
 		}
 	}
 
 	if p.expiration < 0 {
-		return errors.New("Invalid expiration time")
+		return nil, errors.New("Invalid expiration time")
 	}
 
 	if p.expiration > 0 {
@@ -261,10 +190,10 @@ func (p *ProcessPlugin) Init(job *job.Job) error {
 		job.Debugf("Expiration is off.")
 	}
 
-	return nil
+	return p, nil
 }
 
-func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace bool, data map[string]interface{}) {
+func (p *ProcessPlugin) performDataUpdate(j *Job, flowTag string, isReplace bool, data map[string]interface{}) {
 
 	if config.CLIConfig.DebugMode == true {
 		// Debug Mode. Print data dump. Do not send API update
@@ -304,7 +233,7 @@ func (p *ProcessPlugin) performDataUpdate(j *job.Job, flowTag string, isReplace 
 	}
 }
 
-func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response string) error {
+func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *Job, response string) error {
 	isReplace := false
 
 	if strings.HasPrefix(response, "REPLACE\n") {
@@ -351,7 +280,7 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *job.Job, response str
 	return nil
 }
 
-func (p *ProcessPlugin) performScriptTask(j *job.Job) (string, error) {
+func (p *ProcessPlugin) performScriptTask(j *Job) (string, error) {
 	if len(p.args) > 0 {
 		j.Debugf("Executing `%s` with arguments %#v", p.path, p.args)
 	} else {
@@ -363,7 +292,7 @@ func (p *ProcessPlugin) performScriptTask(j *job.Job) (string, error) {
 	return string(out), err
 }
 
-func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
+func (p *ProcessPlugin) performHTTPTask(j *Job) (string, error) {
 	j.Debugf("Retrieving expression from URL `%s`", p.url)
 
 	r, err := http.Get(p.url)
@@ -383,7 +312,7 @@ func (p *ProcessPlugin) performHTTPTask(j *job.Job) (string, error) {
 	return string(out), nil
 }
 
-func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
+func (p *ProcessPlugin) performTemplateTaskLua(j *Job) (string, error) {
 	source, err := ioutil.ReadFile(p.templateFile)
 
 	if err != nil {
@@ -401,7 +330,7 @@ func (p *ProcessPlugin) performTemplateTaskLua(j *job.Job) (string, error) {
 	return string(out), err
 }
 
-func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
+func (p *ProcessPlugin) performTemplateTask(j *Job) (string, error) {
 
 	if strings.HasSuffix(p.templateFile, ".lua") {
 		return p.performTemplateTaskLua(j)
@@ -410,7 +339,7 @@ func (p *ProcessPlugin) performTemplateTask(j *job.Job) (string, error) {
 	return "", fmt.Errorf("Unknown script type for file `%s`", p.templateFile)
 }
 
-func (p *ProcessPlugin) performAllTasks(j *job.Job) {
+func (p *ProcessPlugin) performAllTasks(j *Job) {
 	j.Debugf("Starting process plugin...")
 
 	defer p.PluginHelper.TrackTime(j, time.Now(), "Process plugin completed in %s.")
@@ -452,11 +381,4 @@ func (p *ProcessPlugin) performAllTasks(j *job.Job) {
 	if err := p.analyzeAndSubmitProcessResponse(j, response); err != nil {
 		j.ReportError(errors.New("Unable to analyze process output: " + err.Error()))
 	}
-}
-
-func (p *ProcessPlugin) databaseCleanup(j *job.Job) {
-	j.Debugf("Starting database cleanup...")
-
-	defer p.PluginHelper.TrackTime(j, time.Now(), "Database cleanup completed in %s.")
-	aggregations.DatabaseCleanup()
 }

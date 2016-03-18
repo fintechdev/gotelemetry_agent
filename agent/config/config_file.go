@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// TODO remove below comment once struct verified working
-// type Job map[string]interface{}
 type Job struct {
 	Id         string      `toml:"id"`
 	Tag        string      `toml:"tag"`
@@ -108,15 +106,6 @@ func NewConfigFile() (*ConfigFile, error) {
 
 	for _, job := range result.FlowField {
 		result.JobsField = append(result.JobsField, job)
-	}
-
-	if result.DataConfig().TTL != nil {
-		storageJob := Job{
-			Id:       "_database_cleanup",
-			Interval: *result.DataConfig().TTL,
-		}
-
-		result.JobsField = append(result.JobsField, storageJob)
 	}
 
 	return result, err

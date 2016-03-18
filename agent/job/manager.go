@@ -2,7 +2,7 @@ package job
 
 import (
 	"time"
-
+	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
@@ -100,15 +100,7 @@ func (m *JobManager) CreateJob(jobDescription config.Job, wait bool) error {
 		m.accountStreams[channelTag] = accountStream
 	}
 
-	pluginFactory, err := GetPlugin(jobDescription.Plugin)
-
-	if err != nil {
-		return err
-	}
-
-	pluginInstance := pluginFactory()
-
-	job, err := newJob(m, m.credentials, accountStream, jobDescription.ID(), jobDescription, pluginInstance, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
+	job, err := newJob(m, m.credentials, accountStream, jobDescription.ID(), jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
 	if err != nil {
 		return err
 	}
@@ -137,4 +129,14 @@ func (m *JobManager) monitorDoneChannel() {
 
 func GetJobManager() JobManager {
 	return *jobManager
+
+}
+
+func TerminateJob(id string) {
+	if foundJob, found := jobManager.Jobs[id]; found {
+		foundJob.instance.Terminate(foundJob)
+		fmt.Println("Terminated job: ", id)
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
 }

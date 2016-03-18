@@ -16,7 +16,7 @@ type Job struct {
 	ID                string                   // The ID of the job
 	credentials       gotelemetry.Credentials  // The credentials used by the job. These are not exposed to the plugin
 	stream            *gotelemetry.BatchStream // The batch stream used by the job. This is likewide not exposed to the plugin
-	instance          PluginInstance           // The plugin instance
+	instance          *ProcessPlugin           // The plugin instance
 	errorChannel      chan error               // A channel to which all errors are funneled
 	config            config.Job               // The configuration associated with the job
 	completionChannel chan string              // To be pinged when the job has finished running, so that the manager knows when to quit
@@ -24,12 +24,11 @@ type Job struct {
 }
 
 // newJob creates and starts a new Job
-func newJob(manager *JobManager, credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config config.Job, instance PluginInstance, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
+func newJob(manager *JobManager, credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config config.Job, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
 	result := &Job{
 		ID:                id,
 		credentials:       credentials,
 		stream:            stream,
-		instance:          instance,
 		errorChannel:      errorChannel,
 		config:            config,
 		completionChannel: jobCompletionChannel,
@@ -47,8 +46,8 @@ func newJob(manager *JobManager, credentials gotelemetry.Credentials, stream *go
 
 // start starts a job. It must be executed asychronously in its own goroutine
 func (j *Job) start(wait bool) {
-	err := j.instance.Init(j)
-
+	var err error
+	j.instance, err = newInstance(j)
 	if err != nil {
 		j.ReportError(errors.New("Error initializing the job `" + j.ID + "`"))
 		j.ReportError(err)

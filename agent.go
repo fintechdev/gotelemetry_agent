@@ -15,8 +15,6 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 	"github.com/telemetryapp/gotelemetry_agent/agent/routes"
-
-	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
 )
 
 var VERSION = "3.0.1"
@@ -85,7 +83,12 @@ func main() {
 	for {
 		select {
 		case <-completionChannel:
-			goto Done
+			// TODO
+			// Server mode test. Don't stop when all jobs are finished
+			log.Println("No more jobs to run; Not exiting because server mode.")
+			if false {
+				goto Done
+			}
 		}
 	}
 
@@ -129,9 +132,12 @@ func run() {
 		}
 
 		// Start gin test
-		g := gin.New()
-		routes.Init(g)
-		go g.Run()
+		if true {
+			g := gin.New()
+			gin.SetMode(gin.ReleaseMode)
+			routes.Init(g)
+			go g.Run()
+		}
 
 	}
 }

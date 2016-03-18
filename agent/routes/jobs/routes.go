@@ -13,6 +13,7 @@ func Setup(g *gin.Engine) {
 	g.GET("/jobs", Get)
 	g.GET("/jobs/:id", GetByID)
 	g.POST("/jobs", Post)
+	g.DELETE("/jobs/:id", DeleteByID)
 	jobManager = job.GetJobManager()
 }
 
@@ -43,5 +44,12 @@ func GetByID(g *gin.Context) {
 	} else {
 		fmt.Println("Job not found: ", id)
 	}
+
+}
+
+func DeleteByID(g *gin.Context) {
+
+	id := g.Param("id")
+	job.TerminateJob(id)
 
 }
