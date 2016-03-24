@@ -12,11 +12,11 @@ import (
 type Job struct {
 	Id         string      `toml:"id"`
 	Tag        string      `toml:"tag"`
-	Plugin     string      `toml:"plugin"`
 	ChannelTag string      `toml:"channel_tag"`
 	Batch      bool        `toml:"batch"`
 	Exec       string      `toml:"exec"`
 	Script     string      `toml:"script"`
+	Lua        string      `toml:"lua"`
 	Url        string      `toml:"url"`
 	Args       interface{} `toml:"args"`
 	Template   interface{} `toml:"template"`

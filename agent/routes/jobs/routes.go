@@ -3,8 +3,8 @@ package jobs
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 )
 
 var jobManager job.JobManager
@@ -30,7 +30,7 @@ func Post(g *gin.Context) {
 
 	err := jobManager.CreateJob(jobConfig, false)
 	if err != nil {
-	  fmt.Println("Created Job: ", jobConfig.ID())
+		fmt.Println("Created Job: ", jobConfig.ID())
 	}
 
 }

@@ -14,31 +14,43 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 	"time"
 )
 
+// A simple task closure
+type PluginHelperClosure func(job *Job)
+
+type pluginHelperTask func(job *Job, doneChannel chan bool)
+
 // Struct ProcessPlugin allows the agent to execute an external process and use its
 // output as data that can be fed to the Telemetry API.
-//
-// For configuration parameters, see the Init() function
 type ProcessPlugin struct {
-	*PluginHelper
-	args         []string
-	batch        bool
-	expiration   time.Duration
-	flow         *gotelemetry.Flow
-	flowTag      string
-	path         string
-	scriptArgs   map[string]interface{}
-	template     map[string]interface{}
-	templateFile string
-	url          string
+	args            []string
+	batch           bool
+	expiration      time.Duration
+	flow            *gotelemetry.Flow
+	flowTag         string
+	path            string
+	scriptArgs      map[string]interface{}
+	template        map[string]interface{}
+	templateFile    string
+	url             string
+	tasks           []pluginHelperTask
+	closures        []PluginHelperClosure
+	jobDoneChannel  chan bool
+	taskDoneChannel chan bool
+	waitGroup       *sync.WaitGroup
+	isRunning       bool
 }
 
 func newInstance(job *Job) (*ProcessPlugin, error) {
 
 	p := &ProcessPlugin{
-		PluginHelper: NewPluginHelper(),
+		tasks:           []pluginHelperTask{},
+		jobDoneChannel:  make(chan bool, 0),
+		taskDoneChannel: make(chan bool, 2),
+		waitGroup:       &sync.WaitGroup{},
 	}
 
 	c := job.Config()
@@ -48,8 +60,6 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 	var ok bool
 
 	p.flowTag = c.Tag
-	fmt.Println("sdfsdfsdfghehrjzzz")
-
 	p.batch = c.Batch
 
 	if ok && p.flowTag != "" {
@@ -153,12 +163,12 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 				p.expiration = timeInterval * 3.0
 			}
 
-			p.PluginHelper.AddTaskWithClosure(p.performAllTasks, timeInterval)
+			p.AddTaskWithClosure(p.performAllTasks, timeInterval)
 		} else {
 			return nil, err
 		}
 	} else {
-		p.PluginHelper.AddTaskWithClosure(p.performAllTasks, 0)
+		p.AddTaskWithClosure(p.performAllTasks, 0)
 	}
 
 	if p.expiration > 0 && p.expiration < time.Second*60 {
@@ -312,7 +322,11 @@ func (p *ProcessPlugin) performHTTPTask(j *Job) (string, error) {
 	return string(out), nil
 }
 
-func (p *ProcessPlugin) performTemplateTaskLua(j *Job) (string, error) {
+func (p *ProcessPlugin) performTemplateTask(j *Job) (string, error) {
+	if strings.HasSuffix(p.templateFile, ".lua") {
+		return "", fmt.Errorf("Unknown script type for file `%s`", p.templateFile)
+	}
+
 	source, err := ioutil.ReadFile(p.templateFile)
 
 	if err != nil {
@@ -330,19 +344,10 @@ func (p *ProcessPlugin) performTemplateTaskLua(j *Job) (string, error) {
 	return string(out), err
 }
 
-func (p *ProcessPlugin) performTemplateTask(j *Job) (string, error) {
-
-	if strings.HasSuffix(p.templateFile, ".lua") {
-		return p.performTemplateTaskLua(j)
-	}
-
-	return "", fmt.Errorf("Unknown script type for file `%s`", p.templateFile)
-}
-
 func (p *ProcessPlugin) performAllTasks(j *Job) {
 	j.Debugf("Starting process plugin...")
 
-	defer p.PluginHelper.TrackTime(j, time.Now(), "Process plugin completed in %s.")
+	defer p.TrackTime(j, time.Now(), "Process plugin completed in %s.")
 
 	var response string
 	var err error
@@ -381,4 +386,101 @@ func (p *ProcessPlugin) performAllTasks(j *Job) {
 	if err := p.analyzeAndSubmitProcessResponse(j, response); err != nil {
 		j.ReportError(errors.New("Unable to analyze process output: " + err.Error()))
 	}
+}
+
+// Adds a task to the plugin. The task will be run automarically after the duration specified by
+// the interval parameter. Note that interval is measured starting from the end of the last
+// execution; therefore, you do not need to worry about conditions like slow networking causing
+// successive iterations of a task to “execute over each other.”
+func (p *ProcessPlugin) AddTaskWithClosure(c PluginHelperClosure, interval time.Duration) {
+	var t pluginHelperTask = nil
+
+	runJob := func(j *Job) {
+		p.isRunning = true
+
+		go func(j *Job) {
+			c(j)
+
+			p.isRunning = false
+		}(j)
+	}
+
+	if interval > 0 {
+		t = func(job *Job, doneChannel chan bool) {
+			runJob(job)
+
+			t := time.NewTicker(interval)
+
+			for {
+				select {
+				case <-t.C:
+					if p.isRunning {
+						job.Log("The previous instance of the job is still running; skipping this execution.")
+						continue
+					}
+
+					runJob(job)
+
+					break
+				case <-doneChannel:
+					t.Stop()
+					return
+				}
+			}
+		}
+	}
+	p.addTask(t, c)
+}
+
+func (p *ProcessPlugin) addTask(t pluginHelperTask, c PluginHelperClosure) {
+	if t != nil {
+		p.tasks = append(p.tasks, t)
+	}
+
+	p.closures = append(p.closures, c)
+}
+
+// Run method satisfies the requirements of the PluginInstance interface,
+// executing all the tasks asynchronously.
+func (p *ProcessPlugin) Run(job *Job) {
+	if len(p.tasks) == 0 {
+		// Since there are no scheduled tasks, we just run everything once and
+		// exit. This makes it possible to schedule a run of the agent through
+		// some external mechanism like cron.
+
+		p.RunOnce(job)
+		return
+	}
+
+	for _, t := range p.tasks {
+		p.waitGroup.Add(1)
+
+		go func(t pluginHelperTask) {
+			t(job, p.taskDoneChannel)
+			p.waitGroup.Done()
+		}(t)
+	}
+	select {
+	case <-p.jobDoneChannel:
+		return
+	}
+}
+
+func (p *ProcessPlugin) RunOnce(job *Job) {
+	for _, c := range p.closures {
+		c(job)
+	}
+}
+
+// Terminate waits for all outstanding tasks to be completed and then returns.
+func (p *ProcessPlugin) Terminate() {
+	p.taskDoneChannel <- true
+	p.jobDoneChannel <- true
+	p.waitGroup.Wait()
+}
+
+// TrackTime can be used in a deferred call near the beginning of a function
+// to automatically determine how long that function runs for.
+func (p *ProcessPlugin) TrackTime(job *Job, start time.Time, template string) {
+	job.Logf(template, time.Since(start))
 }

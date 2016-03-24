@@ -14,9 +14,9 @@ import (
 
 type Job struct {
 	ID                string                   // The ID of the job
-	credentials       gotelemetry.Credentials  // The credentials used by the job. These are not exposed to the plugin
-	stream            *gotelemetry.BatchStream // The batch stream used by the job. This is likewide not exposed to the plugin
-	instance          *ProcessPlugin           // The plugin instance
+	credentials       gotelemetry.Credentials  // The credentials used by the job
+	stream            *gotelemetry.BatchStream // The batch stream used by the job.
+	instance          *ProcessPlugin           // The process instance
 	errorChannel      chan error               // A channel to which all errors are funneled
 	config            config.Job               // The configuration associated with the job
 	completionChannel chan string              // To be pinged when the job has finished running, so that the manager knows when to quit

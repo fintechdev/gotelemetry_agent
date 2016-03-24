@@ -73,18 +73,18 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 			ticker := time.NewTicker(ttl)
 			go func() {
 				for {
-					 select {
-						case <- ticker.C:
-							if manager.cleanupRunning {
-								log.Printf("The database cleanup process is already running. Skipping execution.")
-								continue
-							}
-							manager.cleanupRunning = true
-							manager.DatabaseCleanup()
-							manager.cleanupRunning = false
+					select {
+					case <-ticker.C:
+						if manager.cleanupRunning {
+							log.Printf("The database cleanup process is already running. Skipping execution.")
+							continue
 						}
+						manager.cleanupRunning = true
+						manager.DatabaseCleanup()
+						manager.cleanupRunning = false
 					}
-			 }()
+				}
+			}()
 		} else {
 			manager.ttl = 0
 		}

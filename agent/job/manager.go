@@ -1,10 +1,10 @@
 package job
 
 import (
-	"time"
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"time"
 )
 
 type JobManager struct {
@@ -14,7 +14,6 @@ type JobManager struct {
 	completionChannel    chan bool
 	jobCompletionChannel chan string
 	submissionInterval   time.Duration
-
 }
 
 var jobManager *JobManager
@@ -134,7 +133,7 @@ func GetJobManager() JobManager {
 
 func TerminateJob(id string) {
 	if foundJob, found := jobManager.Jobs[id]; found {
-		foundJob.instance.Terminate(foundJob)
+		foundJob.instance.Terminate()
 		fmt.Println("Terminated job: ", id)
 	} else {
 		fmt.Println("Job not found: ", id)
