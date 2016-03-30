@@ -16,8 +16,6 @@ type Job struct {
 	Batch      bool        `toml:"batch"`
 	Exec       string      `toml:"exec"`
 	Script     string      `toml:"script"`
-	Lua        string      `toml:"lua"`
-	Url        string      `toml:"url"`
 	Args       interface{} `toml:"args"`
 	Template   interface{} `toml:"template"`
 	Variant    string      `toml:"variant"`

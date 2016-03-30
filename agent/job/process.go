@@ -6,13 +6,8 @@ import (
 	"fmt"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"sync"
 	"time"
@@ -32,10 +27,8 @@ type ProcessPlugin struct {
 	flow            *gotelemetry.Flow
 	flowTag         string
 	path            string
-	scriptArgs      map[string]interface{}
+	script          *Script
 	template        map[string]interface{}
-	templateFile    string
-	url             string
 	tasks           []pluginHelperTask
 	closures        []PluginHelperClosure
 	jobDoneChannel  chan bool
@@ -73,24 +66,12 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 		return nil, errors.New("You cannot specify both `script` and `exec` properties.")
 	}
 
-	if exec != "" {
-		p.path = exec
-	} else if script != "" {
-		p.path = script
-	}
-
-	p.url = c.Url
-
-	if p.path == "" && p.url == "" {
-		return nil, errors.New("You must specify a `script`, `exec`, or `url` property.")
-	}
-
-	if p.path != "" && p.url != "" {
-		return nil, errors.New("You cannot provide both `script` or `exec` and `url` properties.")
+	if exec == "" && script == "" {
+		return nil, errors.New("You must specify a `script` or `exec` property.")
 	}
 
 	p.args = []string{}
-	p.scriptArgs = map[string]interface{}{}
+	scriptArgs := map[string]interface{}{}
 
 	if args, ok := c.Args.([]interface{}); ok {
 		for _, arg := range args {
@@ -101,44 +82,30 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 			}
 		}
 	} else if args, ok := c.Args.(map[interface{}]interface{}); ok {
-		p.scriptArgs = config.MapTemplate(args).(map[string]interface{})
+		scriptArgs = config.MapTemplate(args).(map[string]interface{})
 	} else if args, ok := c.Args.(map[string]interface{}); ok {
-		p.scriptArgs = args
+		scriptArgs = args
 	}
 
-	if p.path != "" {
+	if exec != "" {
+		p.path = exec
+
 		if _, err := os.Stat(p.path); os.IsNotExist(err) {
 			return nil, errors.New("File " + p.path + " does not exist.")
 		}
 
-		if path.Ext(p.path) == ".lua" {
-			p.url = "tpl://" + p.path
-			p.path = ""
-		} else {
-			if len(p.scriptArgs) != 0 {
-				return nil, errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
-			}
-		}
-	}
-
-	if p.url != "" {
-		if len(p.args) != 0 {
-			return nil, errors.New("You cannot specify an array of arguments when executing a template. Provide a key/value hash instead.")
+		if len(scriptArgs) != 0 {
+			return nil, errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
 		}
 
-		if strings.HasPrefix(p.url, "tpl://") {
-			URL, err := url.Parse(p.url)
+	} else if script != "" {
+		var err error
+		p.script, err = newScript(c.Script, scriptArgs)
 
-			if err != nil {
-				return nil, err
-			}
-
-			p.templateFile = URL.Host + URL.Path
-
-			if _, err := os.Stat(p.templateFile); os.IsNotExist(err) {
-				return nil, errors.New("Template " + p.templateFile + " does not exist.")
-			}
+		if err != nil {
+			return nil, err
 		}
+
 	}
 
 	template := c.Template
@@ -302,48 +269,6 @@ func (p *ProcessPlugin) performScriptTask(j *Job) (string, error) {
 	return string(out), err
 }
 
-func (p *ProcessPlugin) performHTTPTask(j *Job) (string, error) {
-	j.Debugf("Retrieving expression from URL `%s`", p.url)
-
-	r, err := http.Get(p.url)
-
-	if err != nil {
-		return "", err
-	}
-
-	defer r.Body.Close()
-
-	out, err := ioutil.ReadAll(r.Body)
-
-	if r.StatusCode > 399 {
-		return string(out), gotelemetry.NewErrorWithFormat(r.StatusCode, "HTTP request failed with status %d", nil, r.StatusCode)
-	}
-
-	return string(out), nil
-}
-
-func (p *ProcessPlugin) performTemplateTask(j *Job) (string, error) {
-	if strings.HasSuffix(p.templateFile, ".lua") {
-		return "", fmt.Errorf("Unknown script type for file `%s`", p.templateFile)
-	}
-
-	source, err := ioutil.ReadFile(p.templateFile)
-
-	if err != nil {
-		return "", err
-	}
-
-	output, err := lua.Exec(string(source), j, p.scriptArgs)
-
-	if err != nil {
-		return "", err
-	}
-
-	out, err := json.Marshal(config.MapTemplate(output))
-
-	return string(out), err
-}
-
 func (p *ProcessPlugin) performAllTasks(j *Job) {
 	j.Debugf("Starting process plugin...")
 
@@ -354,10 +279,8 @@ func (p *ProcessPlugin) performAllTasks(j *Job) {
 
 	if p.path != "" {
 		response, err = p.performScriptTask(j)
-	} else if p.templateFile != "" {
-		response, err = p.performTemplateTask(j)
-	} else if p.url != "" {
-		response, err = p.performHTTPTask(j)
+	} else if p.script != nil {
+		response, err = p.script.exec(j)
 	} else {
 		err = errors.New("Nothing to do!")
 	}
