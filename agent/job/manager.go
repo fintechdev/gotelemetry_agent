@@ -2,12 +2,14 @@ package job
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"time"
 )
 
-type JobManager struct {
+// Manager instantiates, tracks, and updates all jobs within the Agent
+type Manager struct {
 	Jobs                 map[string]*Job
 	credentials          gotelemetry.Credentials
 	accountStreams       map[string]*gotelemetry.BatchStream
@@ -16,10 +18,11 @@ type JobManager struct {
 	submissionInterval   time.Duration
 }
 
-var jobManager *JobManager
+var jobManager *Manager
 
+// Init the JobManager with a config file and established error channels
 func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionChannel chan bool) error {
-	jobManager = &JobManager{
+	jobManager = &Manager{
 		Jobs:                 map[string]*Job{},
 		completionChannel:    completionChannel,
 		jobCompletionChannel: make(chan string),
@@ -56,7 +59,7 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 
 	for _, jobDescription := range jobConfig.Jobs() {
 
-		if err := jobManager.CreateJob(jobDescription, false); err != nil {
+		if err := jobManager.createJob(jobDescription, false); err != nil {
 			return err
 		}
 
@@ -72,15 +75,15 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 	return nil
 }
 
-func (m *JobManager) CreateJob(jobDescription config.Job, wait bool) error {
-	jobId := jobDescription.ID()
+func (m *Manager) createJob(jobDescription config.Job, wait bool) error {
+	jobID := jobDescription.ID()
 
-	if jobId == "" {
+	if jobID == "" {
 		return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
 	}
 
-	if _, found := m.Jobs[jobId]; found {
-		return gotelemetry.NewError(500, "Duplicate job `"+jobId+"`")
+	if _, found := m.Jobs[jobID]; found {
+		return gotelemetry.NewError(500, "Duplicate job `"+jobID+"`")
 	}
 
 	channelTag := jobDescription.ChannelTag
@@ -99,7 +102,7 @@ func (m *JobManager) CreateJob(jobDescription config.Job, wait bool) error {
 		m.accountStreams[channelTag] = accountStream
 	}
 
-	job, err := newJob(m, m.credentials, accountStream, jobDescription.ID(), jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
+	job, err := newJob(m.credentials, accountStream, jobDescription.ID(), jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
 	if err != nil {
 		return err
 	}
@@ -108,7 +111,7 @@ func (m *JobManager) CreateJob(jobDescription config.Job, wait bool) error {
 	return nil
 }
 
-func (m *JobManager) monitorDoneChannel() {
+func (m *Manager) monitorDoneChannel() {
 	for {
 		select {
 		case id := <-m.jobCompletionChannel:
@@ -126,14 +129,31 @@ func (m *JobManager) monitorDoneChannel() {
 	}
 }
 
-func GetJobManager() JobManager {
-	return *jobManager
-
+// AddJob triggers the createJob function with a marshaled job config file
+func AddJob(jobDescription config.Job) error {
+	return jobManager.createJob(jobDescription, false)
 }
 
+// GetJobs returns a list of all jobs being managed
+func GetJobs() {
+	for k := range jobManager.Jobs {
+		fmt.Println("Job ID:", k)
+	}
+}
+
+// GetJobByID searches using an ID string and returns the job with that ID
+func GetJobByID(id string) {
+	if foundJob, found := jobManager.Jobs[id]; found {
+		fmt.Println(foundJob)
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+}
+
+// TerminateJob searches for a job by ID string and stops/deletes it
 func TerminateJob(id string) {
 	if foundJob, found := jobManager.Jobs[id]; found {
-		foundJob.instance.Terminate()
+		foundJob.instance.terminate()
 		fmt.Println("Terminated job: ", id)
 	} else {
 		fmt.Println("Job not found: ", id)

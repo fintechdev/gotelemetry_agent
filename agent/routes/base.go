@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-
 	"github.com/telemetryapp/gotelemetry_agent/agent/routes/jobs"
 )
 

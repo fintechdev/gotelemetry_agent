@@ -3,14 +3,14 @@ package job
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
 	"io/ioutil"
 	"strings"
+
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/lua"
 )
 
-// Struct ProcessPlugin allows the agent to execute an external process and use its
-// output as data that can be fed to the Telemetry API.
+// Script manages the Lua source code for a job as well as its save locations
 type Script struct {
 	path    string
 	source  string
@@ -18,7 +18,6 @@ type Script struct {
 	enabled bool
 }
 
-// The script struct contains the Lua code that is \
 func newScript(path string, args map[string]interface{}) (*Script, error) {
 
 	s := &Script{
@@ -44,7 +43,6 @@ func newScript(path string, args map[string]interface{}) (*Script, error) {
 }
 
 func (s *Script) exec(j *Job) (string, error) {
-
 	output, err := lua.Exec(s.source, j, s.args)
 
 	if err != nil {
