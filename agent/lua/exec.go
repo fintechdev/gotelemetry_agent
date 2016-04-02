@@ -3,16 +3,18 @@ package lua
 import (
 	"errors"
 	"fmt"
+	"regexp"
+
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago"
 	"github.com/telemetryapp/goluago/util"
-	"regexp"
 )
 
 const arrayMarkerField = "_is_array"
 
 var errorRegex = regexp.MustCompile(`:([^:]+)+:(.+)$`)
 
+// Exec takes a Lua source code string and set of arguments and executes the code using the go-lua interpreter
 func Exec(source string, np notificationProvider, args map[string]interface{}) (map[string]interface{}, error) {
 	l := lua.NewState()
 
@@ -73,11 +75,11 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 
 	if output, ok := table.(map[string]interface{}); ok {
 		return output, err
-	} else {
-		if err == nil {
-			return nil, errors.New("The output global has been overwritten with something other than a table.")
-		}
-
-		return nil, err
 	}
+
+	if err == nil {
+		return nil, errors.New("The output global has been overwritten with something other than a table.")
+	}
+
+	return nil, err
 }

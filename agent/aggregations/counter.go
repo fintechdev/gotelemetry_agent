@@ -1,17 +1,19 @@
 package aggregations
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/boltdb/bolt"
 	"github.com/telemetryapp/gotelemetry"
-	"strconv"
 )
 
+// Counter TODO
 type Counter struct {
 	Name string
 }
 
+// GetCounter TODO
 func GetCounter(name string) (*Counter, bool, error) {
 	isCreated := false
 
@@ -41,7 +43,7 @@ func GetCounter(name string) (*Counter, bool, error) {
 }
 
 func (c *Counter) fatal(err error) {
-	manager.errorChannel <- errors.New(fmt.Sprintf("Counter %s -> %s", c.Name, err))
+	manager.errorChannel <- fmt.Errorf("Counter %s -> %s", c.Name, err)
 }
 
 func (c *Counter) log(format string, data ...interface{}) {
@@ -52,6 +54,7 @@ func (c *Counter) debug(format string, data ...interface{}) {
 	manager.errorChannel <- gotelemetry.NewLogError("Counter %s -> %s", c.Name, fmt.Sprintf(format, data...))
 }
 
+// GetValue TODO
 func (c *Counter) GetValue() int64 {
 
 	var value string
@@ -74,6 +77,7 @@ func (c *Counter) GetValue() int64 {
 	return valueInt
 }
 
+// SetValue TODO
 func (c *Counter) SetValue(newValue int64) {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
@@ -90,6 +94,7 @@ func (c *Counter) SetValue(newValue int64) {
 
 }
 
+// Increment TODO
 func (c *Counter) Increment(delta int64) {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {

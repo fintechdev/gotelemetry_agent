@@ -3,10 +3,12 @@ package aggregations
 import (
 	"encoding/json"
 	"errors"
-	"github.com/boltdb/bolt"
 	"strings"
+
+	"github.com/boltdb/bolt"
 )
 
+// WriteOAuthToken TODO
 func WriteOAuthToken(key string, token interface{}) error {
 	key = strings.TrimSpace(key)
 
@@ -31,6 +33,7 @@ func WriteOAuthToken(key string, token interface{}) error {
 	return err
 }
 
+// ReadOAuthToken TODO
 func ReadOAuthToken(key string, dest interface{}) error {
 	key = strings.TrimSpace(key)
 

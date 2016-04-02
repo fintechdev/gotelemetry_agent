@@ -21,7 +21,7 @@ type Manager struct {
 var jobManager *Manager
 
 // Init the JobManager with a config file and established error channels
-func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionChannel chan bool) error {
+func Init(jobConfig config.Interface, errorChannel chan error, completionChannel chan bool) error {
 	jobManager = &Manager{
 		Jobs:                 map[string]*Job{},
 		completionChannel:    completionChannel,
@@ -76,11 +76,14 @@ func Init(jobConfig config.ConfigInterface, errorChannel chan error, completionC
 }
 
 func (m *Manager) createJob(jobDescription config.Job, wait bool) error {
-	jobID := jobDescription.ID()
-
-	if jobID == "" {
-		return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
+	if jobDescription.ID == "" {
+		if jobDescription.Tag == "" {
+			return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
+		}
+		jobDescription.ID = jobDescription.Tag
 	}
+
+	jobID := jobDescription.ID
 
 	if _, found := m.Jobs[jobID]; found {
 		return gotelemetry.NewError(500, "Duplicate job `"+jobID+"`")
@@ -102,7 +105,7 @@ func (m *Manager) createJob(jobDescription config.Job, wait bool) error {
 		m.accountStreams[channelTag] = accountStream
 	}
 
-	job, err := newJob(m.credentials, accountStream, jobDescription.ID(), jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
+	job, err := newJob(m.credentials, accountStream, jobDescription.ID, jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
 	if err != nil {
 		return err
 	}

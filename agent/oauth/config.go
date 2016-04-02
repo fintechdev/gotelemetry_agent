@@ -2,14 +2,16 @@ package oauth
 
 import (
 	"fmt"
+
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-const TelemetryOAuthClientResponseURL = "https://telemetrytv.com/oauth_response"
+const telemetryOAuthClientResponseURL = "https://telemetrytv.com/oauth_response"
 
 var entries map[string]config.OAuthConfigEntry
 
+// Init sets the entries global to the config file parameter
 func Init(e map[string]config.OAuthConfigEntry) {
 	entries = e
 }
@@ -33,6 +35,7 @@ func clientForEntryWithName(name string) (Client, error) {
 	}
 }
 
+// RunCommand is used to execute commands set using the OAuth command line flag
 func RunCommand(cfg config.CLIConfigType, errorChannel chan error, completionChannel chan bool) {
 	client, err := clientForEntryWithName(cfg.OAuthName)
 
@@ -47,7 +50,7 @@ func RunCommand(cfg config.CLIConfigType, errorChannel chan error, completionCha
 		break
 
 	case config.OAuthCommands.Request:
-		url, err := client.GetAuthorizationURL()
+		url, err := client.getAuthorizationURL()
 
 		if err != nil {
 			errorChannel <- err

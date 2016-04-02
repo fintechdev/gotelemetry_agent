@@ -26,7 +26,7 @@ func post(g *gin.Context) {
 
 	err := job.AddJob(jobConfig)
 	if err != nil {
-		fmt.Println("Created Job: ", jobConfig.ID())
+		fmt.Println("Created Job: ", jobConfig.ID)
 	}
 }
 

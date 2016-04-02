@@ -2,40 +2,51 @@ package aggregations
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"math"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/boltdb/bolt"
 )
 
+// FunctionType TODO
 type FunctionType int
 
 const (
+	// None TODO
 	None FunctionType = iota
+	// Sum TODO
 	Sum
+	// Avg TODO
 	Avg
+	// Min TODO
 	Min
+	// Max TODO
 	Max
+	// Count TODO
 	Count
+	// StdDev TODO
 	StdDev
 )
 
+// Series TODO
 type Series struct {
 	Name string
 }
 
+// validateSeriesName TODO
 func validateSeriesName(name string) error {
 	var seriesNameRegex = regexp.MustCompile(`^[A-Za-z\-][A-Za-z0-9_.\-]*$`)
 	if seriesNameRegex.MatchString(name) {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Invalid series name `%s`. Series names must start with a letter or underscore and can only contain letters, underscores, and digits.", name))
+	return fmt.Errorf("Invalid series name `%s`. Series names must start with a letter or underscore and can only contain letters, underscores, and digits.", name)
 }
 
+// GetSeries TODO
 func GetSeries(name string) (*Series, bool, error) {
 	isCreated := false
 
@@ -48,7 +59,7 @@ func GetSeries(name string) (*Series, bool, error) {
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
 
 		if tx.Bucket([]byte(name)) == nil {
-			_, err := tx.CreateBucket([]byte(name))
+			_, err = tx.CreateBucket([]byte(name))
 			if err != nil {
 				return err
 			}
@@ -69,6 +80,7 @@ func GetSeries(name string) (*Series, bool, error) {
 	return series, isCreated, nil
 }
 
+// Push TODO
 func (s *Series) Push(timestamp *time.Time, value float64) error {
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 
@@ -90,6 +102,7 @@ func (s *Series) Push(timestamp *time.Time, value float64) error {
 	return err
 }
 
+// Last TODO
 func (s *Series) Last() (map[string]interface{}, error) {
 
 	var output map[string]interface{}
@@ -117,6 +130,7 @@ func (s *Series) Last() (map[string]interface{}, error) {
 	return output, err
 }
 
+// Pop TODO
 func (s *Series) Pop() (map[string]interface{}, error) {
 
 	var output map[string]interface{}
@@ -151,6 +165,7 @@ func (s *Series) Pop() (map[string]interface{}, error) {
 	return output, err
 }
 
+// Compute TODO
 func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (float64, error) {
 
 	min := []byte(strconv.FormatInt(start.Unix(), 10))
@@ -228,11 +243,12 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 		}
 		return math.Sqrt(StdDevSum / (count - 1)), nil
 	default:
-		return 0.0, errors.New(fmt.Sprintf("Unknown operation %d", functionType))
+		return 0.0, fmt.Errorf("Unknown operation %d", functionType)
 	}
 
 }
 
+// Aggregate TODO
 func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, aggregateCount int, endTimePtr *time.Time) (interface{}, error) {
 
 	interval := int64(aggregateInterval)
@@ -322,7 +338,7 @@ func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, agg
 						value = 0.0
 					}
 				default:
-					return errors.New(fmt.Sprintf("Unknown operation %d", functionType))
+					return fmt.Errorf("Unknown operation %d", functionType)
 				}
 			} else {
 				value = 0.0
@@ -339,6 +355,7 @@ func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, agg
 	return interface{}(output), nil
 }
 
+// Items TODO
 func (s *Series) Items(count int) (interface{}, error) {
 	items := []interface{}{}
 
@@ -378,6 +395,7 @@ func (s *Series) Items(count int) (interface{}, error) {
 	return output, err
 }
 
+// TrimSince TODO
 func (s *Series) TrimSince(since time.Time) error {
 	max := []byte(strconv.FormatInt(since.Unix(), 10))
 
@@ -404,6 +422,7 @@ func (s *Series) TrimSince(since time.Time) error {
 	return err
 }
 
+// TrimCount TODO
 func (s *Series) TrimCount(count int) error {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {

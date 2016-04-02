@@ -1,12 +1,14 @@
 package agent
 
 import (
+	"net/http"
+
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"net/http"
 )
 
-func ProcessNotificationRequest(configFile *config.ConfigFile, errorChannel chan error, completionChannel chan bool, notificationChannel string, notificationFlow string, notification gotelemetry.Notification) {
+// ProcessNotificationRequest TODO
+func ProcessNotificationRequest(configFile *config.File, errorChannel chan error, completionChannel chan bool, notificationChannel string, notificationFlow string, notification gotelemetry.Notification) {
 	errorChannel <- gotelemetry.NewLogError("Notification mode is on.")
 
 	apiToken, err := configFile.APIToken()

@@ -1,17 +1,18 @@
 package aggregations
 
 import (
-	"errors"
 	"fmt"
-	"github.com/boltdb/bolt"
-	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"log"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/boltdb/bolt"
+	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
+// Manager TODO
 type Manager struct {
 	path           string
 	ttl            time.Duration
@@ -21,8 +22,9 @@ type Manager struct {
 	cleanupRunning bool
 }
 
-var manager *Manager = nil
+var manager *Manager
 
+// Init the aggregation manager instance
 func Init(listen, location, ttlString *string, errorChannel chan error) error {
 	if location != nil {
 
@@ -41,11 +43,11 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 		// Create default buckets
 		err = conn.Update(func(tx *bolt.Tx) error {
 
-			if _, err := tx.CreateBucketIfNotExists([]byte("_counters")); err != nil {
+			if _, err = tx.CreateBucketIfNotExists([]byte("_counters")); err != nil {
 				return err
 			}
 
-			if _, err := tx.CreateBucketIfNotExists([]byte("_oauth")); err != nil {
+			if _, err = tx.CreateBucketIfNotExists([]byte("_oauth")); err != nil {
 				return err
 			}
 
@@ -53,8 +55,8 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 		})
 
 		if ttlString != nil && len(*ttlString) > 0 {
-			ttl, err := config.ParseTimeInterval(*ttlString)
-			if err != nil {
+			ttl, err2 := config.ParseTimeInterval(*ttlString)
+			if err2 != nil {
 				return err
 			}
 			manager.ttl = ttl
@@ -67,7 +69,7 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 			}
 
 			// Run once initially
-			manager.DatabaseCleanup()
+			manager.databaseCleanup()
 
 			// Begin the database trim routine
 			ticker := time.NewTicker(ttl)
@@ -80,7 +82,7 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 							continue
 						}
 						manager.cleanupRunning = true
-						manager.DatabaseCleanup()
+						manager.databaseCleanup()
 						manager.cleanupRunning = false
 					}
 				}
@@ -110,13 +112,14 @@ func (m *Manager) Debugf(format string, v ...interface{}) {
 	}
 }
 
+// Errorf TODO
 func (m *Manager) Errorf(format string, v ...interface{}) {
 	if m.errorChannel != nil {
-		m.errorChannel <- errors.New(fmt.Sprintf("Data Manager -> "+format, v...))
+		m.errorChannel <- fmt.Errorf("Data Manager -> "+format, v...)
 	}
 }
 
-func (m *Manager) DatabaseCleanup() {
+func (m *Manager) databaseCleanup() {
 	fmt.Printf("db cleaned")
 	since := time.Now().Add(-m.ttl)
 	max := []byte(strconv.FormatInt(since.Unix(), 10))

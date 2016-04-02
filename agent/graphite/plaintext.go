@@ -2,18 +2,20 @@ package graphite
 
 import (
 	"bufio"
-	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"io"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-func Init(cfg config.ConfigInterface, errorChannel chan error) error {
+// Init the graphite server listener
+func Init(cfg config.Interface, errorChannel chan error) error {
 	graphiteConfig := cfg.GraphiteConfig()
 
 	if graphiteConfig.TCPListenPort != "" {

@@ -2,10 +2,11 @@ package oauth
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"golang.org/x/oauth2"
-	"net/http"
 )
 
 type v2Client struct {
@@ -27,7 +28,7 @@ func getV2Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		ClientSecret: entry.ClientSecret,
 		Scopes:       entry.Scopes,
 		Endpoint:     endpoint,
-		RedirectURL:  TelemetryOAuthClientResponseURL,
+		RedirectURL:  telemetryOAuthClientResponseURL,
 	}
 
 	res := &v2Client{
@@ -41,7 +42,7 @@ func getV2Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 	return res, err
 }
 
-func (v *v2Client) GetAuthorizationURL() (string, error) {
+func (v *v2Client) getAuthorizationURL() (string, error) {
 	return v.cfg.AuthCodeURL("s", oauth2.AccessTypeOffline, oauth2.ApprovalForce), nil
 }
 

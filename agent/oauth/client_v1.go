@@ -4,10 +4,11 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/garyburd/go-oauth/oauth"
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"net/http"
 )
 
 type v1ClientData struct {
@@ -37,7 +38,7 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 	}
 
 	var signatureMethod oauth.SignatureMethod
-	var privateKey *rsa.PrivateKey = nil
+	var privateKey *rsa.PrivateKey
 
 	switch entry.SignatureMethod {
 	case "":
@@ -47,7 +48,7 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		signatureMethod = oauth.HMACSHA1
 
 	case "rsa_sha1":
-		return nil, errors.New("RSA oAuth1 signatures are not yet supported.")
+		return nil, errors.New("RSA oAuth1 signatures are not yet supported")
 
 	case "plaintext":
 		signatureMethod = oauth.PLAINTEXT
@@ -78,8 +79,8 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 	return res, nil
 }
 
-func (v *v1Client) GetAuthorizationURL() (string, error) {
-	cred, err := v.data.Client.RequestTemporaryCredentials(nil, TelemetryOAuthClientResponseURL, nil)
+func (v *v1Client) getAuthorizationURL() (string, error) {
+	cred, err := v.data.Client.RequestTemporaryCredentials(nil, telemetryOAuthClientResponseURL, nil)
 
 	if err != nil {
 		return "", err

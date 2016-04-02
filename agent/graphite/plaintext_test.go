@@ -1,10 +1,11 @@
 package graphite
 
 import (
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"net"
 	"testing"
+
+	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
 var addr = &net.UDPAddr{IP: net.IP{127, 0, 0, 1}, Port: 2000}
@@ -22,7 +23,7 @@ func testGraphiteMemoryRun(b *testing.B, count int) {
 }
 
 func BenchmarkGraphiteMemory(b *testing.B) {
-	cfg := config.ConfigFile{}
+	cfg := config.File{}
 	cfg.Graphite = config.GraphiteConfig{
 		UDPListenPort: ":2000",
 	}

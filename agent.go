@@ -17,10 +17,13 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/routes"
 )
 
+// VERSION number automatically populated by goxc config file
 var VERSION = "3.0.1"
+
+// SOURCE_DATE is the date of most recent goxc build. Automatically populated by goxc config
 var SOURCE_DATE = "2016-02-24T14:42:45-08:00"
 
-var configFile *config.ConfigFile
+var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
 

@@ -2,12 +2,14 @@ package agent
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"strings"
 )
 
-func ProcessPipeRequest(configFile *config.ConfigFile, errorChannel chan error, completionChannel chan bool, data []byte) {
+// ProcessPipeRequest TODO
+func ProcessPipeRequest(configFile *config.File, errorChannel chan error, completionChannel chan bool, data []byte) {
 	errorChannel <- gotelemetry.NewLogError("Piped mode is on.")
 	errorChannel <- gotelemetry.NewDebugError("Input data is %s", strings.Replace(string(data), "\n", "\\n", -1))
 
