@@ -3,6 +3,7 @@ package oauth
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
@@ -13,6 +14,7 @@ type v2Client struct {
 	name string
 	cfg  *oauth2.Config
 	t    *oauth2.Token
+	ttl  string
 }
 
 var _ Client = &v2Client{}
@@ -35,6 +37,7 @@ func getV2Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		name: name,
 		cfg:  cfg,
 		t:    &oauth2.Token{},
+		ttl:  entry.TTL,
 	}
 
 	err := aggregations.ReadOAuthToken(res.name, &res.t)
@@ -48,12 +51,22 @@ func (v *v2Client) getAuthorizationURL() (string, error) {
 
 func (v *v2Client) ExchangeToken(code, verifier, realm string) error {
 	if code == "" {
-		return errors.New("No authorization code found. Please provide one with -c.")
+		return errors.New("No authorization code found. Please provide one with -o.")
 	}
 
 	token, err := v.cfg.Exchange(oauth2.NoContext, code)
 
 	if err == nil {
+		// Add an expiration time if the TTL property has been set
+		if v.ttl != "" {
+			var ttl time.Duration
+			ttl, err = config.ParseTimeInterval(v.ttl)
+			if err != nil {
+				return err
+			}
+			token.Expiry = time.Now().Add(ttl)
+		}
+
 		aggregations.WriteOAuthToken(v.name, token)
 		v.t = token
 	}
@@ -62,13 +75,35 @@ func (v *v2Client) ExchangeToken(code, verifier, realm string) error {
 }
 
 func (v *v2Client) Do(req *http.Request) (*http.Response, error) {
-	client := v.cfg.Client(oauth2.NoContext, v.t)
+	var err error
 
-	res, err := client.Do(req)
+	// Refresh the token
+	v.t, err = v.cfg.TokenSource(oauth2.NoContext, v.t).Token()
 
-	if err == nil {
-		return res, aggregations.WriteOAuthToken(v.name, v.t)
+	if err != nil {
+		return nil, err
 	}
+
+	// Update the token expiration time if it has been set
+	if v.ttl != "" {
+		var ttl time.Duration
+		ttl, err = config.ParseTimeInterval(v.ttl)
+		if err != nil {
+			return nil, err
+		}
+		v.t.Expiry = time.Now().Add(ttl)
+	}
+
+	// Write the updated token to the database
+	err = aggregations.WriteOAuthToken(v.name, v.t)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Execute the query
+	client := v.cfg.Client(oauth2.NoContext, v.t)
+	res, err := client.Do(req)
 
 	return res, err
 }

@@ -56,6 +56,7 @@ type OAuthConfigEntry struct {
 	Header           map[string]string `toml:"header"`
 	SignatureMethod  string            `toml:"signature_method"`
 	PrivateKey       string            `toml:"private_key"`
+	TTL              string            `toml:"ttl"`
 }
 
 // Interface TODO
