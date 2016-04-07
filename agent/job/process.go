@@ -22,14 +22,14 @@ type pluginHelperTask func(job *Job, doneChannel chan bool)
 
 // ProcessPlugin allows the agent to execute an external process and use its
 // output as data that can be fed to the Telemetry API.
-type ProcessPlugin struct {
+type processPlugin struct {
 	args            []string
 	batch           bool
 	expiration      time.Duration
 	flow            *gotelemetry.Flow
 	flowTag         string
 	path            string
-	script          *Script
+	script          *script
 	template        map[string]interface{}
 	tasks           []pluginHelperTask
 	closures        []pluginHelperClosure
@@ -39,9 +39,9 @@ type ProcessPlugin struct {
 	isRunning       bool
 }
 
-func newInstance(job *Job) (*ProcessPlugin, error) {
+func newInstance(job *Job) (*processPlugin, error) {
 
-	p := &ProcessPlugin{
+	p := &processPlugin{
 		tasks:           []pluginHelperTask{},
 		jobDoneChannel:  make(chan bool, 0),
 		taskDoneChannel: make(chan bool, 2),
@@ -52,12 +52,10 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 
 	job.debugf("The configuration is %#v", c)
 
-	var ok bool
-
 	p.flowTag = c.Tag
 	p.batch = c.Batch
 
-	if ok && p.flowTag != "" {
+	if p.batch && p.flowTag != "" {
 		return nil, errors.New("You cannot specify both `tag` and `batch` properties.")
 	}
 
@@ -66,10 +64,6 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 
 	if exec != "" && script != "" {
 		return nil, errors.New("You cannot specify both `script` and `exec` properties.")
-	}
-
-	if exec == "" && script == "" {
-		return nil, errors.New("You must specify a `script` or `exec` property.")
 	}
 
 	p.args = []string{}
@@ -97,12 +91,12 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 		}
 
 		if len(scriptArgs) != 0 {
-			return nil, errors.New("You cannot specify an key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
+			return nil, errors.New("You cannot specify a key/value hash of arguments when executing an external process. Provide an array of arguments instead.")
 		}
 
 	} else if script != "" {
 		var err error
-		p.script, err = newScript(c.Script, scriptArgs)
+		p.script, err = newScriptFromPath(c.Script, scriptArgs)
 
 		if err != nil {
 			return nil, err
@@ -174,7 +168,7 @@ func newInstance(job *Job) (*ProcessPlugin, error) {
 	return p, nil
 }
 
-func (p *ProcessPlugin) performDataUpdate(j *Job, flowTag string, isReplace bool, data map[string]interface{}) {
+func (p *processPlugin) performDataUpdate(j *Job, flowTag string, isReplace bool, data map[string]interface{}) {
 
 	if config.CLIConfig.DebugMode == true {
 		// Debug Mode. Print data dump. Do not send API update
@@ -214,7 +208,7 @@ func (p *ProcessPlugin) performDataUpdate(j *Job, flowTag string, isReplace bool
 	}
 }
 
-func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *Job, response string) error {
+func (p *processPlugin) analyzeAndSubmitProcessResponse(j *Job, response string) error {
 	isReplace := false
 
 	if strings.HasPrefix(response, "REPLACE\n") {
@@ -249,7 +243,7 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *Job, response string)
 	}
 
 	if p.flowTag == "" {
-		if j.ID != "" {
+		if j.id != "" {
 			// Flow-less job
 			return nil
 		}
@@ -261,7 +255,7 @@ func (p *ProcessPlugin) analyzeAndSubmitProcessResponse(j *Job, response string)
 	return nil
 }
 
-func (p *ProcessPlugin) performScriptTask(j *Job) (string, error) {
+func (p *processPlugin) performScriptTask(j *Job) (string, error) {
 	if len(p.args) > 0 {
 		j.debugf("Executing `%s` with arguments %#v", p.path, p.args)
 	} else {
@@ -273,7 +267,7 @@ func (p *ProcessPlugin) performScriptTask(j *Job) (string, error) {
 	return string(out), err
 }
 
-func (p *ProcessPlugin) performAllTasks(j *Job) {
+func (p *processPlugin) performAllTasks(j *Job) {
 	j.debugf("Starting process plugin...")
 
 	defer p.trackTime(j, time.Now(), "Process plugin completed in %s.")
@@ -284,9 +278,14 @@ func (p *ProcessPlugin) performAllTasks(j *Job) {
 	if p.path != "" {
 		response, err = p.performScriptTask(j)
 	} else if p.script != nil {
+		if !p.script.enabled {
+			j.logf("The script has been disabled")
+			return
+		}
 		response, err = p.script.exec(j)
 	} else {
-		err = errors.New("Nothing to do!")
+		j.logf("No script or exec set")
+		return
 	}
 
 	if err != nil {
@@ -319,7 +318,7 @@ func (p *ProcessPlugin) performAllTasks(j *Job) {
 // the interval parameter. Note that interval is measured starting from the end of the last
 // execution; therefore, you do not need to worry about conditions like slow networking causing
 // successive iterations of a task to “execute over each other.”
-func (p *ProcessPlugin) addTaskWithClosure(c pluginHelperClosure, interval time.Duration) {
+func (p *processPlugin) addTaskWithClosure(c pluginHelperClosure, interval time.Duration) {
 	var t pluginHelperTask
 
 	runJob := func(j *Job) {
@@ -359,7 +358,7 @@ func (p *ProcessPlugin) addTaskWithClosure(c pluginHelperClosure, interval time.
 	p.addTask(t, c)
 }
 
-func (p *ProcessPlugin) addTask(t pluginHelperTask, c pluginHelperClosure) {
+func (p *processPlugin) addTask(t pluginHelperTask, c pluginHelperClosure) {
 	if t != nil {
 		p.tasks = append(p.tasks, t)
 	}
@@ -368,7 +367,7 @@ func (p *ProcessPlugin) addTask(t pluginHelperTask, c pluginHelperClosure) {
 }
 
 // run executes all the tasks asynchronously.
-func (p *ProcessPlugin) run(job *Job) {
+func (p *processPlugin) run(job *Job) {
 	if len(p.tasks) == 0 {
 		// Since there are no scheduled tasks, we just run everything once and
 		// exit. This makes it possible to schedule a run of the agent through
@@ -396,7 +395,7 @@ func (p *ProcessPlugin) run(job *Job) {
 }
 
 // terminate waits for all outstanding tasks to be completed and then returns.
-func (p *ProcessPlugin) terminate() {
+func (p *processPlugin) terminate() {
 	p.taskDoneChannel <- true
 	p.jobDoneChannel <- true
 	p.waitGroup.Wait()
@@ -404,6 +403,6 @@ func (p *ProcessPlugin) terminate() {
 
 // trackTime can be used in a deferred call near the beginning of a function
 // to automatically determine how long that function runs for.
-func (p *ProcessPlugin) trackTime(job *Job, start time.Time, template string) {
+func (p *processPlugin) trackTime(job *Job, start time.Time, template string) {
 	job.logf(template, time.Since(start))
 }

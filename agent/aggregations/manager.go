@@ -120,7 +120,7 @@ func (m *Manager) Errorf(format string, v ...interface{}) {
 }
 
 func (m *Manager) databaseCleanup() {
-	fmt.Printf("db cleaned")
+
 	since := time.Now().Add(-m.ttl)
 	max := []byte(strconv.FormatInt(since.Unix(), 10))
 

@@ -8,9 +8,9 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-// Manager instantiates, tracks, and updates all jobs within the Agent
-type Manager struct {
-	Jobs                 map[string]*Job
+// manager instantiates, tracks, and updates all jobs within the Agent
+type manager struct {
+	jobs                 map[string]*Job
 	credentials          gotelemetry.Credentials
 	accountStreams       map[string]*gotelemetry.BatchStream
 	completionChannel    chan bool
@@ -18,12 +18,12 @@ type Manager struct {
 	submissionInterval   time.Duration
 }
 
-var jobManager *Manager
+var jobManager *manager
 
 // Init the JobManager with a config file and established error channels
 func Init(jobConfig config.Interface, errorChannel chan error, completionChannel chan bool) error {
-	jobManager = &Manager{
-		Jobs:                 map[string]*Job{},
+	jobManager = &manager{
+		jobs:                 map[string]*Job{},
 		completionChannel:    completionChannel,
 		jobCompletionChannel: make(chan string),
 	}
@@ -65,7 +65,7 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 
 	}
 
-	if len(jobManager.Jobs) == 0 {
+	if len(jobManager.jobs) == 0 {
 		errorChannel <- gotelemetry.NewLogError("No jobs are being scheduled.")
 		return nil
 	}
@@ -75,7 +75,7 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 	return nil
 }
 
-func (m *Manager) createJob(jobDescription config.Job, wait bool) error {
+func (m *manager) createJob(jobDescription config.Job, wait bool) error {
 	if jobDescription.ID == "" {
 		if jobDescription.Tag == "" {
 			return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
@@ -85,7 +85,7 @@ func (m *Manager) createJob(jobDescription config.Job, wait bool) error {
 
 	jobID := jobDescription.ID
 
-	if _, found := m.Jobs[jobID]; found {
+	if _, found := m.jobs[jobID]; found {
 		return gotelemetry.NewError(500, "Duplicate job `"+jobID+"`")
 	}
 
@@ -110,17 +110,17 @@ func (m *Manager) createJob(jobDescription config.Job, wait bool) error {
 		return err
 	}
 
-	m.Jobs[job.ID] = job
+	m.jobs[job.id] = job
 	return nil
 }
 
-func (m *Manager) monitorDoneChannel() {
+func (m *manager) monitorDoneChannel() {
 	for {
 		select {
 		case id := <-m.jobCompletionChannel:
-			delete(m.Jobs, id)
+			delete(m.jobs, id)
 
-			if len(m.Jobs) == 0 {
+			if len(m.jobs) == 0 {
 				for _, accountStream := range m.accountStreams {
 					accountStream.Flush()
 				}
@@ -139,14 +139,14 @@ func AddJob(jobDescription config.Job) error {
 
 // GetJobs returns a list of all jobs being managed
 func GetJobs() {
-	for k := range jobManager.Jobs {
+	for k := range jobManager.jobs {
 		fmt.Println("Job ID:", k)
 	}
 }
 
 // GetJobByID searches using an ID string and returns the job with that ID
 func GetJobByID(id string) {
-	if foundJob, found := jobManager.Jobs[id]; found {
+	if foundJob, found := jobManager.jobs[id]; found {
 		fmt.Println(foundJob)
 	} else {
 		fmt.Println("Job not found: ", id)
@@ -155,9 +155,76 @@ func GetJobByID(id string) {
 
 // TerminateJob searches for a job by ID string and stops/deletes it
 func TerminateJob(id string) {
-	if foundJob, found := jobManager.Jobs[id]; found {
+	if foundJob, found := jobManager.jobs[id]; found {
 		foundJob.instance.terminate()
 		fmt.Println("Terminated job: ", id)
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+}
+
+// GetScript gets the source code of a script for the a job by its ID
+func GetScript(id string) {
+	if foundJob, found := jobManager.jobs[id]; found {
+		if foundJob.instance.script != nil {
+			fmt.Println("Job script: ", foundJob.instance.script.source)
+			return
+		}
+		fmt.Println("No script set for job: ", id)
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+}
+
+// AddScript creates or updates a script for a job
+func AddScript(id string, scriptSource string) {
+	if foundJob, found := jobManager.jobs[id]; found {
+
+		// Script already exists. Update
+		if foundJob.instance.script != nil {
+			foundJob.instance.script.source = scriptSource
+			return
+		}
+
+		// Do not add a script if there is an executable
+		if foundJob.instance.path != "" {
+			fmt.Println("An executable already exists so a script cannot be added to : ", id)
+			return
+		}
+
+		foundJob.instance.script = newScriptFromSource(scriptSource)
+
+		fmt.Println("No script set for job: ", id)
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+}
+
+// DeleteScript removes the script of a job
+func DeleteScript(id string) {
+	if foundJob, found := jobManager.jobs[id]; found {
+
+		if foundJob.instance.script != nil {
+			foundJob.instance.script = nil
+			return
+		}
+
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+}
+
+// RunScriptDebug executes a Lua script and returns the result
+func RunScriptDebug(id string) {
+	if foundJob, found := jobManager.jobs[id]; found {
+
+		if foundJob.instance.script != nil {
+			scriptResult, _ := foundJob.instance.script.exec(foundJob)
+			fmt.Println(scriptResult)
+			return
+		}
+		fmt.Println("A script has not been set for: ", id)
+
 	} else {
 		fmt.Println("Job not found: ", id)
 	}

@@ -14,10 +14,10 @@ import (
 // Job is a unit of work that the Agent manages. Jobs manage their own
 // processes that interact with the Telemetry API
 type Job struct {
-	ID                string                   // The ID of the job
+	id                string                   // The ID of the job
 	credentials       gotelemetry.Credentials  // The credentials used by the job
 	stream            *gotelemetry.BatchStream // The batch stream used by the job.
-	instance          *ProcessPlugin           // The process instance
+	instance          *processPlugin           // The process instance
 	errorChannel      chan error               // A channel to which all errors are funneled
 	config            config.Job               // The configuration associated with the job
 	completionChannel chan string              // To be pinged when the job has finished running so that the manager knows when to quit
@@ -26,7 +26,7 @@ type Job struct {
 // newJob creates and starts a new Job
 func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config config.Job, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
 	result := &Job{
-		ID:                id,
+		id:                id,
 		credentials:       credentials,
 		stream:            stream,
 		errorChannel:      errorChannel,
@@ -48,7 +48,7 @@ func (j *Job) start(wait bool) {
 	var err error
 	j.instance, err = newInstance(j)
 	if err != nil {
-		j.reportError(errors.New("Error initializing the job `" + j.ID + "`"))
+		j.reportError(errors.New("Error initializing the job `" + j.id + "`"))
 		j.reportError(err)
 		return
 
@@ -59,7 +59,7 @@ func (j *Job) start(wait bool) {
 		go j.instance.run(j)
 	} else {
 		j.instance.run(j)
-		j.completionChannel <- j.ID
+		j.completionChannel <- j.id
 	}
 }
 
@@ -127,7 +127,7 @@ func (j *Job) queueDataUpdate(tag string, data interface{}, updateType gotelemet
 // reportError sends a formatted error to the agent's global error log. This should be
 // a plugin's preferred error reporting method when running.
 func (j *Job) reportError(err error) {
-	actualError := errors.New(j.ID + ": -> " + err.Error())
+	actualError := errors.New(j.id + ": -> " + err.Error())
 
 	if j.errorChannel != nil {
 		j.errorChannel <- actualError
@@ -169,9 +169,9 @@ func (j *Job) log(v ...interface{}) {
 	for _, val := range v {
 		if j.errorChannel != nil {
 			if v, ok := val.(string); ok {
-				j.errorChannel <- gotelemetry.NewLogError("%s -> %s", j.ID, v)
+				j.errorChannel <- gotelemetry.NewLogError("%s -> %s", j.id, v)
 			} else {
-				j.errorChannel <- gotelemetry.NewLogError("%s -> %#v", j.ID, val)
+				j.errorChannel <- gotelemetry.NewLogError("%s -> %#v", j.id, val)
 			}
 		}
 	}
@@ -180,13 +180,13 @@ func (j *Job) log(v ...interface{}) {
 // logf sends a formatted string to the agent's global log. It works like log.Logf
 func (j *Job) logf(format string, v ...interface{}) {
 	if j.errorChannel != nil {
-		j.errorChannel <- gotelemetry.NewLogError("%s -> %#s", j.ID, fmt.Sprintf(format, v...))
+		j.errorChannel <- gotelemetry.NewLogError("%s -> %#s", j.id, fmt.Sprintf(format, v...))
 	}
 }
 
 // debugf sends a formatted string to the agent's debug log, if it exists. It works like log.Logf
 func (j *Job) debugf(format string, v ...interface{}) {
 	if j.errorChannel != nil {
-		j.errorChannel <- gotelemetry.NewDebugError("%s -> %#s", j.ID, fmt.Sprintf(format, v...))
+		j.errorChannel <- gotelemetry.NewDebugError("%s -> %#s", j.id, fmt.Sprintf(format, v...))
 	}
 }

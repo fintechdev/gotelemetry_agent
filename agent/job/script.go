@@ -11,16 +11,17 @@ import (
 )
 
 // Script manages the Lua source code for a job as well as its save locations
-type Script struct {
+type script struct {
 	path    string
 	source  string
 	args    map[string]interface{}
 	enabled bool
+	job     *Job
 }
 
-func newScript(path string, args map[string]interface{}) (*Script, error) {
+func newScriptFromPath(path string, args map[string]interface{}) (*script, error) {
 
-	s := &Script{
+	s := &script{
 		enabled: true,
 	}
 
@@ -42,7 +43,17 @@ func newScript(path string, args map[string]interface{}) (*Script, error) {
 	return s, nil
 }
 
-func (s *Script) exec(j *Job) (string, error) {
+func newScriptFromSource(source string) *script {
+	s := &script{
+		enabled: true,
+	}
+
+	s.source = source
+
+	return s
+}
+
+func (s *script) exec(j *Job) (string, error) {
 	output, err := lua.Exec(s.source, j, s.args)
 
 	if err != nil {
