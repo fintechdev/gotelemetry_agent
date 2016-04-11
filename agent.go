@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"sync"
 
@@ -138,8 +139,25 @@ func run() {
 		if true {
 			g := gin.New()
 			gin.SetMode(gin.ReleaseMode)
-			routes.Init(g)
-			go g.Run()
+
+			// Authenticate all requests
+			g.Use(func(g *gin.Context) {
+				auth := g.Request.Header.Get("AUTHORIZATION")
+				if len(auth) > 6 && auth[6:] == configFile.AuthToken {
+					g.Next()
+				} else {
+					g.AbortWithStatus(http.StatusUnauthorized)
+				}
+			})
+
+			routes.Init(g, configFile)
+
+			listen := configFile.Listen
+			if len(listen) == 0 {
+				listen = ":8080"
+			}
+			errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
+			go g.Run(listen)
 		}
 
 	}
