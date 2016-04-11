@@ -1,4 +1,4 @@
-package aggregations
+package database
 
 import (
 	"bytes"

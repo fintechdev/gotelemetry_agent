@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"golang.org/x/oauth2"
 )
@@ -40,7 +40,7 @@ func getV2Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		ttl:  entry.TTL,
 	}
 
-	err := aggregations.ReadOAuthToken(res.name, &res.t)
+	err := database.ReadOAuthToken(res.name, &res.t)
 
 	return res, err
 }
@@ -67,7 +67,7 @@ func (v *v2Client) ExchangeToken(code, verifier, realm string) error {
 			token.Expiry = time.Now().Add(ttl)
 		}
 
-		aggregations.WriteOAuthToken(v.name, token)
+		database.WriteOAuthToken(v.name, token)
 		v.t = token
 	}
 
@@ -95,7 +95,7 @@ func (v *v2Client) Do(req *http.Request) (*http.Response, error) {
 	}
 
 	// Write the updated token to the database
-	err = aggregations.WriteOAuthToken(v.name, v.t)
+	err = database.WriteOAuthToken(v.name, v.t)
 
 	if err != nil {
 		return nil, err

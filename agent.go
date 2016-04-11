@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
@@ -107,7 +107,7 @@ Done:
 }
 
 func run() {
-	if err := aggregations.Init(configFile.DataConfig().Listen, configFile.DataConfig().DataLocation, configFile.DataConfig().TTL, errorChannel); err != nil {
+	if err := database.Init(configFile.DataConfig().Listen, configFile.DataConfig().DataLocation, configFile.DataConfig().TTL, errorChannel); err != nil {
 		log.Fatalf("Initialization error: %s", err)
 	}
 
@@ -134,7 +134,6 @@ func run() {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
-		// Start gin test
 		if true {
 			g := gin.New()
 			gin.SetMode(gin.ReleaseMode)

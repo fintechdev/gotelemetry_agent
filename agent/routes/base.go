@@ -1,11 +1,10 @@
 package routes
 
-import (
-	"github.com/gin-gonic/gin"
-	"github.com/telemetryapp/gotelemetry_agent/agent/routes/jobs"
-)
+import "github.com/gin-gonic/gin"
 
 // Init the routes
 func Init(g *gin.Engine) {
-	jobs.Setup(g)
+	jobsRoute(g)
+	statsRoute(g)
+	logsRoute(g)
 }

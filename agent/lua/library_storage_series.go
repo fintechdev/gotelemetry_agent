@@ -5,12 +5,12 @@ import (
 
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
-	"name": func(s *aggregations.Series) lua.Function {
+var seriesFunctions = map[string]func(s *database.Series) lua.Function{
+	"name": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			util.DeepPush(l, s.Name)
 
@@ -18,7 +18,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"trimSince": func(s *aggregations.Series) lua.Function {
+	"trimSince": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 
 			if l.TypeOf(1) == lua.TypeString {
@@ -50,7 +50,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"trimCount": func(s *aggregations.Series) lua.Function {
+	"trimCount": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 
 			count := lua.CheckInteger(l, 1)
@@ -64,7 +64,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"push": func(s *aggregations.Series) lua.Function {
+	"push": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			value := lua.CheckNumber(l, 1)
 			timestamp := time.Unix(int64(lua.OptInteger(l, 2, int(time.Now().Unix()))), 0)
@@ -78,7 +78,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"pop": func(s *aggregations.Series) lua.Function {
+	"pop": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			res, err := s.Pop()
 
@@ -93,7 +93,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"last": func(s *aggregations.Series) lua.Function {
+	"last": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			res, err := s.Last()
 
@@ -108,7 +108,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"items": func(s *aggregations.Series) lua.Function {
+	"items": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 
 			res, err := s.Items(lua.CheckInteger(l, 1))
@@ -162,7 +162,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"compute": func(s *aggregations.Series) lua.Function {
+	"compute": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			functionType := lua.CheckInteger(l, 1)
 
@@ -177,7 +177,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 				curTime := time.Now()
 				timeSince := curTime.Add(-duration)
 
-				res, err := s.Compute(aggregations.FunctionType(functionType), &timeSince, &curTime)
+				res, err := s.Compute(database.FunctionType(functionType), &timeSince, &curTime)
 
 				if err != nil {
 					lua.Errorf(l, "%s", err)
@@ -192,7 +192,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 			start := time.Unix(int64(lua.CheckInteger(l, 2)), 0)
 			end := time.Unix(int64(lua.CheckInteger(l, 3)), 0)
 
-			res, err := s.Compute(aggregations.FunctionType(functionType), &start, &end)
+			res, err := s.Compute(database.FunctionType(functionType), &start, &end)
 
 			if err != nil {
 				lua.Errorf(l, "%s", err)
@@ -205,7 +205,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 		}
 	},
 
-	"aggregate": func(s *aggregations.Series) lua.Function {
+	"aggregate": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			functionType := lua.CheckInteger(l, 1)
 			interval := 0
@@ -225,7 +225,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 				interval = lua.CheckInteger(l, 2)
 			}
 
-			res, err := s.Aggregate(aggregations.FunctionType(functionType), interval, count, &end)
+			res, err := s.Aggregate(database.FunctionType(functionType), interval, count, &end)
 
 			if err != nil {
 				lua.Errorf(l, "%s", err)
@@ -278,7 +278,7 @@ var seriesFunctions = map[string]func(s *aggregations.Series) lua.Function{
 }
 
 func pushSeries(l *lua.State, name string) {
-	series, _, err := aggregations.GetSeries(name)
+	series, _, err := database.GetSeries(name)
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())

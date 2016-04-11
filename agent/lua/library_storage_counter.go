@@ -2,11 +2,11 @@ package lua
 
 import (
 	"github.com/telemetryapp/go-lua"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
-var counterFunctions = map[string]func(c *aggregations.Counter) lua.Function{
-	"value": func(c *aggregations.Counter) lua.Function {
+var counterFunctions = map[string]func(c *database.Counter) lua.Function{
+	"value": func(c *database.Counter) lua.Function {
 		return func(l *lua.State) int {
 			l.PushInteger(int(c.GetValue()))
 
@@ -14,7 +14,7 @@ var counterFunctions = map[string]func(c *aggregations.Counter) lua.Function{
 		}
 	},
 
-	"set": func(c *aggregations.Counter) lua.Function {
+	"set": func(c *database.Counter) lua.Function {
 		return func(l *lua.State) int {
 			c.SetValue(int64(lua.CheckInteger(l, 1)))
 
@@ -22,7 +22,7 @@ var counterFunctions = map[string]func(c *aggregations.Counter) lua.Function{
 		}
 	},
 
-	"increment": func(c *aggregations.Counter) lua.Function {
+	"increment": func(c *database.Counter) lua.Function {
 		return func(l *lua.State) int {
 			c.Increment(int64(lua.CheckInteger(l, 1)))
 
@@ -32,7 +32,7 @@ var counterFunctions = map[string]func(c *aggregations.Counter) lua.Function{
 }
 
 func pushCounter(l *lua.State, name string) {
-	counter, _, err := aggregations.GetCounter(name)
+	counter, _, err := database.GetCounter(name)
 
 	if err != nil {
 		lua.Errorf(l, "%s", err)

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 type expectsError bool
@@ -197,7 +197,7 @@ func TestRegex(t *testing.T) {
 func TestSeries(t *testing.T) {
 	l := "/tmp/agent.bolt"
 	ttl := "1h"
-	aggregations.Init(nil, &l, &ttl, make(chan error, 99999))
+	database.Init(nil, &l, &ttl, make(chan error, 99999))
 
 	ts := float64(time.Now().Unix() + 10)
 	tss := fmt.Sprintf("%g", ts)

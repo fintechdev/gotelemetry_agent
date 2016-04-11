@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/garyburd/go-oauth/oauth"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
@@ -74,7 +74,7 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		},
 	}
 
-	aggregations.ReadOAuthToken(res.name, &res.data)
+	database.ReadOAuthToken(res.name, &res.data)
 
 	return res, nil
 }
@@ -88,7 +88,7 @@ func (v *v1Client) getAuthorizationURL() (string, error) {
 
 	v.data.TemporaryCredentials = cred
 
-	err = aggregations.WriteOAuthToken(v.name, v.data)
+	err = database.WriteOAuthToken(v.name, v.data)
 
 	return v.data.Client.AuthorizationURL(cred, nil), err
 }
@@ -103,7 +103,7 @@ func (v *v1Client) ExchangeToken(code, verifier, realm string) error {
 	v.data.PermanentCredentials = cred
 	v.data.Realm = realm
 
-	return aggregations.WriteOAuthToken(v.name, v.data)
+	return database.WriteOAuthToken(v.name, v.data)
 }
 
 func (v *v1Client) Do(req *http.Request) (*http.Response, error) {

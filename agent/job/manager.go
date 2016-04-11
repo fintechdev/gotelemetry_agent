@@ -229,3 +229,39 @@ func RunScriptDebug(id string) {
 		fmt.Println("Job not found: ", id)
 	}
 }
+
+// SetScriptState enables or disables the script for a given job ID
+func SetScriptState(id string, enableScript bool) {
+	if foundJob, found := jobManager.jobs[id]; found {
+
+		if foundJob.instance.script != nil {
+			if enableScript {
+				foundJob.instance.script.enabled = true
+				fmt.Println("Enabled the script for: ", id)
+				return
+			}
+
+			foundJob.instance.script.enabled = false
+			fmt.Println("Disabled the script for: ", id)
+			return
+
+		}
+		fmt.Println("A script has not been set for: ", id)
+
+	} else {
+		fmt.Println("Job not found: ", id)
+	}
+}
+
+// ReplaceJob searches for a job by ID string and deletes it and replaces with a new board
+func ReplaceJob(jobDescription config.Job) error {
+	id := jobDescription.ID
+
+	if foundJob, found := jobManager.jobs[id]; found {
+		foundJob.instance.terminate()
+		return jobManager.createJob(jobDescription, false)
+	}
+
+	return fmt.Errorf("Job not found: %s", id)
+
+}

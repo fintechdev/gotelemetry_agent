@@ -4,8 +4,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 var addr = &net.UDPAddr{IP: net.IP{127, 0, 0, 1}, Port: 2000}
@@ -39,7 +39,7 @@ func BenchmarkGraphiteMemory(b *testing.B) {
 	p := ":2000"
 	l := "/tmp/agent.db"
 	ttl := "1h"
-	aggregations.Init(&p, &l, &ttl, errorChannel)
+	database.Init(&p, &l, &ttl, errorChannel)
 
 	Init(&cfg, errorChannel)
 
