@@ -138,8 +138,13 @@ func run() {
 		if true {
 			g := gin.New()
 			gin.SetMode(gin.ReleaseMode)
-			routes.Init(g)
-			go g.Run()
+			routes.Init(g, configFile)
+
+			listen := configFile.Listen
+			if len(listen) == 0 {
+				listen = ":8080"
+			}
+			go g.Run(listen)
 		}
 
 	}
