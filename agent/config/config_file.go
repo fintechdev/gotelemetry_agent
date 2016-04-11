@@ -82,6 +82,7 @@ type File struct {
 	Graphite  GraphiteConfig              `toml:"graphite"`
 	Data      DataConfig                  `toml:"data"`
 	Listen    string                      `toml:"listen"`
+	AuthToken string                      `toml:"auth_token"`
 	JobsField []Job                       `toml:"jobs"`
 	FlowField []Job                       `toml:"flow"`
 	OAuth     map[string]OAuthConfigEntry `toml:"oauth"`
