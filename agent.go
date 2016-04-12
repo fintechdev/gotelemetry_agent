@@ -135,13 +135,14 @@ func run() {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
-		if true {
+		if configFile.AuthToken != "" {
 			g := gin.New()
 			gin.SetMode(gin.ReleaseMode)
 
 			// Authenticate all requests
 			g.Use(func(g *gin.Context) {
 				auth := g.Request.Header.Get("AUTHORIZATION")
+				// Auth header will contain a five character prefix
 				if len(auth) > 6 && auth[6:] == configFile.AuthToken {
 					g.Next()
 				} else {

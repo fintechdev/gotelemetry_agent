@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"fmt"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
@@ -17,30 +17,57 @@ func jobsRoute(g *gin.Engine) {
 
 	// returns a list of all jobs
 	g.GET("/jobs", func(g *gin.Context) {
-		job.GetJobs()
+		jobsList, err := job.GetJobs()
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		jobsListMap := make(map[string][]string)
+		jobsListMap["jobs"] = jobsList
+
+		g.JSON(http.StatusOK, jobsListMap)
 	})
 
 	// creates a new job
 	g.POST("/jobs", func(g *gin.Context) {
 		var jobConfig config.Job
 		g.BindJSON(&jobConfig)
-
 		err := job.AddJob(jobConfig)
+
 		if err != nil {
-			fmt.Println("Created Job: ", jobConfig.ID)
+			g.Error(err)
+			return
 		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 	// gets a job specified by ID (returns a script if present as a nested object)
 	g.GET("/jobs/:id", func(g *gin.Context) {
 		id := g.Param("id")
-		job.GetJobByID(id)
+		jobConfig, err := job.GetJobByID(id)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.JSON(http.StatusOK, jobConfig)
 	})
 
 	// deletes a job by ID
 	g.DELETE("/jobs/:id", func(g *gin.Context) {
 		id := g.Param("id")
-		job.TerminateJob(id)
+		err := job.TerminateJob(id)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 	// replaces an existing job with the contents
@@ -49,15 +76,29 @@ func jobsRoute(g *gin.Engine) {
 		g.BindJSON(&jobConfig)
 
 		err := job.ReplaceJob(jobConfig)
+
 		if err != nil {
-			fmt.Println("Replaced Job: ", jobConfig.ID)
+			g.Error(err)
+			return
 		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 	// gets a script for the job
 	g.GET("/jobs/:id/script", func(g *gin.Context) {
 		id := g.Param("id")
-		job.GetScript(id)
+		jobScript, err := job.GetScript(id)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		jobScriptMap := make(map[string]string)
+		jobScriptMap["source"] = jobScript
+
+		g.JSON(http.StatusOK, jobScriptMap)
 	})
 
 	// creates or updates a script for a job
@@ -65,32 +106,66 @@ func jobsRoute(g *gin.Engine) {
 		id := g.Param("id")
 		var scriptSource script
 		g.BindJSON(&scriptSource)
-		fmt.Println(scriptSource.Source)
-		job.AddScript(id, scriptSource.Source)
+		err := job.AddScript(id, scriptSource.Source)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 	// removes the jobs script
 	g.DELETE("/jobs/:id/script", func(g *gin.Context) {
 		id := g.Param("id")
-		job.DeleteScript(id)
+		err := job.DeleteScript(id)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 	// executes a script in debug mode and returns the output
 	g.GET("/jobs/:id/script/run", func(g *gin.Context) {
 		id := g.Param("id")
-		job.RunScriptDebug(id)
+		res, err := job.RunScriptDebug(id)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.JSON(http.StatusOK, res)
 	})
 
 	// allow for enabling scripts
 	g.PUT("/jobs/:id/script/enable", func(g *gin.Context) {
 		id := g.Param("id")
-		job.SetScriptState(id, true)
+		err := job.SetScriptState(id, true)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 	// allow for disabling scripts
 	g.PUT("/jobs/:id/script/disable", func(g *gin.Context) {
 		id := g.Param("id")
-		job.SetScriptState(id, false)
+		err := job.SetScriptState(id, false)
+
+		if err != nil {
+			g.Error(err)
+			return
+		}
+
+		g.Status(http.StatusNoContent)
 	})
 
 }

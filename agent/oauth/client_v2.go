@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"golang.org/x/oauth2"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
-	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 var seriesFunctions = map[string]func(s *database.Series) lua.Function{

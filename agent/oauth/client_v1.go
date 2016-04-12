@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"github.com/garyburd/go-oauth/oauth"
-	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 type v1ClientData struct {

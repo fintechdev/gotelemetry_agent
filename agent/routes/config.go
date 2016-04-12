@@ -1,4 +1,4 @@
-package config
+package routes
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ type request struct {
 }
 
 // Setup instantiates the endpoints used for manipulating jobs
-func Setup(g *gin.Engine, cfg agentConfig.Interface) {
+func configRoute(g *gin.Engine, cfg agentConfig.Interface) {
 	g.PATCH("/config", updateFunc(cfg))
 }
 
