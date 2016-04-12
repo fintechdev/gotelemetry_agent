@@ -21,7 +21,10 @@ func configRoute(g *gin.Engine, cfg agentConfig.Interface) {
 func updateFunc(cfg agentConfig.Interface) gin.HandlerFunc {
 	return func(g *gin.Context) {
 		data := request{}
-		g.BindJSON(&data)
+		if err := g.BindJSON(&data); err != nil {
+			g.Error(err).SetType(gin.ErrorTypeBind)
+			return
+		}
 
 		if len(data.Server.APIToken) > 0 {
 			err := cfg.SetAPIToken(data.Server.APIToken)
