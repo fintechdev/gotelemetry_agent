@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
+	"net/url"
 )
 
 type script struct {
@@ -17,25 +18,19 @@ func jobsRoute(g *gin.Engine) {
 
 	// returns a list of all jobs
 	g.GET("/jobs", func(g *gin.Context) {
-		jobsList, err := job.GetJobs()
-
-		if err != nil {
-			g.Error(err)
-			return
-		}
-
-		jobsListMap := make(map[string][]string)
-		jobsListMap["jobs"] = jobsList
-
-		g.JSON(http.StatusOK, jobsListMap)
+		jobsList, _ := job.GetJobs()
+		g.JSON(http.StatusOK, jobsList)
 	})
 
 	// creates a new job
 	g.POST("/jobs", func(g *gin.Context) {
 		var jobConfig config.Job
-		g.BindJSON(&jobConfig)
-		err := job.AddJob(jobConfig)
+		if err := g.BindJSON(&jobConfig); err != nil {
+			g.Error(err).SetType(gin.ErrorTypeBind)
+			return
+		}
 
+		err := job.AddJob(jobConfig)
 		if err != nil {
 			g.Error(err)
 			return
@@ -46,11 +41,11 @@ func jobsRoute(g *gin.Engine) {
 
 	// gets a job specified by ID (returns a script if present as a nested object)
 	g.GET("/jobs/:id", func(g *gin.Context) {
-		id := g.Param("id")
+		id, _ := url.QueryUnescape(g.Param("id"))
 		jobConfig, err := job.GetJobByID(id)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -73,7 +68,10 @@ func jobsRoute(g *gin.Engine) {
 	// replaces an existing job with the contents
 	g.PUT("/jobs/:id", func(g *gin.Context) {
 		var jobConfig config.Job
-		g.BindJSON(&jobConfig)
+		if err := g.BindJSON(&jobConfig); err != nil {
+			g.Error(err).SetType(gin.ErrorTypeBind)
+			return
+		}
 
 		err := job.ReplaceJob(jobConfig)
 
@@ -104,8 +102,13 @@ func jobsRoute(g *gin.Engine) {
 	// creates or updates a script for a job
 	g.PUT("/jobs/:id/script", func(g *gin.Context) {
 		id := g.Param("id")
+
 		var scriptSource script
-		g.BindJSON(&scriptSource)
+		if err := g.BindJSON(&scriptSource); err != nil {
+			g.Error(err).SetType(gin.ErrorTypeBind)
+			return
+		}
+
 		err := job.AddScript(id, scriptSource.Source)
 
 		if err != nil {

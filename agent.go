@@ -3,11 +3,9 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"sync"
 
-	"github.com/gin-gonic/gin"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
@@ -135,42 +133,8 @@ func run() {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
-		if configFile.AuthToken != "" {
-			g := gin.New()
-			gin.SetMode(gin.ReleaseMode)
-
-			g.Use(func(g *gin.Context) {
-				g.Header("Access-Control-Allow-Origin", "*")
-				g.Header("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE, OPTIONS")
-				g.Header("Access-Control-Allow-Headers", "Authorization,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type")
-
-				if g.Request.Method == "OPTIONS" {
-					g.AbortWithStatus(http.StatusNoContent)
-				} else {
-					g.Next()
-				}
-			})
-
-			// Authenticate all requests
-			g.Use(func(g *gin.Context) {
-				auth := g.Request.Header.Get("AUTHORIZATION")
-				// Auth header will contain a five character prefix
-				if len(auth) > 6 && auth[6:] == configFile.AuthToken {
-					g.Next()
-				} else {
-					g.AbortWithStatus(http.StatusUnauthorized)
-				}
-			})
-
-			routes.Init(g, configFile)
-
-			listen := configFile.Listen
-			if len(listen) == 0 {
-				listen = ":8080"
-			}
-			errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
-			go g.Run(listen)
+		if err := routes.Init(configFile, errorChannel); err != nil {
+			log.Fatalf("Initialization error: %s", err)
 		}
-
 	}
 }

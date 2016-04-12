@@ -72,17 +72,24 @@ type Interface interface {
 	SubmissionInterval() time.Duration
 	OAuthConfig() map[string]OAuthConfigEntry
 	Jobs() []Job
+	Listen() string
+	AuthToken() string
+}
+
+// Listener
+type ListenerConfig struct {
+	Listen    string `toml:"listen"`
+	AuthToken string `toml:"auth_token"`
 }
 
 // File TODO
 type File struct {
 	filePath  string
 	fileMode  os.FileMode
+	Listener  ListenerConfig              `toml:"listener"`
 	Server    ServerConfig                `toml:"server"`
 	Graphite  GraphiteConfig              `toml:"graphite"`
 	Data      DataConfig                  `toml:"data"`
-	Listen    string                      `toml:"listen"`
-	AuthToken string                      `toml:"auth_token"`
 	JobsField []Job                       `toml:"jobs"`
 	FlowField []Job                       `toml:"flow"`
 	OAuth     map[string]OAuthConfigEntry `toml:"oauth"`
@@ -152,7 +159,6 @@ func (c *File) SetAPIToken(token string) error {
 	if err := toml.NewEncoder(buf).Encode(c); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(buf.String())
 
 	err := ioutil.WriteFile(c.filePath, buf.Bytes(), c.fileMode)
 
@@ -230,4 +236,14 @@ func MapTemplate(from interface{}) interface{} {
 	default:
 		return from
 	}
+}
+
+// Listen TODO
+func (c *File) Listen() string {
+	return c.Listener.Listen
+}
+
+// Listen TODO
+func (c *File) AuthToken() string {
+	return c.Listener.AuthToken
 }
