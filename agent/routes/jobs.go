@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-
 	"net/url"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +54,7 @@ func jobsRoute(g *gin.Engine) {
 
 	// deletes a job by ID
 	g.DELETE("/jobs/:id", func(g *gin.Context) {
-		id := g.Param("id")
+		id, _ := url.QueryUnescape(g.Param("id"))
 		err := job.TerminateJob(id)
 
 		if err != nil {
@@ -67,12 +66,15 @@ func jobsRoute(g *gin.Engine) {
 	})
 
 	// replaces an existing job with the contents
-	g.PUT("/jobs/:id", func(g *gin.Context) {
+	g.PATCH("/jobs/:id", func(g *gin.Context) {
 		var jobConfig config.Job
 		if err := g.BindJSON(&jobConfig); err != nil {
 			g.Error(err).SetType(gin.ErrorTypeBind)
 			return
 		}
+
+		id, _ := url.QueryUnescape(g.Param("id"))
+		jobConfig.ID = id
 
 		err := job.ReplaceJob(jobConfig)
 
@@ -86,7 +88,7 @@ func jobsRoute(g *gin.Engine) {
 
 	// gets a script for the job
 	g.GET("/jobs/:id/script", func(g *gin.Context) {
-		id := g.Param("id")
+		id, _ := url.QueryUnescape(g.Param("id"))
 		jobScript, err := job.GetScript(id)
 
 		if err != nil {
@@ -101,8 +103,8 @@ func jobsRoute(g *gin.Engine) {
 	})
 
 	// creates or updates a script for a job
-	g.PUT("/jobs/:id/script", func(g *gin.Context) {
-		id := g.Param("id")
+	g.POST("/jobs/:id/script", func(g *gin.Context) {
+		id, _ := url.QueryUnescape(g.Param("id"))
 
 		var scriptSource script
 		if err := g.BindJSON(&scriptSource); err != nil {
@@ -122,7 +124,7 @@ func jobsRoute(g *gin.Engine) {
 
 	// removes the jobs script
 	g.DELETE("/jobs/:id/script", func(g *gin.Context) {
-		id := g.Param("id")
+		id, _ := url.QueryUnescape(g.Param("id"))
 		err := job.DeleteScript(id)
 
 		if err != nil {
@@ -135,7 +137,7 @@ func jobsRoute(g *gin.Engine) {
 
 	// executes a script in debug mode and returns the output
 	g.GET("/jobs/:id/script/run", func(g *gin.Context) {
-		id := g.Param("id")
+		id, _ := url.QueryUnescape(g.Param("id"))
 		res, err := job.RunScriptDebug(id)
 
 		if err != nil {
@@ -147,8 +149,8 @@ func jobsRoute(g *gin.Engine) {
 	})
 
 	// allow for enabling scripts
-	g.PUT("/jobs/:id/script/enable", func(g *gin.Context) {
-		id := g.Param("id")
+	g.POST("/jobs/:id/script/enable", func(g *gin.Context) {
+		id, _ := url.QueryUnescape(g.Param("id"))
 		err := job.SetScriptState(id, true)
 
 		if err != nil {
@@ -160,8 +162,8 @@ func jobsRoute(g *gin.Engine) {
 	})
 
 	// allow for disabling scripts
-	g.PUT("/jobs/:id/script/disable", func(g *gin.Context) {
-		id := g.Param("id")
+	g.POST("/jobs/:id/script/disable", func(g *gin.Context) {
+		id, _ := url.QueryUnescape(g.Param("id"))
 		err := job.SetScriptState(id, false)
 
 		if err != nil {

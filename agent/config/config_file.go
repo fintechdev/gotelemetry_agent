@@ -14,17 +14,17 @@ import (
 
 // Job TODO
 type Job struct {
-	ID         string      `toml:"id"`
-	Tag        string      `toml:"tag"`
-	ChannelTag string      `toml:"channel_tag"`
-	Batch      bool        `toml:"batch"`
-	Exec       string      `toml:"exec"`
-	Script     string      `toml:"script"`
-	Args       interface{} `toml:"args"`
-	Template   interface{} `toml:"template"`
-	Variant    string      `toml:"variant"`
-	Expiration interface{} `toml:"expiration"`
-	Interval   string      `toml:"interval"`
+	ID         string      `toml:"id"          json:"id"`
+	Tag        string      `toml:"tag"         json:"tag"`
+	ChannelTag string      `toml:"channel_tag" json:"channel_tag"`
+	Batch      bool        `toml:"batch"       json:"batch"`
+	Exec       string      `toml:"exec"        json:"exec"`
+	Script     string      `toml:"script"      json:"script"`
+	Args       interface{} `toml:"args"        json:"args"`
+	Template   interface{} `toml:"template"    json:"template"`
+	Variant    string      `toml:"variant"     json:"variant"`
+	Expiration interface{} `toml:"expiration"  json:"expiration"`
+	Interval   string      `toml:"interval"    json:"interval"`
 }
 
 // ServerConfig TODO
