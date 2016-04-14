@@ -8,12 +8,14 @@ import (
 	"github.com/telemetryapp/gotelemetry"
 )
 
-// Counter TODO
+// Counter tracks the name of the counter and is used to append Lua functions
 type Counter struct {
 	Name string
 }
 
-// GetCounter TODO
+// GetCounter initializes and returns a counter object. It creates the counter
+// with a value of zero within the database if it does not already exist.
+// A boolean is returned to track if it was created
 func GetCounter(name string) (*Counter, bool, error) {
 	isCreated := false
 
@@ -54,7 +56,7 @@ func (c *Counter) debug(format string, data ...interface{}) {
 	manager.errorChannel <- gotelemetry.NewLogError("Counter %s -> %s", c.Name, fmt.Sprintf(format, data...))
 }
 
-// GetValue TODO
+// GetValue returns an integer of the current counter value
 func (c *Counter) GetValue() int64 {
 
 	var value string
@@ -77,7 +79,7 @@ func (c *Counter) GetValue() int64 {
 	return valueInt
 }
 
-// SetValue TODO
+// SetValue takes an integer and overrides the previous value of the counter
 func (c *Counter) SetValue(newValue int64) {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
@@ -94,7 +96,7 @@ func (c *Counter) SetValue(newValue int64) {
 
 }
 
-// Increment TODO
+// Increment takes a signed integer and adds that value to the counter
 func (c *Counter) Increment(delta int64) {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {

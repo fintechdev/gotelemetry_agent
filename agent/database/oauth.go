@@ -8,7 +8,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// WriteOAuthToken TODO
+// WriteOAuthToken writes an OAuth token to the database under a given key string
 func WriteOAuthToken(key string, token interface{}) error {
 	key = strings.TrimSpace(key)
 
@@ -33,7 +33,7 @@ func WriteOAuthToken(key string, token interface{}) error {
 	return err
 }
 
-// ReadOAuthToken TODO
+// ReadOAuthToken takes an OAuth tokens key and returns an un marshaled token object
 func ReadOAuthToken(key string, dest interface{}) error {
 	key = strings.TrimSpace(key)
 

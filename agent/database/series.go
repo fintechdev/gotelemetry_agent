@@ -11,32 +11,24 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// FunctionType TODO
+// FunctionType are the enumerations of calculations used to compute or aggregate series data
 type FunctionType int
 
 const (
-	// None TODO
 	None FunctionType = iota
-	// Sum TODO
 	Sum
-	// Avg TODO
 	Avg
-	// Min TODO
 	Min
-	// Max TODO
 	Max
-	// Count TODO
 	Count
-	// StdDev TODO
 	StdDev
 )
 
-// Series TODO
+// Series tracks the name of the series and is used to append Lua functions
 type Series struct {
 	Name string
 }
 
-// validateSeriesName TODO
 func validateSeriesName(name string) error {
 	var seriesNameRegex = regexp.MustCompile(`^[A-Za-z\-][A-Za-z0-9_.\-]*$`)
 	if seriesNameRegex.MatchString(name) {
@@ -46,7 +38,8 @@ func validateSeriesName(name string) error {
 	return fmt.Errorf("Invalid series name `%s`. Series names must start with a letter or underscore and can only contain letters, underscores, and digits.", name)
 }
 
-// GetSeries TODO
+// GetSeries searches the root level of the database by bucket name and creates
+// the bucket if it does not exist. Returns a boolean true if the bucket was created
 func GetSeries(name string) (*Series, bool, error) {
 	isCreated := false
 
@@ -80,7 +73,8 @@ func GetSeries(name string) (*Series, bool, error) {
 	return series, isCreated, nil
 }
 
-// Push TODO
+// Push adds a value to a given point of the series based on timestamp.
+// The position will default to the current time if time is not provided
 func (s *Series) Push(timestamp *time.Time, value float64) error {
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 
@@ -102,7 +96,7 @@ func (s *Series) Push(timestamp *time.Time, value float64) error {
 	return err
 }
 
-// Last TODO
+// Last returns the timestamp value pair of the last item in a series without removing it
 func (s *Series) Last() (map[string]interface{}, error) {
 
 	var output map[string]interface{}
@@ -130,7 +124,7 @@ func (s *Series) Last() (map[string]interface{}, error) {
 	return output, err
 }
 
-// Pop TODO
+// Pop removes the last value of a series and returns its timestamp/value
 func (s *Series) Pop() (map[string]interface{}, error) {
 
 	var output map[string]interface{}
@@ -165,7 +159,8 @@ func (s *Series) Pop() (map[string]interface{}, error) {
 	return output, err
 }
 
-// Compute TODO
+// Compute uses a given operation to calculate series data based on a given
+// start and end time into a single floating point value
 func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (float64, error) {
 
 	min := []byte(strconv.FormatInt(start.Unix(), 10))
@@ -233,7 +228,7 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 	case Count:
 		return count, nil
 	case StdDev:
-		// Standard deviation formula requies at least two values
+		// Standard deviation formula requires at least two values
 		if count < 2 {
 			return 0.0, nil
 		}
@@ -248,7 +243,8 @@ func (s *Series) Compute(functionType FunctionType, start, end *time.Time) (floa
 
 }
 
-// Aggregate TODO
+// Aggregate performs an aggregation over the contents of the series, first grouping
+// data by a given time period, then computing an operation of your choosing over each group
 func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, aggregateCount int, endTimePtr *time.Time) (interface{}, error) {
 
 	interval := int64(aggregateInterval)
@@ -355,7 +351,7 @@ func (s *Series) Aggregate(functionType FunctionType, aggregateInterval int, agg
 	return interface{}(output), nil
 }
 
-// Items TODO
+// Items returns a given number returns a map of timestamp/value pairs
 func (s *Series) Items(count int) (interface{}, error) {
 	items := []interface{}{}
 
@@ -395,7 +391,7 @@ func (s *Series) Items(count int) (interface{}, error) {
 	return output, err
 }
 
-// TrimSince TODO
+// TrimSince keeps series items since a given datetime and deletes all other entries
 func (s *Series) TrimSince(since time.Time) error {
 	max := []byte(strconv.FormatInt(since.Unix(), 10))
 
@@ -422,7 +418,7 @@ func (s *Series) TrimSince(since time.Time) error {
 	return err
 }
 
-// TrimCount TODO
+// TrimCount keeps a given number of series items and removes all other entries
 func (s *Series) TrimCount(count int) error {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {

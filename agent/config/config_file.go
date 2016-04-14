@@ -76,7 +76,7 @@ type Interface interface {
 	AuthToken() string
 }
 
-// Listener
+// ListenerConfig TODO
 type ListenerConfig struct {
 	Listen    string `toml:"listen"`
 	AuthToken string `toml:"auth_token"`
@@ -151,7 +151,7 @@ func (c *File) APIToken() (string, error) {
 	return "", errors.New("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 }
 
-// Replace APIToken. This will overwrite the original config file, comments will be gone
+// SetAPIToken replaces the config file API token. This will overwrite the original config file, comments will be gone
 func (c *File) SetAPIToken(token string) error {
 	c.Server.APIToken = token
 
@@ -243,7 +243,7 @@ func (c *File) Listen() string {
 	return c.Listener.Listen
 }
 
-// Listen TODO
+// AuthToken TODO
 func (c *File) AuthToken() string {
 	return c.Listener.AuthToken
 }

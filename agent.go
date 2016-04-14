@@ -17,10 +17,10 @@ import (
 )
 
 // VERSION number automatically populated by goxc config file
-var VERSION = "3.0.1"
+var VERSION = "3.0.2"
 
 // SOURCE_DATE is the date of most recent goxc build. Automatically populated by goxc config
-var SOURCE_DATE = "2016-02-24T14:42:45-08:00"
+var SOURCE_DATE = "2016-04-13T13:41:10-07:00"
 
 var configFile *config.File
 var errorChannel chan error
@@ -85,12 +85,7 @@ func main() {
 	for {
 		select {
 		case <-completionChannel:
-			// TODO
-			// Server mode test. Don't stop when all jobs are finished
-			log.Println("No more jobs to run; Not exiting because server mode.")
-			if false {
-				goto Done
-			}
+			goto Done
 		}
 	}
 

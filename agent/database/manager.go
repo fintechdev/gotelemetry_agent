@@ -12,7 +12,7 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-// Manager TODO
+// Manager maintains the status and state of the agent's database
 type Manager struct {
 	path           string
 	ttl            time.Duration
@@ -112,7 +112,7 @@ func (m *Manager) Debugf(format string, v ...interface{}) {
 	}
 }
 
-// Errorf TODO
+// Errorf sends a formatted error string to the agent's error channel
 func (m *Manager) Errorf(format string, v ...interface{}) {
 	if m.errorChannel != nil {
 		m.errorChannel <- fmt.Errorf("Data Manager -> "+format, v...)

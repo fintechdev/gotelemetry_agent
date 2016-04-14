@@ -3,10 +3,11 @@ package routes
 import (
 	"net/http"
 
+	"net/url"
+
 	"github.com/gin-gonic/gin"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
-	"net/url"
 )
 
 type script struct {
@@ -58,7 +59,7 @@ func jobsRoute(g *gin.Engine) {
 		err := job.TerminateJob(id)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -76,7 +77,7 @@ func jobsRoute(g *gin.Engine) {
 		err := job.ReplaceJob(jobConfig)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -89,7 +90,7 @@ func jobsRoute(g *gin.Engine) {
 		jobScript, err := job.GetScript(id)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -112,7 +113,7 @@ func jobsRoute(g *gin.Engine) {
 		err := job.AddScript(id, scriptSource.Source)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -125,7 +126,7 @@ func jobsRoute(g *gin.Engine) {
 		err := job.DeleteScript(id)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -138,7 +139,7 @@ func jobsRoute(g *gin.Engine) {
 		res, err := job.RunScriptDebug(id)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -151,7 +152,7 @@ func jobsRoute(g *gin.Engine) {
 		err := job.SetScriptState(id, true)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 
@@ -164,7 +165,7 @@ func jobsRoute(g *gin.Engine) {
 		err := job.SetScriptState(id, false)
 
 		if err != nil {
-			g.Error(err)
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
 		}
 

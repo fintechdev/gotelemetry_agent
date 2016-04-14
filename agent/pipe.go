@@ -8,7 +8,7 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
-// ProcessPipeRequest TODO
+// ProcessPipeRequest processes data packets that are piped to the Agent
 func ProcessPipeRequest(configFile *config.File, errorChannel chan error, completionChannel chan bool, data []byte) {
 	errorChannel <- gotelemetry.NewLogError("Piped mode is on.")
 	errorChannel <- gotelemetry.NewDebugError("Input data is %s", strings.Replace(string(data), "\n", "\\n", -1))
