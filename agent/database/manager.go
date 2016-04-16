@@ -51,6 +51,10 @@ func Init(listen, location, ttlString *string, errorChannel chan error) error {
 				return err
 			}
 
+			if _, err = tx.CreateBucketIfNotExists([]byte("_jobs")); err != nil {
+				return err
+			}
+
 			return nil
 		})
 

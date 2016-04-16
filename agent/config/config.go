@@ -74,7 +74,7 @@ func Init(version string, sourceDate string) {
 
 	app.Flag("config", "Path to the configuration file for this agent.").Short('c').Default("./config.toml").StringVar(&CLIConfig.ConfigFileLocation)
 
-	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetryapp.com").StringVar(&CLIConfig.APIURL)
+	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetrytv.com").StringVar(&CLIConfig.APIURL)
 	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")
 	filter := app.Flag("filter", "Run only the jobs whose IDs (or tags if no ID is specified) match the given regular expression").Default(".").String()
 	app.Flag("debug", "Run scripts in debug mode. No API calls will be made. All output will be printed to the console.").BoolVar(&CLIConfig.DebugMode)

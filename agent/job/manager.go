@@ -6,6 +6,7 @@ import (
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 // manager instantiates, tracks, and updates all jobs within the Agent
@@ -57,12 +58,24 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 
 	jobManager.accountStreams = map[string]*gotelemetry.BatchStream{}
 
+	// Create each of the jobs listed in the config file
 	for _, jobDescription := range jobConfig.Jobs() {
 
 		if err := jobManager.createJob(jobDescription, false); err != nil {
 			return err
 		}
 
+	}
+
+	// Fetch jobs located in the database. Do not add jobs already included in the config file
+	jobsDatabase, err := database.GetAllJobs()
+	for _, jobDescription := range jobsDatabase {
+		if _, found := jobManager.jobs[jobDescription.ID]; found {
+			continue
+		}
+		if err := jobManager.createJob(jobDescription, false); err != nil {
+			return err
+		}
 	}
 
 	if len(jobManager.jobs) == 0 {
@@ -109,6 +122,9 @@ func (m *manager) createJob(jobDescription config.Job, wait bool) error {
 	if err != nil {
 		return err
 	}
+
+	// Job creation successful. Write the job to the database
+	database.WriteJob(jobDescription)
 
 	m.jobs[job.id] = job
 	return nil
