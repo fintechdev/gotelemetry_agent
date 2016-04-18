@@ -186,6 +186,8 @@ func TerminateJob(id string) error {
 		return fmt.Errorf("Job not found: %s", id)
 	}
 
+	delete(jobManager.jobs, id)
+
 	foundJob.instance.terminate()
 	return nil
 }
@@ -194,12 +196,10 @@ func TerminateJob(id string) error {
 func ReplaceJob(jobDescription config.Job) error {
 	id := jobDescription.ID
 
-	foundJob, found := jobManager.jobs[id]
-	if !found {
-		return fmt.Errorf("Job not found: %s", id)
+	if err := TerminateJob(id); err != nil {
+		return err
 	}
 
-	foundJob.instance.terminate()
 	return jobManager.createJob(jobDescription, false)
 }
 
