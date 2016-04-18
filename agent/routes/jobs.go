@@ -103,7 +103,7 @@ func jobsRoute(g *gin.Engine) {
 	})
 
 	// creates or updates a script for a job
-	g.POST("/jobs/:id/script", func(g *gin.Context) {
+	g.PUT("/jobs/:id/script", func(g *gin.Context) {
 		id, _ := url.QueryUnescape(g.Param("id"))
 
 		var scriptSource script
