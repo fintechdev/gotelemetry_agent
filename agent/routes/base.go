@@ -3,12 +3,15 @@ package routes
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
+
+var g *gin.Engine
 
 // Init the routes
 func Init(cfg config.Interface, errorChannel chan error) error {
@@ -18,7 +21,7 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 		return nil
 	}
 
-	g := gin.New()
+	g = gin.New()
 	gin.SetMode(gin.ReleaseMode)
 
 	// Handle CORS
@@ -78,9 +81,6 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 			"errors": errMesages})
 	})
 
-	jobsRoute(g)
-	statsRoute(g)
-	logsRoute(g)
 	configRoute(g, cfg)
 
 	listen := cfg.Listen()
@@ -90,5 +90,22 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 	errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
 	go g.Run(listen)
 
+	// If an API token is not set at this point, block until we receive one via the API
+	if apiToken := cfg.APIToken(); len(apiToken) == 0 {
+		errorChannel <- gotelemetry.NewLogError("An API token has not been set. Waiting for connection from Telemetry Client")
+		for len(apiToken) == 0 {
+			time.Sleep(time.Second * 1)
+			apiToken = cfg.APIToken()
+		}
+	}
+
 	return nil
+}
+
+// SetAdditionalRoutes initializes all non-configuration routes as the dependencies
+// for these routes may not be set at the time of execution for Init()
+func SetAdditionalRoutes() {
+	jobsRoute(g)
+	statsRoute(g)
+	logsRoute(g)
 }

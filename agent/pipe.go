@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/telemetryapp/gotelemetry"
@@ -25,12 +26,11 @@ func ProcessPipeRequest(configFile *config.File, errorChannel chan error, comple
 		errorChannel <- gotelemetry.NewDebugError("Will perform a Rails-style HTTP PATCH operation")
 	}
 
-	apiToken, err := configFile.APIToken()
+	apiToken := configFile.APIToken()
 
-	if err != nil {
-		errorChannel <- err
+	if len(apiToken) == 0 {
+		errorChannel <- fmt.Errorf("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 		completionChannel <- true
-
 		return
 	}
 

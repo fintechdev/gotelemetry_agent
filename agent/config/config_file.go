@@ -1,11 +1,8 @@
 package config
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"time"
 
@@ -35,9 +32,8 @@ type ServerConfig struct {
 
 // DataConfig TODO
 type DataConfig struct {
-	DataLocation *string `toml:"path"`
-	TTL          *string `toml:"ttl"`
-	Listen       *string `toml:"listen"`
+	DataLocation string `toml:"path"`
+	TTL          string `toml:"ttl"`
 }
 
 // GraphiteConfig TODO
@@ -64,8 +60,9 @@ type OAuthConfigEntry struct {
 // Interface TODO
 type Interface interface {
 	APIURL() string
-	APIToken() (string, error)
-	SetAPIToken(string) error
+	APIToken() string
+	SetAPIToken(string)
+	SetAuthToken(string)
 	ChannelTag() string
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
@@ -74,6 +71,7 @@ type Interface interface {
 	Jobs() []Job
 	Listen() string
 	AuthToken() string
+	DatabasePath() string
 }
 
 // ListenerConfig TODO
@@ -101,6 +99,13 @@ var _ Interface = &File{}
 func NewConfigFile() (*File, error) {
 	filePath := CLIConfig.ConfigFileLocation
 
+	result := &File{}
+
+	if len(filePath) == 0 {
+		// Return an empty configfile if a path has not been set
+		return result, nil
+	}
+
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get configuration file info at %s. Did you use --config to specify the right path?\n\n", filePath)
@@ -122,8 +127,6 @@ func NewConfigFile() (*File, error) {
 		return nil, fmt.Errorf("Unable to open configuration file at %s. Did you use --config to specify the right path?\n\n", filePath)
 	}
 
-	result := &File{}
-
 	_, err = toml.Decode(string(source), result)
 
 	for _, job := range result.FlowField {
@@ -137,32 +140,24 @@ func NewConfigFile() (*File, error) {
 }
 
 // APIToken TODO
-func (c *File) APIToken() (string, error) {
+func (c *File) APIToken() string {
 	result := c.Server.APIToken
 
 	if result == "" {
-		result = os.ExpandEnv("$TELEMETRY_API_TOKEN")
+		return os.ExpandEnv("$TELEMETRY_API_TOKEN")
 	}
 
-	if result != "" {
-		return result, nil
-	}
-
-	return "", errors.New("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
+	return result
 }
 
-// SetAPIToken replaces the config file API token. This will overwrite the original config file, comments will be gone
-func (c *File) SetAPIToken(token string) error {
+// SetAPIToken replaces the config API token
+func (c *File) SetAPIToken(token string) {
 	c.Server.APIToken = token
+}
 
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(c); err != nil {
-		log.Fatal(err)
-	}
-
-	err := ioutil.WriteFile(c.filePath, buf.Bytes(), c.fileMode)
-
-	return err
+// SetAuthToken replaces the config auth token
+func (c *File) SetAuthToken(token string) {
+	c.Listener.AuthToken = token
 }
 
 // APIURL TODO
@@ -245,5 +240,22 @@ func (c *File) Listen() string {
 
 // AuthToken TODO
 func (c *File) AuthToken() string {
+	if cliAuthKey := CLIConfig.AuthenticationKey; len(cliAuthKey) > 0 {
+		return cliAuthKey
+	}
+
 	return c.Listener.AuthToken
+}
+
+// DatabasePath TODO
+func (c *File) DatabasePath() string {
+	if databasePath := CLIConfig.DatabaseFileLocation; len(databasePath) > 0 {
+		return databasePath
+	}
+
+	if len(c.Data.DataLocation) == 0 {
+		return "agent.db"
+	}
+
+	return c.Data.DataLocation
 }

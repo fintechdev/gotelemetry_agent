@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	agentConfig "github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 type request struct {
@@ -27,11 +28,8 @@ func updateFunc(cfg agentConfig.Interface) gin.HandlerFunc {
 		}
 
 		if len(data.Server.APIToken) > 0 {
-			err := cfg.SetAPIToken(data.Server.APIToken)
-			if err != nil {
-				g.Error(err)
-				return
-			}
+			database.WriteConfigParam("api_token", data.Server.APIToken)
+			cfg.SetAPIToken(data.Server.APIToken)
 		}
 
 		g.Status(http.StatusNoContent)

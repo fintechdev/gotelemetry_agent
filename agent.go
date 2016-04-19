@@ -101,7 +101,11 @@ Done:
 }
 
 func run() {
-	if err := database.Init(configFile.DataConfig().Listen, configFile.DataConfig().DataLocation, configFile.DataConfig().TTL, errorChannel); err != nil {
+	if err := database.Init(configFile, errorChannel); err != nil {
+		log.Fatalf("Initialization error: %s", err)
+	}
+
+	if err := database.MergeDatabaseWithConfigFile(configFile); err != nil {
 		log.Fatalf("Initialization error: %s", err)
 	}
 
@@ -124,12 +128,15 @@ func run() {
 	} else if config.CLIConfig.OAuthCommand != config.OAuthCommands.None {
 		oauth.RunCommand(config.CLIConfig, errorChannel, completionChannel)
 	} else {
+		if err := routes.Init(configFile, errorChannel); err != nil {
+			log.Fatalf("Initialization error: %s", err)
+		}
+
 		if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
-		if err := routes.Init(configFile, errorChannel); err != nil {
-			log.Fatalf("Initialization error: %s", err)
-		}
+		routes.SetAdditionalRoutes()
+
 	}
 }

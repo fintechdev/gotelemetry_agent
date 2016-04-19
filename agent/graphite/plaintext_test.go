@@ -27,6 +27,10 @@ func BenchmarkGraphiteMemory(b *testing.B) {
 	cfg.Graphite = config.GraphiteConfig{
 		UDPListenPort: ":2000",
 	}
+	cfg.Data = config.DataConfig{
+		TTL:          "1h",
+		DataLocation: "/tmp/agent.db",
+	}
 
 	errorChannel := make(chan error, 1)
 
@@ -36,10 +40,7 @@ func BenchmarkGraphiteMemory(b *testing.B) {
 		}
 	}()
 
-	p := ":2000"
-	l := "/tmp/agent.db"
-	ttl := "1h"
-	database.Init(&p, &l, &ttl, errorChannel)
+	database.Init(&cfg, errorChannel)
 
 	Init(&cfg, errorChannel)
 

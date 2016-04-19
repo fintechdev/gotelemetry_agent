@@ -2,8 +2,10 @@ package database
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/boltdb/bolt"
+	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
@@ -31,16 +33,43 @@ func GetAllJobs() ([]config.Job, error) {
 }
 
 // WriteJob stores a job within the database
-func WriteJob(job config.Job) error {
+func WriteJob(job config.Job) (config.Job, error) {
+	// Ensure that all jobs have an ID
+	if job.ID == "" {
+		if job.Tag == "" {
+			return job, gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
+		}
+		job.ID = job.Tag
+	}
+	// TODO add stronger validation
+
 	jobMarshal, err := json.Marshal(job)
 
 	if err != nil {
-		return err
+		return job, err
 	}
 
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_jobs"))
 		err := bucket.Put([]byte(job.ID), jobMarshal)
+		return err
+	})
+
+	return job, err
+}
+
+// DeleteJob finds a job by its ID and removes it from the database
+func DeleteJob(jobID string) error {
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_jobs"))
+
+		// Run a get command first to ensure that the key exists
+		if v := bucket.Get([]byte(jobID)); v == nil {
+			return fmt.Errorf("Could not find the job in database: %s", jobID)
+		}
+
+		err := bucket.Delete([]byte(jobID))
+
 		return err
 	})
 
