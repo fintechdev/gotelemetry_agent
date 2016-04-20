@@ -132,7 +132,7 @@ func run() {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
-		if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
+		if err := job.Init(configFile, errorChannel, nil); err != nil {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
