@@ -29,10 +29,10 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 		jobCompletionChannel: make(chan string),
 	}
 
-	apiToken, err := jobConfig.APIToken()
+	apiToken := jobConfig.APIToken()
 
-	if err != nil {
-		return err
+	if len(apiToken) == 0 {
+		return fmt.Errorf("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 	}
 
 	credentials, err := gotelemetry.NewCredentials(apiToken, jobConfig.APIURL())
@@ -58,24 +58,14 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 
 	jobManager.accountStreams = map[string]*gotelemetry.BatchStream{}
 
-	// Create each of the jobs listed in the config file
-	for _, jobDescription := range jobConfig.Jobs() {
-
-		if err := jobManager.createJob(jobDescription, false); err != nil {
-			return err
-		}
-
-	}
-
-	// Fetch jobs located in the database. Do not add jobs already included in the config file
+	// Fetch and create jobs located in the database
 	jobsDatabase, err := database.GetAllJobs()
 	for _, jobDescription := range jobsDatabase {
-		if _, found := jobManager.jobs[jobDescription.ID]; found {
-			continue
-		}
+
 		if err := jobManager.createJob(jobDescription, false); err != nil {
 			return err
 		}
+
 	}
 
 	if len(jobManager.jobs) == 0 {
@@ -89,13 +79,6 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 }
 
 func (m *manager) createJob(jobDescription config.Job, wait bool) error {
-	if jobDescription.ID == "" {
-		if jobDescription.Tag == "" {
-			return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
-		}
-		jobDescription.ID = jobDescription.Tag
-	}
-
 	jobID := jobDescription.ID
 
 	if _, found := m.jobs[jobID]; found {
@@ -122,9 +105,6 @@ func (m *manager) createJob(jobDescription config.Job, wait bool) error {
 	if err != nil {
 		return err
 	}
-
-	// Job creation successful. Write the job to the database
-	database.WriteJob(jobDescription)
 
 	m.jobs[job.id] = job
 	return nil
@@ -167,7 +147,15 @@ func GetJobs() ([]string, error) {
 
 // AddJob triggers the createJob function with a marshaled job config file
 func AddJob(jobDescription config.Job) error {
-	return jobManager.createJob(jobDescription, false)
+	jobDescription, err := database.WriteJob(jobDescription)
+
+	if err != nil {
+		return err
+	}
+
+	err = jobManager.createJob(jobDescription, false)
+
+	return err
 }
 
 // GetJobByID searches using an ID string and returns the job with that ID
@@ -191,7 +179,10 @@ func TerminateJob(id string) error {
 	delete(jobManager.jobs, id)
 
 	foundJob.instance.terminate()
-	return nil
+
+	err := database.DeleteJob(id)
+
+	return err
 }
 
 // ReplaceJob searches for a job by ID string and deletes it and replaces with a new job

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/telemetryapp/gotelemetry"
@@ -11,12 +12,11 @@ import (
 func ProcessNotificationRequest(configFile *config.File, errorChannel chan error, completionChannel chan bool, notificationChannel string, notificationFlow string, notification gotelemetry.Notification) {
 	errorChannel <- gotelemetry.NewLogError("Notification mode is on.")
 
-	apiToken, err := configFile.APIToken()
+	apiToken := configFile.APIToken()
 
-	if err != nil {
-		errorChannel <- err
+	if len(apiToken) == 0 {
+		errorChannel <- fmt.Errorf("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 		completionChannel <- true
-
 		return
 	}
 
