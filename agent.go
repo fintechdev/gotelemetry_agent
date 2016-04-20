@@ -124,7 +124,7 @@ func run() {
 	} else if config.CLIConfig.OAuthCommand != config.OAuthCommands.None {
 		oauth.RunCommand(config.CLIConfig, errorChannel, completionChannel)
 	} else {
-		if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
+		if err := job.Init(configFile, errorChannel, nil); err != nil {
 			log.Fatalf("Initialization error: %s", err)
 		}
 

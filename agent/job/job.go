@@ -59,7 +59,9 @@ func (j *Job) start(wait bool) {
 		go j.instance.run(j)
 	} else {
 		j.instance.run(j)
-		j.completionChannel <- j.id
+		if j.completionChannel != nil {
+			j.completionChannel <- j.id
+		}
 	}
 }
 

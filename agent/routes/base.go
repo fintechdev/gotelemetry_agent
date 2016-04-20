@@ -1,8 +1,10 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -34,18 +36,74 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 		}
 	})
 
+	// Logging
+	g.Use(logFunc(errorChannel))
+
 	// Authenticate all requests
-	g.Use(func(g *gin.Context) {
+	g.Use(authFunc(authToken))
+
+	// Handle errors
+	g.Use(errorFunc(errorChannel))
+
+	jobsRoute(g)
+	statsRoute(g)
+	logsRoute(g)
+	configRoute(g, cfg)
+
+	listen := cfg.Listen()
+	if len(listen) == 0 {
+		listen = ":8080"
+	}
+	errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
+	go g.Run(listen)
+
+	return nil
+}
+
+func logFunc(errorChannel chan error) gin.HandlerFunc {
+	return func(g *gin.Context) {
+		start := time.Now()
+		path := g.Request.URL.Path
+
+		g.Next()
+
+		end := time.Now()
+		latency := end.Sub(start)
+
+		clientIP := g.ClientIP()
+		method := g.Request.Method
+		statusCode := g.Writer.Status()
+		error := g.Errors.String()
+
+		timeFormatted := end.Format("2006-01-02 15:04:05")
+
+		msg := fmt.Sprintf(
+			`ip="%s" time="%s" method="%s" path="%s" status="%d" latency="%s" error="%+v"`,
+			clientIP,
+			timeFormatted,
+			method,
+			path,
+			statusCode,
+			latency,
+			error)
+
+		errorChannel <- gotelemetry.NewLogError(msg)
+	}
+}
+
+func authFunc(authToken string) gin.HandlerFunc {
+	return func(g *gin.Context) {
 		auth := g.Request.Header.Get("AUTHORIZATION")
 		if strings.HasSuffix(auth, authToken) {
 			g.Next()
 		} else {
 			g.AbortWithStatus(http.StatusUnauthorized)
 		}
-	})
+	}
+}
 
-	// Handle errors
-	g.Use(func(g *gin.Context) {
+func errorFunc(errorChannel chan error) gin.HandlerFunc {
+	return func(g *gin.Context) {
 		g.Next()
 
 		if len(g.Errors) == 0 {
@@ -76,19 +134,5 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 		g.JSON(status, gin.H{
 			"code":   status,
 			"errors": errMesages})
-	})
-
-	jobsRoute(g)
-	statsRoute(g)
-	logsRoute(g)
-	configRoute(g, cfg)
-
-	listen := cfg.Listen()
-	if len(listen) == 0 {
-		listen = ":8080"
 	}
-	errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
-	go g.Run(listen)
-
-	return nil
 }

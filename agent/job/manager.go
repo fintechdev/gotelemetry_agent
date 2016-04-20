@@ -141,7 +141,9 @@ func (m *manager) monitorDoneChannel() {
 					accountStream.Flush()
 				}
 
-				m.completionChannel <- true
+				if m.completionChannel != nil {
+					m.completionChannel <- true
+				}
 				return
 			}
 		}
