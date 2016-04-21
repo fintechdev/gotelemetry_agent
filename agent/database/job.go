@@ -75,3 +75,48 @@ func DeleteJob(jobID string) error {
 
 	return err
 }
+
+func WriteScript(jobID, scriptSource string) error {
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_scripts"))
+		err := bucket.Put([]byte(jobID), []byte(scriptSource))
+		return err
+	})
+
+	return err
+}
+
+func GetScript(jobID string) string {
+	var scriptSource string
+
+	manager.conn.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_scripts"))
+
+		val := bucket.Get([]byte(jobID))
+
+		if val != nil {
+			scriptSource = string(val)
+		}
+
+		return nil
+	})
+
+	return scriptSource
+}
+
+func DeleteScript(jobID string) error {
+	err := manager.conn.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("_scripts"))
+
+		// Run a get command first to ensure that the key exists
+		if v := bucket.Get([]byte(jobID)); v == nil {
+			return fmt.Errorf("Could not find the script in database for job: %s", jobID)
+		}
+
+		err := bucket.Delete([]byte(jobID))
+
+		return err
+	})
+
+	return err
+}

@@ -10,7 +10,7 @@ import (
 )
 
 type script struct {
-	Source string `json:"source" binding:"required"`
+	Source string `json:"source"`
 }
 
 // jobsSetup instantiates the endpoints used for manipulating jobs
@@ -55,8 +55,14 @@ func jobsRoute(g *gin.Engine) {
 	// deletes a job by ID
 	g.DELETE("/jobs/:id", func(g *gin.Context) {
 		id, _ := url.QueryUnescape(g.Param("id"))
-		err := job.TerminateJob(id)
 
+		err := job.DeleteScript(id)
+		if err != nil {
+			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
+			return
+		}
+
+		err = job.TerminateJob(id)
 		if err != nil {
 			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return

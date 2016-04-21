@@ -187,13 +187,16 @@ func TerminateJob(id string) error {
 
 // ReplaceJob searches for a job by ID string and deletes it and replaces with a new job
 func ReplaceJob(jobDescription config.Job) error {
-	id := jobDescription.ID
 
-	if err := TerminateJob(id); err != nil {
+	if err := TerminateJob(jobDescription.ID); err != nil {
 		return err
 	}
 
-	return jobManager.createJob(jobDescription, false)
+	if err := AddJob(jobDescription); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetScript gets the source code of a script for the a job by its ID
@@ -222,6 +225,8 @@ func AddScript(id string, scriptSource string) error {
 		return fmt.Errorf("An executable already exists so a script cannot be added to : %s", id)
 	}
 
+	database.WriteScript(id, scriptSource)
+
 	// Script already exists. Update
 	if foundJob.instance.script != nil {
 		foundJob.instance.script.source = scriptSource
@@ -244,8 +249,10 @@ func DeleteScript(id string) error {
 		return fmt.Errorf("A script has not been set for: %s", id)
 	}
 
+	err := database.DeleteScript(id)
 	foundJob.instance.script = nil
-	return nil
+
+	return err
 }
 
 // RunScriptDebug executes a Lua script and returns the result

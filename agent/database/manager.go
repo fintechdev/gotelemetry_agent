@@ -60,6 +60,10 @@ func Init(configFile config.Interface, errorChannel chan error) error {
 			return err
 		}
 
+		if _, err = tx.CreateBucketIfNotExists([]byte("_scripts")); err != nil {
+			return err
+		}
+
 		return nil
 	})
 

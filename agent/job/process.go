@@ -12,6 +12,7 @@ import (
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 // pluginHelperClosure are raw task functions
@@ -102,6 +103,8 @@ func newInstance(job *Job) (*processPlugin, error) {
 			return nil, err
 		}
 
+	} else if scriptSource := database.GetScript(c.ID); len(scriptSource) > 0 {
+		p.script = newScriptFromSource(scriptSource)
 	}
 
 	template := c.Template
