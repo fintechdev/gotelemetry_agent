@@ -25,29 +25,31 @@ var OAuthCommands = struct {
 
 // CLIConfigType manages the various settings that are initialized at Agent launch
 type CLIConfigType struct {
-	APIURL               string
-	ChannelTag           string
-	ConfigFileLocation   string
-	DatabaseFileLocation string
-	AuthenticationKey    string
-	LogLevel             gotelemetry.LogLevel
-	Filter               *regexp.Regexp
-	ForceRunOnce         bool
-	IsPiping             bool
-	UseJSONPatch         bool
-	UsePOST              bool
-	IsNotifying          bool
-	DebugMode            bool
-	NotificationChannel  string
-	NotificationFlow     string
-	Notification         gotelemetry.Notification
-	WantsFunctionHelp    bool
-	FunctionHelpName     string
-	OAuthCommand         OAuthCommand
-	OAuthName            string
-	OAuthCode            string
-	OAuthVerifier        string
-	OAuthRealmID         string
+	APIURL              string
+	ChannelTag          string
+	ConfigFileLocation  string
+	DatabasePath        string
+	DatabaseTTL         string
+	AuthenticationToken string
+	AuthenticationPort  string
+	LogLevel            gotelemetry.LogLevel
+	Filter              *regexp.Regexp
+	ForceRunOnce        bool
+	IsPiping            bool
+	UseJSONPatch        bool
+	UsePOST             bool
+	IsNotifying         bool
+	DebugMode           bool
+	NotificationChannel string
+	NotificationFlow    string
+	Notification        gotelemetry.Notification
+	WantsFunctionHelp   bool
+	FunctionHelpName    string
+	OAuthCommand        OAuthCommand
+	OAuthName           string
+	OAuthCode           string
+	OAuthVerifier       string
+	OAuthRealmID        string
 }
 
 // CLIConfig is accessed throughout the Agent to check startup configurations
@@ -75,8 +77,11 @@ func Init(version string, sourceDate string) {
 	app.Version(version)
 
 	app.Flag("config", "Path to the configuration file for this agent.").Short('c').StringVar(&CLIConfig.ConfigFileLocation)
-	app.Flag("database", "Path to the database file for this agent.").Short('d').StringVar(&CLIConfig.DatabaseFileLocation)
-	app.Flag("key", "The Authentication Key used for the GUI to connect to the Agent.").Short('k').StringVar(&CLIConfig.AuthenticationKey)
+
+	app.Flag("path", "Path to the database file for this agent.").Short('p').StringVar(&CLIConfig.DatabasePath)
+	app.Flag("ttl", "The maximum lifespan of all series data in the Database.").StringVar(&CLIConfig.DatabaseTTL)
+	app.Flag("auth_token", "The Authentication Token used for TelemetryTV to connect to the Agent.").Short('t').StringVar(&CLIConfig.AuthenticationToken)
+	app.Flag("listen", "The port that the Agent's API will use to listen for TelemetryTV.").Short('l').StringVar(&CLIConfig.AuthenticationPort)
 
 	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetrytv.com").StringVar(&CLIConfig.APIURL)
 	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")

@@ -48,7 +48,7 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 	submissionInterval := jobConfig.SubmissionInterval()
 
 	if submissionInterval < time.Second {
-		errorChannel <- gotelemetry.NewLogError("Submission interval automatically set to 1s. You can change this value by adding a `submission_interval` property to your configuration file.")
+		errorChannel <- gotelemetry.NewLogError("Submission interval automatically set to 1s.")
 		submissionInterval = time.Second
 	} else {
 		errorChannel <- gotelemetry.NewLogError("Submission interval set to %ds", submissionInterval/time.Second)
@@ -58,14 +58,28 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 
 	jobManager.accountStreams = map[string]*gotelemetry.BatchStream{}
 
-	// Fetch and create jobs located in the database
-	jobsDatabase, err := database.GetAllJobs()
-	for _, jobDescription := range jobsDatabase {
+	// Create each of the jobs listed in the config file
+	for _, jobDescription := range jobConfig.Jobs() {
 
-		if err := jobManager.createJob(jobDescription, false); err != nil {
+		if err := jobManager.createJob(&jobDescription, false); err != nil {
+			return err
+		}
+		// Job added successfully. Write to database
+		if err := database.WriteJob(jobDescription); err != nil {
 			return err
 		}
 
+	}
+
+	// Fetch jobs located in the database. Do not add jobs already included in the config file
+	jobsDatabase, err := database.GetAllJobs()
+	for _, jobDescription := range jobsDatabase {
+		if _, found := jobManager.jobs[jobDescription.ID]; found {
+			continue
+		}
+		if err := jobManager.createJob(&jobDescription, false); err != nil {
+			return err
+		}
 	}
 
 	if len(jobManager.jobs) == 0 {
@@ -78,7 +92,14 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 	return nil
 }
 
-func (m *manager) createJob(jobDescription config.Job, wait bool) error {
+func (m *manager) createJob(jobDescription *config.Job, wait bool) error {
+	// Ensure that all jobs have an ID
+	if jobDescription.ID == "" {
+		if jobDescription.Tag == "" {
+			return gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
+		}
+		jobDescription.ID = jobDescription.Tag
+	}
 	jobID := jobDescription.ID
 
 	if _, found := m.jobs[jobID]; found {
@@ -101,7 +122,7 @@ func (m *manager) createJob(jobDescription config.Job, wait bool) error {
 		m.accountStreams[channelTag] = accountStream
 	}
 
-	job, err := newJob(m.credentials, accountStream, jobDescription.ID, jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
+	job, err := newJob(m.credentials, accountStream, jobDescription.ID, *jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
 	if err != nil {
 		return err
 	}
@@ -147,14 +168,12 @@ func GetJobs() ([]string, error) {
 
 // AddJob triggers the createJob function with a marshaled job config file
 func AddJob(jobDescription config.Job) error {
-	jobDescription, err := database.WriteJob(jobDescription)
-
-	if err != nil {
+	if err := jobManager.createJob(&jobDescription, false); err != nil {
 		return err
 	}
 
-	err = jobManager.createJob(jobDescription, false)
-
+	// Job added successfully. Write to database
+	err := database.WriteJob(jobDescription)
 	return err
 }
 
@@ -165,7 +184,6 @@ func GetJobByID(id string) (*config.Job, error) {
 		return nil, fmt.Errorf("Job not found: %s", id)
 	}
 
-	// TODO attach Lua script as an embedded object
 	return &foundJob.config, nil
 }
 
@@ -174,6 +192,13 @@ func TerminateJob(id string) error {
 	foundJob, found := jobManager.jobs[id]
 	if !found {
 		return fmt.Errorf("Job not found: %s", id)
+	}
+
+	// Delete a script if one exists
+	if foundJob.instance.script != nil {
+		if err := DeleteScript(foundJob.id); err != nil {
+			return err
+		}
 	}
 
 	delete(jobManager.jobs, id)
@@ -187,9 +212,12 @@ func TerminateJob(id string) error {
 
 // ReplaceJob searches for a job by ID string and deletes it and replaces with a new job
 func ReplaceJob(jobDescription config.Job) error {
-
-	if err := TerminateJob(jobDescription.ID); err != nil {
-		return err
+	// Terminate the job if it already exists
+	_, found := jobManager.jobs[jobDescription.ID]
+	if found {
+		if err := TerminateJob(jobDescription.ID); err != nil {
+			return err
+		}
 	}
 
 	if err := AddJob(jobDescription); err != nil {

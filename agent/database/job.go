@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/boltdb/bolt"
-	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
 
@@ -33,20 +32,11 @@ func GetAllJobs() ([]config.Job, error) {
 }
 
 // WriteJob stores a job within the database
-func WriteJob(job config.Job) (config.Job, error) {
-	// Ensure that all jobs have an ID
-	if job.ID == "" {
-		if job.Tag == "" {
-			return job, gotelemetry.NewError(500, "Job ID missing and no `tag` or `id` provided.")
-		}
-		job.ID = job.Tag
-	}
-	// TODO add stronger validation
-
+func WriteJob(job config.Job) error {
 	jobMarshal, err := json.Marshal(job)
 
 	if err != nil {
-		return job, err
+		return err
 	}
 
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
@@ -55,7 +45,7 @@ func WriteJob(job config.Job) (config.Job, error) {
 		return err
 	})
 
-	return job, err
+	return err
 }
 
 // DeleteJob finds a job by its ID and removes it from the database
@@ -76,6 +66,7 @@ func DeleteJob(jobID string) error {
 	return err
 }
 
+// WriteScript writes a job's associated Lua source code keyed by the job ID
 func WriteScript(jobID, scriptSource string) error {
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_scripts"))
@@ -86,6 +77,7 @@ func WriteScript(jobID, scriptSource string) error {
 	return err
 }
 
+// GetScript searches by job ID and returns a string of Lua source code. Returns empty string if not found
 func GetScript(jobID string) string {
 	var scriptSource string
 
@@ -104,6 +96,7 @@ func GetScript(jobID string) string {
 	return scriptSource
 }
 
+// DeleteScript searches by job ID for a Lua source code string and deletes the entry. Returns an error if not found
 func DeleteScript(jobID string) error {
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_scripts"))

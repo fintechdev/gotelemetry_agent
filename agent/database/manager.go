@@ -27,7 +27,6 @@ var manager *Manager
 // Init the aggregation manager instance
 func Init(configFile config.Interface, errorChannel chan error) error {
 	location := configFile.DatabasePath()
-	ttlString := configFile.DataConfig().TTL
 
 	conn, err := bolt.Open(location, 0644, nil)
 
@@ -66,6 +65,13 @@ func Init(configFile config.Interface, errorChannel chan error) error {
 
 		return nil
 	})
+
+	ttlString := configFile.DatabaseTTL()
+	if len(ttlString) > 0 {
+		WriteConfigParam("ttl", ttlString)
+	} else if ttlString = GetConfigParam("ttl"); len(ttlString) > 0 {
+		configFile.SetDatabaseTTL(ttlString)
+	}
 
 	if len(ttlString) > 0 {
 		ttl, err2 := config.ParseTimeInterval(ttlString)
@@ -172,12 +178,6 @@ func (m *Manager) databaseCleanup() {
 // MergeDatabaseWithConfigFile takes the Agent config file and stores its values
 // into the database. If not set then fetch the values from the database and set in config file
 func MergeDatabaseWithConfigFile(configFile config.Interface) error {
-	// Add jobs from the config file to the database
-	for _, jobDescription := range configFile.Jobs() {
-		if _, err := WriteJob(jobDescription); err != nil {
-			return err
-		}
-	}
 
 	// Fetch and update the API token
 	apiToken := configFile.APIToken()
@@ -192,6 +192,13 @@ func MergeDatabaseWithConfigFile(configFile config.Interface) error {
 		WriteConfigParam("auth_token", authToken)
 	} else if authToken = GetConfigParam("auth_token"); len(authToken) > 0 {
 		configFile.SetAuthToken(authToken)
+	}
+
+	portNumber := configFile.Listen()
+	if len(portNumber) > 0 {
+		WriteConfigParam("listen", portNumber)
+	} else if authToken = GetConfigParam("listen"); len(portNumber) > 0 {
+		configFile.SetListen(portNumber)
 	}
 
 	return nil

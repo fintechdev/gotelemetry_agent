@@ -21,9 +21,8 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 	if len(authToken) == 0 {
 		return nil
 	}
-
-	g = gin.New()
 	gin.SetMode(gin.ReleaseMode)
+	g = gin.New()
 
 	// Handle CORS
 	g.Use(func(g *gin.Context) {

@@ -24,24 +24,6 @@ type Job struct {
 	Interval   string      `toml:"interval"    json:"interval"`
 }
 
-// ServerConfig TODO
-type ServerConfig struct {
-	APIToken              string      `toml:"api_token"`
-	RawSubmissionInterval interface{} `toml:"submission_interval"`
-}
-
-// DataConfig TODO
-type DataConfig struct {
-	DataLocation string `toml:"path"`
-	TTL          string `toml:"ttl"`
-}
-
-// GraphiteConfig TODO
-type GraphiteConfig struct {
-	TCPListenPort string `toml:"listen_tcp"`
-	UDPListenPort string `toml:"listen_udp"`
-}
-
 // OAuthConfigEntry TODO
 type OAuthConfigEntry struct {
 	Version          int               `toml:"version"`
@@ -57,12 +39,38 @@ type OAuthConfigEntry struct {
 	TTL              string            `toml:"ttl"`
 }
 
+// ServerConfig TODO
+type ServerConfig struct {
+	APIToken              string      `toml:"api_token"`
+	RawSubmissionInterval interface{} `toml:"submission_interval"`
+}
+
+// DataConfig TODO
+type DataConfig struct {
+	DataLocation string `toml:"path"`
+	TTL          string `toml:"ttl"`
+}
+
+// ListenerConfig TODO
+type ListenerConfig struct {
+	Listen    string `toml:"listen"`
+	AuthToken string `toml:"auth_token"`
+}
+
+// GraphiteConfig TODO
+type GraphiteConfig struct {
+	TCPListenPort string `toml:"listen_tcp"`
+	UDPListenPort string `toml:"listen_udp"`
+}
+
 // Interface TODO
 type Interface interface {
 	APIURL() string
 	APIToken() string
 	SetAPIToken(string)
 	SetAuthToken(string)
+	SetListen(string)
+	SetDatabaseTTL(string)
 	ChannelTag() string
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
@@ -72,12 +80,7 @@ type Interface interface {
 	Listen() string
 	AuthToken() string
 	DatabasePath() string
-}
-
-// ListenerConfig TODO
-type ListenerConfig struct {
-	Listen    string `toml:"listen"`
-	AuthToken string `toml:"auth_token"`
+	DatabaseTTL() string
 }
 
 // File TODO
@@ -160,6 +163,16 @@ func (c *File) SetAuthToken(token string) {
 	c.Listener.AuthToken = token
 }
 
+// SetListen TODO
+func (c *File) SetListen(portNumber string) {
+	c.Listener.Listen = portNumber
+}
+
+// SetDatabaseTTL TODO
+func (c *File) SetDatabaseTTL(ttlString string) {
+	c.Data.TTL = ttlString
+}
+
 // APIURL TODO
 func (c *File) APIURL() string {
 	return CLIConfig.APIURL
@@ -235,12 +248,16 @@ func MapTemplate(from interface{}) interface{} {
 
 // Listen TODO
 func (c *File) Listen() string {
+	if cliListenPort := CLIConfig.AuthenticationPort; len(cliListenPort) > 0 {
+		return cliListenPort
+	}
+
 	return c.Listener.Listen
 }
 
 // AuthToken TODO
 func (c *File) AuthToken() string {
-	if cliAuthKey := CLIConfig.AuthenticationKey; len(cliAuthKey) > 0 {
+	if cliAuthKey := CLIConfig.AuthenticationToken; len(cliAuthKey) > 0 {
 		return cliAuthKey
 	}
 
@@ -249,7 +266,7 @@ func (c *File) AuthToken() string {
 
 // DatabasePath TODO
 func (c *File) DatabasePath() string {
-	if databasePath := CLIConfig.DatabaseFileLocation; len(databasePath) > 0 {
+	if databasePath := CLIConfig.DatabasePath; len(databasePath) > 0 {
 		return databasePath
 	}
 
@@ -258,4 +275,13 @@ func (c *File) DatabasePath() string {
 	}
 
 	return c.Data.DataLocation
+}
+
+// DatabaseTTL TODO
+func (c *File) DatabaseTTL() string {
+	if dataTTL := CLIConfig.DatabaseTTL; len(dataTTL) > 0 {
+		return dataTTL
+	}
+
+	return c.Data.TTL
 }

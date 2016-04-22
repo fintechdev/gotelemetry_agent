@@ -34,6 +34,13 @@ func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream
 		completionChannel: jobCompletionChannel,
 	}
 
+	var err error
+	result.instance, err = newInstance(result)
+	if err != nil {
+		result.reportError(errors.New("Error initializing the job `" + result.id + "`"))
+		return nil, err
+	}
+
 	if wait {
 		result.start(true)
 	} else {
@@ -45,16 +52,6 @@ func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream
 
 // start starts a job. It must be executed asychronously in its own goroutine
 func (j *Job) start(wait bool) {
-	var err error
-	j.instance, err = newInstance(j)
-	if err != nil {
-		j.reportError(errors.New("Error initializing the job `" + j.id + "`"))
-		j.reportError(err)
-		return
-
-		//TODO Signal failure to manager
-	}
-
 	if wait {
 		go j.instance.run(j)
 	} else {

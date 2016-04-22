@@ -125,20 +125,6 @@ func newInstance(job *Job) (*processPlugin, error) {
 
 	}
 
-	if c.Interval != "" {
-		if timeInterval, err := config.ParseTimeInterval(c.Interval); err == nil {
-			if p.expiration == 0 {
-				p.expiration = timeInterval * 3.0
-			}
-
-			p.addTaskWithClosure(p.performAllTasks, timeInterval)
-		} else {
-			return nil, err
-		}
-	} else {
-		p.addTaskWithClosure(p.performAllTasks, 0)
-	}
-
 	if p.expiration > 0 && p.expiration < time.Second*60 {
 		p.expiration = time.Second * 60
 	}
@@ -166,6 +152,20 @@ func newInstance(job *Job) (*processPlugin, error) {
 		job.debugf("Expiration is set to %dµs", p.expiration)
 	} else {
 		job.debugf("Expiration is off.")
+	}
+
+	if c.Interval != "" {
+		if timeInterval, err := config.ParseTimeInterval(c.Interval); err == nil {
+			if p.expiration == 0 {
+				p.expiration = timeInterval * 3.0
+			}
+
+			p.addTaskWithClosure(p.performAllTasks, timeInterval)
+		} else {
+			return nil, err
+		}
+	} else {
+		p.addTaskWithClosure(p.performAllTasks, 0)
 	}
 
 	return p, nil
