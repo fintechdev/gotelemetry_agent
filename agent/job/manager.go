@@ -257,6 +257,13 @@ func AddScript(id string, scriptSource string) error {
 
 	// Script already exists. Update
 	if foundJob.instance.script != nil {
+
+		// External script. Write to the file
+		if len(foundJob.instance.script.filePath) > 0 {
+			foundJob.instance.script.UpdateExternalScript(scriptSource)
+			return nil
+		}
+
 		foundJob.instance.script.source = scriptSource
 		return nil
 	}
