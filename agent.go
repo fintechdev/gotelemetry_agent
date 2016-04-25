@@ -1,25 +1,28 @@
 package main
 
 import (
-	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
-	"github.com/telemetryapp/gotelemetry_agent/agent/job"
-	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 	"io/ioutil"
 	"log"
 	"os"
 	"sync"
 
-	_ "github.com/telemetryapp/gotelemetry_agent/plugin"
+	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
+	"github.com/telemetryapp/gotelemetry_agent/agent/graphite"
+	"github.com/telemetryapp/gotelemetry_agent/agent/job"
+	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
+	"github.com/telemetryapp/gotelemetry_agent/agent/routes"
 )
 
-var VERSION = "3.0.1"
-var SOURCE_DATE = "2016-02-24T14:42:45-08:00"
+// VERSION number automatically populated by goxc config file
+var VERSION = "3.0.2"
 
-var configFile *config.ConfigFile
+// SOURCE_DATE is the date of most recent goxc build. Automatically populated by goxc config
+var SOURCE_DATE = "2016-04-13T13:41:10-07:00"
+
+var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
 
@@ -98,7 +101,11 @@ Done:
 }
 
 func run() {
-	if err := aggregations.Init(configFile.DataConfig().Listen, configFile.DataConfig().DataLocation, configFile.DataConfig().TTL, errorChannel); err != nil {
+	if err := database.Init(configFile, errorChannel); err != nil {
+		log.Fatalf("Initialization error: %s", err)
+	}
+
+	if err := database.MergeDatabaseWithConfigFile(configFile); err != nil {
 		log.Fatalf("Initialization error: %s", err)
 	}
 
@@ -121,10 +128,15 @@ func run() {
 	} else if config.CLIConfig.OAuthCommand != config.OAuthCommands.None {
 		oauth.RunCommand(config.CLIConfig, errorChannel, completionChannel)
 	} else {
-		_, err := job.NewJobManager(configFile, errorChannel, completionChannel)
-
-		if err != nil {
+		if err := routes.Init(configFile, errorChannel); err != nil {
 			log.Fatalf("Initialization error: %s", err)
 		}
+
+		if err := job.Init(configFile, errorChannel, nil); err != nil {
+			log.Fatalf("Initialization error: %s", err)
+		}
+
+		routes.SetAdditionalRoutes()
+
 	}
 }

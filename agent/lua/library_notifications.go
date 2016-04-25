@@ -1,9 +1,10 @@
 package lua
 
 import (
+	"time"
+
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/gotelemetry"
-	"time"
 )
 
 type notificationProvider interface {

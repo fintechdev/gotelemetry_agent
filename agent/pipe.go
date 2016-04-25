@@ -2,12 +2,15 @@ package agent
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
-	"strings"
 )
 
-func ProcessPipeRequest(configFile *config.ConfigFile, errorChannel chan error, completionChannel chan bool, data []byte) {
+// ProcessPipeRequest processes data packets that are piped to the Agent
+func ProcessPipeRequest(configFile *config.File, errorChannel chan error, completionChannel chan bool, data []byte) {
 	errorChannel <- gotelemetry.NewLogError("Piped mode is on.")
 	errorChannel <- gotelemetry.NewDebugError("Input data is %s", strings.Replace(string(data), "\n", "\\n", -1))
 
@@ -23,12 +26,11 @@ func ProcessPipeRequest(configFile *config.ConfigFile, errorChannel chan error, 
 		errorChannel <- gotelemetry.NewDebugError("Will perform a Rails-style HTTP PATCH operation")
 	}
 
-	apiToken, err := configFile.APIToken()
+	apiToken := configFile.APIToken()
 
-	if err != nil {
-		errorChannel <- err
+	if len(apiToken) == 0 {
+		errorChannel <- fmt.Errorf("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
 		completionChannel <- true
-
 		return
 	}
 

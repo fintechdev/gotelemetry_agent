@@ -2,12 +2,13 @@ package lua
 
 import (
 	"bytes"
-	"github.com/telemetryapp/go-lua"
-	"github.com/telemetryapp/goluago/util"
-	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/telemetryapp/go-lua"
+	"github.com/telemetryapp/goluago/util"
+	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 )
 
 func oauthRequest(l *lua.State, entryName, method, urlString string, body string, query string) int {
@@ -19,9 +20,9 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 	}
 
 	if query != "" {
-		parsedQuery, err := url.ParseQuery(query)
+		parsedQuery, err2 := url.ParseQuery(query)
 
-		if err != nil {
+		if err2 != nil {
 			lua.Errorf(l, "%s", err.Error())
 			panic("unreachable")
 		}
