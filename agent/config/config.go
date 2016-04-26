@@ -30,7 +30,7 @@ type CLIConfigType struct {
 	ConfigFileLocation  string
 	DatabasePath        string
 	DatabaseTTL         string
-	AuthenticationToken string
+	AuthenticationKey   string
 	AuthenticationPort  string
 	LogLevel            gotelemetry.LogLevel
 	Filter              *regexp.Regexp
@@ -80,7 +80,7 @@ func Init(version string, sourceDate string) {
 
 	app.Flag("path", "Path to the database file for this agent.").Short('p').StringVar(&CLIConfig.DatabasePath)
 	app.Flag("ttl", "The maximum lifespan of all series data in the Database.").StringVar(&CLIConfig.DatabaseTTL)
-	app.Flag("auth_token", "The Authentication Token used for TelemetryTV to connect to the Agent.").Short('t').StringVar(&CLIConfig.AuthenticationToken)
+	app.Flag("auth_key", "The Authentication Key used for TelemetryTV to connect to the Agent.").Short('t').StringVar(&CLIConfig.AuthenticationKey)
 	app.Flag("listen", "The port that the Agent's API will use to listen for TelemetryTV.").Short('l').StringVar(&CLIConfig.AuthenticationPort)
 
 	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetrytv.com").StringVar(&CLIConfig.APIURL)
@@ -113,7 +113,7 @@ func Init(version string, sourceDate string) {
 	oauthExchange.Flag("verifier", "The verifier code received from the provider").Short('e').StringVar(&CLIConfig.OAuthVerifier)
 	oauthExchange.Flag("realm", "The realm ID received from the provider").Short('r').StringVar(&CLIConfig.OAuthRealmID)
 
-	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.")
+	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.").Default()
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case once.FullCommand():

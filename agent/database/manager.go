@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -187,17 +188,29 @@ func MergeDatabaseWithConfigFile(configFile config.Interface) error {
 		configFile.SetAPIToken(apiToken)
 	}
 
-	authToken := configFile.AuthToken()
-	if len(authToken) > 0 {
-		WriteConfigParam("auth_token", authToken)
-	} else if authToken = GetConfigParam("auth_token"); len(authToken) > 0 {
-		configFile.SetAuthToken(authToken)
+	authKey := configFile.AuthKey()
+	if len(authKey) > 0 {
+		WriteConfigParam("auth_key", authKey)
+	} else if authKey = GetConfigParam("auth_key"); len(authKey) > 0 {
+		configFile.SetAuthKey(authKey)
+	} else if len(apiToken) == 0 {
+		// If both the API token and Auth token have not been set then generate a random auth token
+		rand.Seed(time.Now().UnixNano())
+		const alphanum = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+		bytes := make([]byte, 16)
+		for i := range bytes {
+			bytes[i] = alphanum[rand.Intn(len(alphanum))]
+		}
+
+		authKey = string(bytes)
+		WriteConfigParam("auth_key", authKey)
+		configFile.SetAuthKey(authKey)
 	}
 
 	portNumber := configFile.Listen()
 	if len(portNumber) > 0 {
 		WriteConfigParam("listen", portNumber)
-	} else if authToken = GetConfigParam("listen"); len(portNumber) > 0 {
+	} else if portNumber = GetConfigParam("listen"); len(portNumber) > 0 {
 		configFile.SetListen(portNumber)
 	}
 

@@ -16,9 +16,9 @@ var g *gin.Engine
 
 // Init the routes
 func Init(cfg config.Interface, errorChannel chan error) error {
-	authToken := cfg.AuthToken()
+	authKey := cfg.AuthKey()
 
-	if len(authToken) == 0 {
+	if len(authKey) == 0 {
 		return nil
 	}
 	gin.SetMode(gin.ReleaseMode)
@@ -41,7 +41,7 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 	g.Use(logFunc(errorChannel))
 
 	// Authenticate all requests
-	g.Use(authFunc(authToken))
+	g.Use(authFunc(authKey))
 
 	// Handle errors
 	g.Use(errorFunc(errorChannel))
@@ -52,12 +52,17 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 	if len(listen) == 0 {
 		listen = ":8080"
 	}
+	errorChannel <- gotelemetry.NewLogError("Your Authentication Key is: %s", authKey)
 	errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
 	go g.Run(listen)
 
 	// If an API token is not set at this point, block until we receive one via the API
 	if apiToken := cfg.APIToken(); len(apiToken) == 0 {
-		errorChannel <- gotelemetry.NewLogError("An API token has not been set. Waiting for connection from Telemetry Client")
+		fmt.Println()
+		fmt.Println("It looks like this is your first time running the Agent.")
+		fmt.Println("Use the information above to add this Agent to the TelemetryTV App.")
+		fmt.Println()
+		errorChannel <- gotelemetry.NewLogError("Waiting for connection from the TelemetryTV App...")
 		for len(apiToken) == 0 {
 			time.Sleep(time.Second * 1)
 			apiToken = cfg.APIToken()
@@ -98,10 +103,10 @@ func logFunc(errorChannel chan error) gin.HandlerFunc {
 	}
 }
 
-func authFunc(authToken string) gin.HandlerFunc {
+func authFunc(authKey string) gin.HandlerFunc {
 	return func(g *gin.Context) {
 		auth := g.Request.Header.Get("AUTHORIZATION")
-		if strings.HasSuffix(auth, authToken) {
+		if strings.HasSuffix(auth, authKey) {
 			g.Next()
 		} else {
 			g.AbortWithStatus(http.StatusUnauthorized)

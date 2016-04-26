@@ -53,8 +53,8 @@ type DataConfig struct {
 
 // ListenerConfig TODO
 type ListenerConfig struct {
-	Listen    string `toml:"listen"`
-	AuthToken string `toml:"auth_token"`
+	Listen  string `toml:"listen"`
+	AuthKey string `toml:"auth_key"`
 }
 
 // GraphiteConfig TODO
@@ -68,7 +68,7 @@ type Interface interface {
 	APIURL() string
 	APIToken() string
 	SetAPIToken(string)
-	SetAuthToken(string)
+	SetAuthKey(string)
 	SetListen(string)
 	SetDatabaseTTL(string)
 	ChannelTag() string
@@ -78,7 +78,7 @@ type Interface interface {
 	OAuthConfig() map[string]OAuthConfigEntry
 	Jobs() []Job
 	Listen() string
-	AuthToken() string
+	AuthKey() string
 	DatabasePath() string
 	DatabaseTTL() string
 }
@@ -158,9 +158,9 @@ func (c *File) SetAPIToken(token string) {
 	c.Server.APIToken = token
 }
 
-// SetAuthToken replaces the config auth token
-func (c *File) SetAuthToken(token string) {
-	c.Listener.AuthToken = token
+// SetAuthKey replaces the config auth token
+func (c *File) SetAuthKey(key string) {
+	c.Listener.AuthKey = key
 }
 
 // SetListen TODO
@@ -255,13 +255,13 @@ func (c *File) Listen() string {
 	return c.Listener.Listen
 }
 
-// AuthToken TODO
-func (c *File) AuthToken() string {
-	if cliAuthKey := CLIConfig.AuthenticationToken; len(cliAuthKey) > 0 {
+// AuthKey TODO
+func (c *File) AuthKey() string {
+	if cliAuthKey := CLIConfig.AuthenticationKey; len(cliAuthKey) > 0 {
 		return cliAuthKey
 	}
 
-	return c.Listener.AuthToken
+	return c.Listener.AuthKey
 }
 
 // DatabasePath TODO
