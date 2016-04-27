@@ -52,9 +52,19 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 	if len(listen) == 0 {
 		listen = ":8080"
 	}
+	errorChannel <- gotelemetry.NewLogError("Listening at port: %s", listen)
 	errorChannel <- gotelemetry.NewLogError("Your Authentication Key is: %s", authKey)
-	errorChannel <- gotelemetry.NewLogError("Listening at %s", listen)
-	go g.Run(listen)
+
+	certFile := cfg.CertFile()
+	keyFile := cfg.KeyFile()
+
+	if len(certFile) > 0 && len(keyFile) > 0 {
+		// TLS Server
+		go g.RunTLS(listen, certFile, keyFile)
+	} else {
+		//Simple Non TLS Server)
+		go g.Run(listen)
+	}
 
 	// If an API token is not set at this point, block until we receive one via the API
 	if apiToken := cfg.APIToken(); len(apiToken) == 0 {

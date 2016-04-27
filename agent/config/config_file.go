@@ -53,8 +53,10 @@ type DataConfig struct {
 
 // ListenerConfig TODO
 type ListenerConfig struct {
-	Listen  string `toml:"listen"`
-	AuthKey string `toml:"auth_key"`
+	Listen   string `toml:"listen"`
+	AuthKey  string `toml:"auth_key"`
+	CertFile string `toml:"certfile"`
+	KeyFile  string `toml:"keyfile"`
 }
 
 // GraphiteConfig TODO
@@ -81,6 +83,8 @@ type Interface interface {
 	AuthKey() string
 	DatabasePath() string
 	DatabaseTTL() string
+	CertFile() string
+	KeyFile() string
 }
 
 // File TODO
@@ -284,4 +288,22 @@ func (c *File) DatabaseTTL() string {
 	}
 
 	return c.Data.TTL
+}
+
+// CertFile TODO
+func (c *File) CertFile() string {
+	if certFile := CLIConfig.CertFile; len(certFile) > 0 {
+		return certFile
+	}
+
+	return c.Listener.CertFile
+}
+
+// KeyFile TODO
+func (c *File) KeyFile() string {
+	if keyFile := CLIConfig.KeyFile; len(keyFile) > 0 {
+		return keyFile
+	}
+
+	return c.Listener.KeyFile
 }

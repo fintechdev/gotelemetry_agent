@@ -32,6 +32,8 @@ type CLIConfigType struct {
 	DatabaseTTL         string
 	AuthenticationKey   string
 	AuthenticationPort  string
+	CertFile            string
+	KeyFile             string
 	LogLevel            gotelemetry.LogLevel
 	Filter              *regexp.Regexp
 	ForceRunOnce        bool
@@ -80,8 +82,10 @@ func Init(version string, sourceDate string) {
 
 	app.Flag("path", "Path to the database file for this agent.").Short('p').StringVar(&CLIConfig.DatabasePath)
 	app.Flag("ttl", "The maximum lifespan of all series data in the Database.").StringVar(&CLIConfig.DatabaseTTL)
-	app.Flag("auth_key", "The Authentication Key used for TelemetryTV to connect to the Agent.").Short('t').StringVar(&CLIConfig.AuthenticationKey)
+	app.Flag("auth_key", "The Authentication Key used for TelemetryTV to connect to the Agent.").Short('k').StringVar(&CLIConfig.AuthenticationKey)
 	app.Flag("listen", "The port that the Agent's API will use to listen for TelemetryTV.").Short('l').StringVar(&CLIConfig.AuthenticationPort)
+	app.Flag("certfile", "").StringVar(&CLIConfig.CertFile)
+	app.Flag("keyfile", "").StringVar(&CLIConfig.KeyFile)
 
 	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetrytv.com").StringVar(&CLIConfig.APIURL)
 	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")
