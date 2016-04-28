@@ -160,8 +160,11 @@ func errorFunc(errorChannel chan error) gin.HandlerFunc {
 }
 
 // SetAdditionalRoutes initializes all non-configuration routes as the dependencies
-// for these routes may not be set at the time of execution for Init()
+// because these routes may not be set at the time of execution for Init()
 func SetAdditionalRoutes() {
+	if g == nil {
+		return
+	}
 	jobsRoute(g)
 	statsRoute(g)
 	logsRoute(g)
