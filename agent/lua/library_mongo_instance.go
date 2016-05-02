@@ -1,6 +1,8 @@
 package lua
 
 import (
+	"encoding/json"
+
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
 
@@ -34,6 +36,18 @@ var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
 
 			err = q.All(&result)
 
+			// Lua only supports basic types. Several BSON types will throw an error
+			// so we marshal the query results in JSON format
+			bytes, err := json.Marshal(&result)
+
+			if err != nil {
+				lua.Errorf(l, "%s", err.Error())
+				panic("unreachable")
+			}
+
+			resultJSON := []map[string]interface{}{}
+			json.Unmarshal(bytes, &resultJSON)
+
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
 				panic("unreachable")
@@ -41,7 +55,7 @@ var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
 
 			pushArray(l)
 
-			for index, value := range result {
+			for index, value := range resultJSON {
 				util.DeepPush(l, value)
 				l.RawSetInt(-2, index+1)
 			}
