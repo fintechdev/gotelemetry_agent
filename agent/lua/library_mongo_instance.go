@@ -2,6 +2,9 @@ package lua
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
@@ -23,6 +26,14 @@ var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
 					panic("unreachable")
 				}
 
+				// Convert basic types into BSON types
+				if queryMap, ok := query.(map[string]interface{}); ok {
+					query, err = convertTypes(queryMap)
+					if err != nil {
+						lua.Errorf(l, "%s", err.Error())
+						panic("unreachable")
+					}
+				}
 			}
 
 			skip := lua.OptInteger(l, 2, 0)
@@ -100,6 +111,34 @@ var mongoQueryFunctions = map[string]func(query *mgo.Query) lua.Function{
 			return 1
 		}
 	},
+}
+
+func convertTypes(query map[string]interface{}) (interface{}, error) {
+	for key, value := range query {
+		switch valueType := value.(type) {
+		case map[string]interface{}:
+			// Recursively call this function if the value is also a map
+			var err error
+			query[key], err = convertTypes(valueType)
+			if err != nil {
+				return nil, err
+			}
+		case string:
+			// We are looking for values with a type (#) prefix
+			if strings.HasPrefix(valueType, "#") {
+				if strings.HasPrefix(valueType, "#Timestamp=") {
+					timestampString := strings.TrimPrefix(valueType, "#Timestamp=")
+					timestampInt, err := strconv.ParseInt(timestampString, 10, 64)
+					if err != nil {
+						return nil, err
+					}
+					query[key] = time.Unix(timestampInt, 0)
+				}
+			}
+		}
+
+	}
+	return query, nil
 }
 
 func pushMongoResult(l *lua.State, result *[]interface{}) {
