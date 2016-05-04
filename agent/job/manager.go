@@ -194,13 +194,6 @@ func TerminateJob(id string) error {
 		return fmt.Errorf("Job not found: %s", id)
 	}
 
-	// Delete a script if one exists
-	if foundJob.instance.script != nil {
-		if err := DeleteScript(foundJob.id); err != nil {
-			return err
-		}
-	}
-
 	delete(jobManager.jobs, id)
 
 	foundJob.instance.terminate()
@@ -244,50 +237,48 @@ func GetScript(id string) (string, error) {
 // AddScript creates or updates a script for a job
 func AddScript(id string, scriptSource string) error {
 	foundJob, found := jobManager.jobs[id]
-	if !found {
-		return fmt.Errorf("Job not found: %s", id)
-	}
-
-	// Do not add a script if there is an executable
-	if foundJob.instance.path != "" {
-		return fmt.Errorf("An executable already exists so a script cannot be added to : %s", id)
-	}
-
-	database.WriteScript(id, scriptSource)
-
-	// Script already exists. Update
-	if foundJob.instance.script != nil {
-
-		// External script. Write to the file
-		if len(foundJob.instance.script.filePath) > 0 {
-			foundJob.instance.script.UpdateExternalScript(scriptSource)
-			return nil
+	if found {
+		// Do not add a script if there is an executable already added
+		if foundJob.instance.path != "" {
+			return fmt.Errorf("An executable already exists so a script cannot be added to : %s", id)
 		}
 
-		foundJob.instance.script.source = scriptSource
-		return nil
+		// Script already exists. Update
+		if foundJob.instance.script != nil {
+
+			// External script. Write to the file. Exit and do not update database
+			if len(foundJob.instance.script.filePath) > 0 {
+				err := foundJob.instance.script.UpdateExternalScript(scriptSource)
+				return err
+			}
+
+			foundJob.instance.script.source = scriptSource
+		}
+
+		// No script has been set. Create a new one
+		foundJob.instance.script = newScriptFromSource(scriptSource)
 	}
 
-	// No script has been set. Create a new one
-	foundJob.instance.script = newScriptFromSource(scriptSource)
+	// Network latency may cause the script to be added before the job is created
+	// Write the script to the database even if no job. The job creation function will detect and add it
+	database.WriteScript(id, scriptSource)
+
 	return nil
 }
 
 // DeleteScript removes the script of a job
 func DeleteScript(id string) error {
-	foundJob, found := jobManager.jobs[id]
-	if !found {
-		return fmt.Errorf("Job not found: %s", id)
+	// It is possible that a script exists in the database but not in a job instance
+	if err := database.DeleteScript(id); err != nil {
+		return err
 	}
 
-	if foundJob.instance.script == nil {
-		return fmt.Errorf("A script has not been set for: %s", id)
+	// If the job instance does exist then remove its script
+	if foundJob, found := jobManager.jobs[id]; found && foundJob.instance.script != nil {
+		foundJob.instance.script = nil
 	}
 
-	err := database.DeleteScript(id)
-	foundJob.instance.script = nil
-
-	return err
+	return nil
 }
 
 // RunScriptDebug executes a Lua script and returns the result
