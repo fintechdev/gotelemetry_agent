@@ -39,7 +39,7 @@ func jobsRoute(g *gin.Engine) {
 		g.Status(http.StatusNoContent)
 	})
 
-	// gets a job specified by ID (returns a script if present as a nested object)
+	// gets a job specified by ID
 	g.GET("/jobs/:id", func(g *gin.Context) {
 		id, _ := url.QueryUnescape(g.Param("id"))
 		jobConfig, err := job.GetJobByID(id)
@@ -56,13 +56,7 @@ func jobsRoute(g *gin.Engine) {
 	g.DELETE("/jobs/:id", func(g *gin.Context) {
 		id, _ := url.QueryUnescape(g.Param("id"))
 
-		err := job.DeleteScript(id)
-		if err != nil {
-			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
-			return
-		}
-
-		err = job.TerminateJob(id)
+		err := job.TerminateJob(id)
 		if err != nil {
 			g.JSON(http.StatusNotFound, gin.H{"code": http.StatusNotFound, "errors": err.Error()})
 			return
