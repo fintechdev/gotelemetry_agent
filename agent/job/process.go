@@ -156,10 +156,6 @@ func newInstance(job *Job) (*processPlugin, error) {
 
 	if c.Interval != "" {
 		if timeInterval, err := config.ParseTimeInterval(c.Interval); err == nil {
-			if p.expiration == 0 {
-				p.expiration = timeInterval * 3.0
-			}
-
 			p.addTaskWithClosure(p.performAllTasks, timeInterval)
 		} else {
 			return nil, err
