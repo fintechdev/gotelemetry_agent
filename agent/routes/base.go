@@ -15,11 +15,11 @@ import (
 var g *gin.Engine
 
 // Init the routes
-func Init(cfg config.Interface, errorChannel chan error) error {
+func Init(cfg config.Interface, errorChannel chan error) (bool, error) {
 	authKey := cfg.AuthKey()
 
 	if len(authKey) == 0 {
-		return nil
+		return false, nil
 	}
 	gin.SetMode(gin.ReleaseMode)
 	g = gin.New()
@@ -79,7 +79,7 @@ func Init(cfg config.Interface, errorChannel chan error) error {
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func logFunc(errorChannel chan error) gin.HandlerFunc {
@@ -162,9 +162,6 @@ func errorFunc(errorChannel chan error) gin.HandlerFunc {
 // SetAdditionalRoutes initializes all non-configuration routes as the dependencies
 // because these routes may not be set at the time of execution for Init()
 func SetAdditionalRoutes() {
-	if g == nil {
-		return
-	}
 	jobsRoute(g)
 	statsRoute(g)
 	logsRoute(g)

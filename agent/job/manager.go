@@ -82,11 +82,6 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 		}
 	}
 
-	if len(jobManager.jobs) == 0 {
-		errorChannel <- gotelemetry.NewLogError("No jobs are being scheduled.")
-		return nil
-	}
-
 	go jobManager.monitorDoneChannel()
 
 	return nil
@@ -137,16 +132,19 @@ func (m *manager) monitorDoneChannel() {
 		case id := <-m.jobCompletionChannel:
 			delete(m.jobs, id)
 
-			if len(m.jobs) == 0 {
-				for _, accountStream := range m.accountStreams {
-					accountStream.Flush()
-				}
+			// Do not monitor for completion if in server mode
+			if m.completionChannel != nil {
+				if len(m.jobs) == 0 {
+					for _, accountStream := range m.accountStreams {
+						accountStream.Flush()
+					}
 
-				if m.completionChannel != nil {
 					m.completionChannel <- true
+
+					return
 				}
-				return
 			}
+
 		}
 	}
 }
@@ -193,8 +191,6 @@ func TerminateJob(id string) error {
 	if !found {
 		return fmt.Errorf("Job not found: %s", id)
 	}
-
-	delete(jobManager.jobs, id)
 
 	foundJob.instance.terminate()
 

@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"sync"
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"
@@ -26,8 +25,7 @@ var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
 
-func handleErrors(errorChannel chan error, wg *sync.WaitGroup) {
-	defer wg.Done()
+func handleErrors(errorChannel chan error) {
 
 	for {
 		select {
@@ -75,11 +73,7 @@ func main() {
 	errorChannel = make(chan error, 0)
 	completionChannel = make(chan bool, 1)
 
-	wg := &sync.WaitGroup{}
-
-	wg.Add(1)
-
-	go handleErrors(errorChannel, wg)
+	go handleErrors(errorChannel)
 	go run()
 
 	for {
@@ -93,9 +87,6 @@ Done:
 
 	for len(errorChannel) > 0 {
 	}
-
-	close(errorChannel)
-	wg.Wait()
 
 	log.Println("No more jobs to run; exiting.")
 }
@@ -128,15 +119,22 @@ func run() {
 	} else if config.CLIConfig.OAuthCommand != config.OAuthCommands.None {
 		oauth.RunCommand(config.CLIConfig, errorChannel, completionChannel)
 	} else {
-		if err := routes.Init(configFile, errorChannel); err != nil {
+
+		serverListening, err := routes.Init(configFile, errorChannel)
+		if err != nil {
 			log.Fatalf("Initialization error: %s", err)
 		}
 
-		if err := job.Init(configFile, errorChannel, nil); err != nil {
-			log.Fatalf("Initialization error: %s", err)
+		if serverListening {
+			if err := job.Init(configFile, errorChannel, nil); err != nil {
+				log.Fatalf("Initialization error: %s", err)
+			}
+			routes.SetAdditionalRoutes()
+		} else {
+			if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
+				log.Fatalf("Initialization error: %s", err)
+			}
 		}
-
-		routes.SetAdditionalRoutes()
 
 	}
 }
