@@ -1,6 +1,7 @@
 package lua
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"strconv"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/telemetryapp/goluago/util"
 
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
@@ -133,6 +135,13 @@ func convertTypes(query map[string]interface{}) (interface{}, error) {
 						return nil, err
 					}
 					query[key] = time.Unix(timestampInt, 0)
+				} else if strings.HasPrefix(valueType, "#ObjectId=") {
+					objectIDString := strings.TrimPrefix(valueType, "#ObjectId=")
+					objectIDBytes, err := hex.DecodeString(objectIDString)
+					if err != nil {
+						return nil, err
+					}
+					query[key] = bson.ObjectId(objectIDBytes)
 				}
 			}
 		}
