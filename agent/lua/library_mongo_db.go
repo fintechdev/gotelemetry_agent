@@ -1,6 +1,8 @@
 package lua
 
 import (
+	"encoding/json"
+
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
 	"gopkg.in/mgo.v2"
@@ -53,7 +55,17 @@ var mongoDBFunctions = map[string]func(db *mgo.Database) lua.Function{
 				panic("unreachable")
 			}
 
-			util.DeepPush(l, result)
+			bytes, err := json.Marshal(&result)
+
+			if err != nil {
+				lua.Errorf(l, "%s", err.Error())
+				panic("unreachable")
+			}
+
+			var resultJSON interface{}
+			json.Unmarshal(bytes, &resultJSON)
+
+			util.DeepPush(l, resultJSON)
 
 			return 1
 		}

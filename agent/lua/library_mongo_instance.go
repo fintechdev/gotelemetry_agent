@@ -163,11 +163,6 @@ func pushMongoResult(l *lua.State, result *[]interface{}) {
 	var resultJSON []interface{}
 	json.Unmarshal(bytes, &resultJSON)
 
-	if err != nil {
-		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
-	}
-
 	pushArray(l)
 
 	for index, value := range resultJSON {
