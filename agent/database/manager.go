@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"math/rand"
@@ -144,24 +145,24 @@ func (m *Manager) databaseCleanup() {
 
 		err := tx.ForEach(func(name []byte, b *bolt.Bucket) error {
 
-			if string(string(name)[0]) != "_" {
+			if bytes.HasPrefix(name, []byte("_")) {
+				return nil
+			}
 
-				cursor := b.Cursor()
+			cursor := b.Cursor()
 
-				// Start by finding the closest value to our trim target
-				cursor.Seek(max)
-				// Step backwards since we do not want to remove the target
-				k, _ := cursor.Prev()
+			// Start by finding the closest value to our trim target
+			cursor.Seek(max)
+			// Step backwards since we do not want to remove the target
+			k, _ := cursor.Prev()
 
-				// Delete all items that take place before this point
-				for k != nil {
-					err := cursor.Delete()
-					if err != nil {
-						return err
-					}
-					k, _ = cursor.Prev()
+			// Delete all items that take place before this point
+			for k != nil {
+				err := cursor.Delete()
+				if err != nil {
+					return err
 				}
-
+				k, _ = cursor.Prev()
 			}
 
 			return nil
@@ -182,36 +183,35 @@ func MergeDatabaseWithConfigFile(configFile config.Interface) error {
 
 	// Fetch and update the API token
 	apiToken := configFile.APIToken()
-	if len(apiToken) > 0 {
-		WriteConfigParam("api_token", apiToken)
-	} else if apiToken = GetConfigParam("api_token"); len(apiToken) > 0 {
-		configFile.SetAPIToken(apiToken)
+	if len(apiToken) == 0 {
+		if apiToken = GetConfigParam("api_token"); len(apiToken) > 0 {
+			configFile.SetAPIToken(apiToken)
+		}
 	}
 
 	authKey := configFile.AuthKey()
-	if len(authKey) > 0 {
-		WriteConfigParam("auth_key", authKey)
-	} else if authKey = GetConfigParam("auth_key"); len(authKey) > 0 {
-		configFile.SetAuthKey(authKey)
-	} else if len(apiToken) == 0 {
-		// If both the API token and Auth token have not been set then generate a random auth token
-		rand.Seed(time.Now().UnixNano())
-		const alphanum = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
-		bytes := make([]byte, 16)
-		for i := range bytes {
-			bytes[i] = alphanum[rand.Intn(len(alphanum))]
-		}
+	if len(authKey) == 0 {
+		if authKey = GetConfigParam("auth_key"); len(authKey) > 0 {
+			configFile.SetAuthKey(authKey)
+		} else if len(apiToken) == 0 {
+			// If both the API token and Auth token have not been set then generate a random auth token
+			rand.Seed(time.Now().UnixNano())
+			const alphanum = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+			bytes := make([]byte, 16)
+			for i := range bytes {
+				bytes[i] = alphanum[rand.Intn(len(alphanum))]
+			}
 
-		authKey = string(bytes)
-		WriteConfigParam("auth_key", authKey)
-		configFile.SetAuthKey(authKey)
+			authKey = string(bytes)
+			configFile.SetAuthKey(authKey)
+		}
 	}
 
 	portNumber := configFile.Listen()
-	if len(portNumber) > 0 {
-		WriteConfigParam("listen", portNumber)
-	} else if portNumber = GetConfigParam("listen"); len(portNumber) > 0 {
-		configFile.SetListen(portNumber)
+	if len(portNumber) == 0 {
+		if portNumber = GetConfigParam("listen"); len(portNumber) > 0 {
+			configFile.SetListen(portNumber)
+		}
 	}
 
 	return nil

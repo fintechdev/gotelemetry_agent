@@ -57,10 +57,9 @@ type CLIConfigType struct {
 // CLIConfig is accessed throughout the Agent to check startup configurations
 var CLIConfig CLIConfigType
 
-func banner(version string, sourceDate string) {
+func banner(version string) {
 	println()
-	println("Telemetry Agent")
-	println("v" + version + "-" + sourceDate)
+	println("Telemetry Agent v" + version)
 	println()
 	println("Copyright © 2012-2016 Telemetry Inc.")
 	println()
@@ -70,9 +69,9 @@ func banner(version string, sourceDate string) {
 }
 
 // Init the Agent by initializing flags and displaying on screen data
-func Init(version string, sourceDate string) {
+func Init(version string) {
 	gotelemetry.UserAgentString = "Telemetry Agent v" + version
-	banner(version, sourceDate)
+	banner(version)
 
 	app := kingpin.New("telemetry_agent", "The Telemetry Agent")
 

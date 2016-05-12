@@ -448,3 +448,44 @@ func (s *Series) TrimCount(count int) error {
 
 	return err
 }
+
+// FindSeries takes a search string and returns an array of all bucket names that match the query
+// % is to be used on the left or right of the search string to declare it as a prefix or suffix
+func FindSeries(searchString string) ([]string, error) {
+	res := []string{}
+	search := []byte(searchString)
+
+	prefixSuffix := []byte("%")
+	var searchPrefix bool
+	var searchSuffix bool
+
+	if p := bytes.TrimPrefix(search, prefixSuffix); !bytes.Equal(p, search) {
+		search = p
+		searchPrefix = true
+	} else if s := bytes.TrimSuffix(search, prefixSuffix); !bytes.Equal(s, search) {
+		search = s
+		searchSuffix = true
+	}
+
+	err := manager.conn.View(func(tx *bolt.Tx) error {
+		err := tx.ForEach(func(name []byte, b *bolt.Bucket) error {
+
+			if bytes.HasPrefix(name, []byte("_")) {
+				return nil
+			}
+
+			if searchPrefix && bytes.HasPrefix(name, search) {
+				res = append(res, string(name))
+			} else if searchSuffix && bytes.HasSuffix(name, search) {
+				res = append(res, string(name))
+			} else if bytes.Contains(name, search) {
+				res = append(res, string(name))
+			}
+
+			return nil
+		})
+		return err
+	})
+
+	return res, err
+}

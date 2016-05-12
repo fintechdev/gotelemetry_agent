@@ -18,9 +18,6 @@ import (
 // VERSION number automatically populated by goxc config file
 var VERSION = "3.0.2"
 
-// SOURCE_DATE is the date of most recent goxc build. Automatically populated by goxc config
-var SOURCE_DATE = "2016-04-13T13:41:10-07:00"
-
 var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
@@ -62,7 +59,7 @@ func handleErrors(errorChannel chan error) {
 func main() {
 	var err error
 
-	config.Init(VERSION, SOURCE_DATE)
+	config.Init(VERSION)
 
 	configFile, err = config.NewConfigFile()
 

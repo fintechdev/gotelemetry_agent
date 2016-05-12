@@ -60,15 +60,9 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 
 	// Create each of the jobs listed in the config file
 	for _, jobDescription := range jobConfig.Jobs() {
-
 		if err := jobManager.createJob(&jobDescription, false); err != nil {
 			return err
 		}
-		// Job added successfully. Write to database
-		if err := database.WriteJob(jobDescription); err != nil {
-			return err
-		}
-
 	}
 
 	// Fetch jobs located in the database. Do not add jobs already included in the config file

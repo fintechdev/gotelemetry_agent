@@ -10,6 +10,7 @@ import (
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 var g *gin.Engine
@@ -77,6 +78,8 @@ func Init(cfg config.Interface, errorChannel chan error) (bool, error) {
 			time.Sleep(time.Second * 1)
 			apiToken = cfg.APIToken()
 		}
+		// Connection successful. We can now write our auth key
+		database.WriteConfigParam("auth_key", authKey)
 	}
 
 	return true, nil
