@@ -60,7 +60,6 @@ var CLIConfig CLIConfigType
 func banner(version string) {
 	println()
 	println("Telemetry Agent v" + version)
-	println()
 	println("Copyright © 2012-2016 Telemetry Inc.")
 	println()
 	println("For license information, see the LICENSE file")

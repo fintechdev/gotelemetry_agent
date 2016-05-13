@@ -28,6 +28,26 @@ var mongoConnectionFunctions = map[string]func(s *mgo.Session) lua.Function{
 		}
 	},
 
+	"database_names": func(s *mgo.Session) lua.Function {
+		return func(l *lua.State) int {
+			pushArray(l)
+
+			dbNames, err := s.DatabaseNames()
+
+			if err != nil {
+				lua.Errorf(l, "%s", err.Error())
+				panic("unreachable")
+			}
+
+			for index, dbName := range dbNames {
+				util.DeepPush(l, dbName)
+				l.RawSetInt(-2, index+1)
+			}
+
+			return 1
+		}
+	},
+
 	"close": func(s *mgo.Session) lua.Function {
 		return func(l *lua.State) int {
 			s.Close()
