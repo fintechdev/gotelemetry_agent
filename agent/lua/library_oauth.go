@@ -20,9 +20,10 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 	}
 
 	if query != "" {
-		parsedQuery, err2 := url.ParseQuery(query)
+		var parsedQuery url.Values
+		parsedQuery, err = url.ParseQuery(query)
 
-		if err2 != nil {
+		if err != nil {
 			lua.Errorf(l, "%s", err.Error())
 			panic("unreachable")
 		}

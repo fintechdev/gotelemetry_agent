@@ -14,6 +14,7 @@ import (
 // FunctionType are the enumerations of calculations used to compute or aggregate series data
 type FunctionType int
 
+// The FunctionType functions that are available
 const (
 	None FunctionType = iota
 	Sum

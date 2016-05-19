@@ -69,15 +69,16 @@ func Init(configFile config.Interface, errorChannel chan error) error {
 	})
 
 	ttlString := configFile.DatabaseTTL()
-	if len(ttlString) > 0 {
-		WriteConfigParam("ttl", ttlString)
-	} else if ttlString = GetConfigParam("ttl"); len(ttlString) > 0 {
-		configFile.SetDatabaseTTL(ttlString)
+	if len(ttlString) == 0 {
+		if ttlString = GetConfigParam("ttl"); len(ttlString) > 0 {
+			configFile.SetDatabaseTTL(ttlString)
+		}
 	}
 
 	if len(ttlString) > 0 {
-		ttl, err2 := config.ParseTimeInterval(ttlString)
-		if err2 != nil {
+		var ttl time.Duration
+		ttl, err = config.ParseTimeInterval(ttlString)
+		if err != nil {
 			return err
 		}
 		manager.ttl = ttl
@@ -211,6 +212,20 @@ func MergeDatabaseWithConfigFile(configFile config.Interface) error {
 	if len(portNumber) == 0 {
 		if portNumber = GetConfigParam("listen"); len(portNumber) > 0 {
 			configFile.SetListen(portNumber)
+		}
+	}
+
+	UDPListenPort := configFile.GraphiteConfig().UDPListenPort
+	if len(UDPListenPort) == 0 {
+		if UDPListenPort = GetConfigParam("listen_udp"); len(UDPListenPort) > 0 {
+			configFile.SetListen(UDPListenPort)
+		} else { // Only fetch a TCP Port number if there is no UDP port
+			TCPListenPort := configFile.GraphiteConfig().TCPListenPort
+			if len(TCPListenPort) == 0 {
+				if TCPListenPort = GetConfigParam("listen_tcp"); len(TCPListenPort) > 0 {
+					configFile.SetListen(TCPListenPort)
+				}
+			}
 		}
 	}
 

@@ -69,10 +69,10 @@ func Init(cfg config.Interface, errorChannel chan error) (bool, error) {
 
 	// If an API token is not set at this point, block until we receive one via the API
 	if apiToken := cfg.APIToken(); len(apiToken) == 0 {
-		fmt.Println()
-		fmt.Println("It looks like this is your first time running the Agent.")
-		fmt.Println("Use the information above to add this Agent to the TelemetryTV App.")
-		fmt.Println()
+		println()
+		println("It looks like this is your first time running the Agent.")
+		println("Use the information above to add this Agent to the TelemetryTV App.")
+		println()
 		errorChannel <- gotelemetry.NewLogError("Waiting for connection from the TelemetryTV App...")
 		for len(apiToken) == 0 {
 			time.Sleep(time.Second * 1)
