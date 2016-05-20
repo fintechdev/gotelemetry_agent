@@ -6,7 +6,7 @@
 		"default"
 	],
 	"BuildConstraints": "!plan9,!nacl,!solaris",
-	"PackageVersion": "3.0.1",
+	"PackageVersion": "3.0.2",
 	"TaskSettings": {
 		"go-fmt": {
 			"dir": "./..."
@@ -21,9 +21,8 @@
 			"dir": "./..."
 		},
 		"publish-github": {
-			"body": "- Data storage TTL now instantiates a dedicated job task. _database_cleanup runs on an interval based on TTL (will run at least every 24 hours) and trims all series data since the interval point. \n- Fixed a bug where flow-less jobs would throw an error.\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
+			"body": "- The Agent now has an API that allows jobs and settings to be configured remotely\n- Executing the Agent without parameters will now provide instructions for connecting with the TelemetryTV App\n- Plugins are no longer supported\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
 			"owner": "telemetryapp",
-			"prerelease": false,
 			"repository": "gotelemetry_agent"
 		}
 	},

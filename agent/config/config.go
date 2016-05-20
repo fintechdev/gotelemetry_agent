@@ -9,8 +9,10 @@ import (
 	"github.com/telemetryapp/gotelemetry"
 )
 
+// OAuthCommand is set to the type of command that will be executed by oauth.RunCommand
 type OAuthCommand string
 
+// OAuthCommands are the states that an OAuth command can be set to
 var OAuthCommands = struct {
 	None     OAuthCommand
 	Request  OAuthCommand
@@ -21,10 +23,17 @@ var OAuthCommands = struct {
 	Exchange: "exchange",
 }
 
+// CLIConfigType manages the various settings that are initialized at Agent launch
 type CLIConfigType struct {
 	APIURL              string
 	ChannelTag          string
 	ConfigFileLocation  string
+	DatabasePath        string
+	DatabaseTTL         string
+	AuthenticationKey   string
+	AuthenticationPort  string
+	CertFile            string
+	KeyFile             string
 	LogLevel            gotelemetry.LogLevel
 	Filter              *regexp.Regexp
 	ForceRunOnce        bool
@@ -45,13 +54,12 @@ type CLIConfigType struct {
 	OAuthRealmID        string
 }
 
+// CLIConfig is accessed throughout the Agent to check startup configurations
 var CLIConfig CLIConfigType
 
-func banner(VERSION string, SOURCE_DATE string) {
+func banner(version string) {
 	println()
-	println("Telemetry Agent")
-	println("v" + VERSION + "-" + SOURCE_DATE)
-	println()
+	println("Telemetry Agent v" + version)
 	println("Copyright © 2012-2016 Telemetry Inc.")
 	println()
 	println("For license information, see the LICENSE file")
@@ -59,15 +67,23 @@ func banner(VERSION string, SOURCE_DATE string) {
 	println()
 }
 
-func Init(VERSION string, SOURCE_DATE string) {
-	gotelemetry.UserAgentString = "Telemetry Agent v" + VERSION
-	banner(VERSION, SOURCE_DATE)
+// Init the Agent by initializing flags and displaying on screen data
+func Init(version string) {
+	gotelemetry.UserAgentString = "Telemetry Agent v" + version
+	banner(version)
 
 	app := kingpin.New("telemetry_agent", "The Telemetry Agent")
 
-	app.Version(VERSION)
+	app.Version(version)
 
-	app.Flag("config", "Path to the configuration file for this agent.").Short('c').Default("./config.toml").StringVar(&CLIConfig.ConfigFileLocation)
+	app.Flag("config", "Path to the configuration file for this agent.").Short('c').StringVar(&CLIConfig.ConfigFileLocation)
+
+	app.Flag("path", "Path to the database file for this agent.").Short('p').StringVar(&CLIConfig.DatabasePath)
+	app.Flag("ttl", "The maximum lifespan of all series data in the Database.").StringVar(&CLIConfig.DatabaseTTL)
+	app.Flag("auth_key", "The Authentication Key used for TelemetryTV to connect to the Agent.").Short('k').StringVar(&CLIConfig.AuthenticationKey)
+	app.Flag("listen", "The port that the Agent's API will use to listen for TelemetryTV.").Short('l').StringVar(&CLIConfig.AuthenticationPort)
+	app.Flag("certfile", "").StringVar(&CLIConfig.CertFile)
+	app.Flag("keyfile", "").StringVar(&CLIConfig.KeyFile)
 
 	app.Flag("apiurl", "Set the URL to the Telemetry API").Short('a').Default("https://api.telemetrytv.com").StringVar(&CLIConfig.APIURL)
 	logLevel := app.Flag("verbosity", "Set the verbosity level (`debug`, `info`, `error`).").Short('v').Default("info").Enum("debug", "info", "error")
@@ -99,7 +115,7 @@ func Init(VERSION string, SOURCE_DATE string) {
 	oauthExchange.Flag("verifier", "The verifier code received from the provider").Short('e').StringVar(&CLIConfig.OAuthVerifier)
 	oauthExchange.Flag("realm", "The realm ID received from the provider").Short('r').StringVar(&CLIConfig.OAuthRealmID)
 
-	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.")
+	run := app.Command("run", "Runs the jobs scheduled in the configuration file provided.").Default()
 
 	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
 	case once.FullCommand():

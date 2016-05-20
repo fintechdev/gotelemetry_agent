@@ -1,9 +1,6 @@
 package lua
 
 import (
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"

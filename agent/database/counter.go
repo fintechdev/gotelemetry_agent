@@ -1,17 +1,21 @@
-package aggregations
+package database
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/boltdb/bolt"
 	"github.com/telemetryapp/gotelemetry"
-	"strconv"
 )
 
+// Counter tracks the name of the counter and is used to append Lua functions
 type Counter struct {
 	Name string
 }
 
+// GetCounter initializes and returns a counter object. It creates the counter
+// with a value of zero within the database if it does not already exist.
+// A boolean is returned to track if it was created
 func GetCounter(name string) (*Counter, bool, error) {
 	isCreated := false
 
@@ -41,7 +45,7 @@ func GetCounter(name string) (*Counter, bool, error) {
 }
 
 func (c *Counter) fatal(err error) {
-	manager.errorChannel <- errors.New(fmt.Sprintf("Counter %s -> %s", c.Name, err))
+	manager.errorChannel <- fmt.Errorf("Counter %s -> %s", c.Name, err)
 }
 
 func (c *Counter) log(format string, data ...interface{}) {
@@ -52,6 +56,7 @@ func (c *Counter) debug(format string, data ...interface{}) {
 	manager.errorChannel <- gotelemetry.NewLogError("Counter %s -> %s", c.Name, fmt.Sprintf(format, data...))
 }
 
+// GetValue returns an integer of the current counter value
 func (c *Counter) GetValue() int64 {
 
 	var value string
@@ -74,6 +79,7 @@ func (c *Counter) GetValue() int64 {
 	return valueInt
 }
 
+// SetValue takes an integer and overrides the previous value of the counter
 func (c *Counter) SetValue(newValue int64) {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {
@@ -90,6 +96,7 @@ func (c *Counter) SetValue(newValue int64) {
 
 }
 
+// Increment takes a signed integer and adds that value to the counter
 func (c *Counter) Increment(delta int64) {
 
 	err := manager.conn.Update(func(tx *bolt.Tx) error {

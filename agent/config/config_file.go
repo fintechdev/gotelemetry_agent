@@ -1,64 +1,41 @@
 package config
 
 import (
-	"errors"
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/BurntSushi/toml"
 )
 
-type Job map[string]interface{}
-
-func (j Job) ID() string {
-	if result, success := j["id"].(string); success {
-		return result
-	}
-
-	if result, success := j["flow_tag"].(string); success {
-		return result
-	}
-
-	if result, success := j["tag"].(string); success {
-		return result
-	}
-
-	return ""
+// File is the top level struct of the Agent config file
+type File struct {
+	Listener  ListenerConfig              `toml:"listener"`
+	Server    ServerConfig                `toml:"server"`
+	Graphite  GraphiteConfig              `toml:"graphite"`
+	Data      DataConfig                  `toml:"data"`
+	JobsField []Job                       `toml:"jobs"`
+	FlowField []Job                       `toml:"flow"`
+	OAuth     map[string]OAuthConfigEntry `toml:"oauth"`
 }
 
-func (j Job) Plugin() string {
-	if result, success := j["plugin"].(string); success {
-		return result
-	}
-
-	return "com.telemetryapp.process"
+// Job handles all job and flow parameters
+type Job struct {
+	ID         string      `toml:"id"          json:"id"`
+	Tag        string      `toml:"tag"         json:"tag"`
+	ChannelTag string      `toml:"channel_tag" json:"channel_tag"`
+	Batch      bool        `toml:"batch"       json:"batch"`
+	Exec       string      `toml:"exec"        json:"exec"`
+	Script     string      `toml:"script"      json:"script"`
+	Args       interface{} `toml:"args"        json:"args"`
+	Template   interface{} `toml:"template"    json:"template"`
+	Variant    string      `toml:"variant"     json:"variant"`
+	Expiration interface{} `toml:"expiration"  json:"expiration"`
+	Interval   string      `toml:"interval"    json:"interval"`
 }
 
-func (j Job) ChannelTag() string {
-	if result, ok := j["channel_tag"].(string); ok {
-		return result
-	}
-
-	return ""
-}
-
-type ServerConfig struct {
-	APIToken              string      `toml:"api_token"`
-	RawSubmissionInterval interface{} `toml:"submission_interval"`
-}
-
-type DataConfig struct {
-	DataLocation *string `toml:"path"`
-	TTL          *string `toml:"ttl"`
-	Listen       *string `toml:"listen"`
-}
-
-type GraphiteConfig struct {
-	TCPListenPort string `toml:"listen_tcp"`
-	UDPListenPort string `toml:"listen_udp"`
-}
-
+// OAuthConfigEntry handles OAuth configuration parameters
 type OAuthConfigEntry struct {
 	Version          int               `toml:"version"`
 	ClientID         string            `toml:"client_id"`
@@ -70,47 +47,86 @@ type OAuthConfigEntry struct {
 	Header           map[string]string `toml:"header"`
 	SignatureMethod  string            `toml:"signature_method"`
 	PrivateKey       string            `toml:"private_key"`
+	TTL              string            `toml:"ttl"`
 }
 
-type ConfigInterface interface {
+// ServerConfig handles configuration info for the API connection to TelemetryTV
+type ServerConfig struct {
+	APIToken              string      `toml:"api_token"`
+	RawSubmissionInterval interface{} `toml:"submission_interval"`
+}
+
+// DataConfig handles the configuration info for the Agent's internal database
+type DataConfig struct {
+	DataLocation string `toml:"path"`
+	TTL          string `toml:"ttl"`
+}
+
+// ListenerConfig handles configuration info for the Agent's internal API
+type ListenerConfig struct {
+	Listen   string `toml:"listen"`
+	AuthKey  string `toml:"auth_key"`
+	CertFile string `toml:"certfile"`
+	KeyFile  string `toml:"keyfile"`
+}
+
+// GraphiteConfig handles the port numbers for the Agent's Graphite interface
+type GraphiteConfig struct {
+	TCPListenPort string `toml:"listen_tcp"`
+	UDPListenPort string `toml:"listen_udp"`
+}
+
+// Interface limits the configuration scope to include only the get/set functions
+type Interface interface {
 	APIURL() string
-	APIToken() (string, error)
+	APIToken() string
+	SetAPIToken(string)
+	SetAuthKey(string)
+	SetListen(string)
+	SetDatabaseTTL(string)
+	SetUDPListenPort(string)
+	SetTCPListenPort(string)
 	ChannelTag() string
 	DataConfig() DataConfig
 	GraphiteConfig() GraphiteConfig
 	SubmissionInterval() time.Duration
 	OAuthConfig() map[string]OAuthConfigEntry
 	Jobs() []Job
+	Listen() string
+	AuthKey() string
+	DatabasePath() string
+	DatabaseTTL() string
+	CertFile() string
+	KeyFile() string
 }
 
-type ConfigFile struct {
-	Server    ServerConfig                `toml:"server"`
-	Graphite  GraphiteConfig              `toml:"graphite"`
-	Data      DataConfig                  `toml:"data"`
-	Listen    string                      `toml:"listen"`
-	JobsField []Job                       `toml:"jobs"`
-	FlowField []Job                       `toml:"flow"`
-	OAuth     map[string]OAuthConfigEntry `toml:"oauth"`
-}
+var _ Interface = &File{}
 
-var _ ConfigInterface = &ConfigFile{}
+// NewConfigFile initializes a configFile object based on a configuration file path.
+// returns the populated object if the parsing is successful. Returns an empty object
+// if no path is provided
+func NewConfigFile() (*File, error) {
+	filePath := CLIConfig.ConfigFileLocation
 
-func NewConfigFile() (*ConfigFile, error) {
-	source, err := ioutil.ReadFile(CLIConfig.ConfigFileLocation)
+	result := &File{}
 
+	if len(filePath) == 0 {
+		// Return an empty config file if a path has not been set
+		return result, nil
+	}
+
+	source, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		if CLIConfig.IsPiping || CLIConfig.IsNotifying {
-			return &ConfigFile{
+			return &File{
 				Data:      DataConfig{},
 				Graphite:  GraphiteConfig{},
 				JobsField: []Job{},
 			}, nil
 		}
 
-		return nil, errors.New(fmt.Sprintf("Unable to open configuration file at %s. Did you use --config to specify the right path?\n\n", CLIConfig.ConfigFileLocation))
+		return nil, fmt.Errorf("Unable to open configuration file at %s. Did you use --config to specify the right path?\n\n", filePath)
 	}
-
-	result := &ConfigFile{}
 
 	_, err = toml.Decode(string(source), result)
 
@@ -118,72 +134,11 @@ func NewConfigFile() (*ConfigFile, error) {
 		result.JobsField = append(result.JobsField, job)
 	}
 
-	if result.DataConfig().TTL != nil {
-		storageJob := map[string]interface{}{
-			"id":       "_database_cleanup",
-			"interval": *result.DataConfig().TTL,
-		}
-
-		result.JobsField = append(result.JobsField, storageJob)
-	}
-
 	return result, err
 }
 
-func (c *ConfigFile) APIToken() (string, error) {
-	result := c.Server.APIToken
-
-	if result == "" {
-		result = os.ExpandEnv("$TELEMETRY_API_TOKEN")
-	}
-
-	if result != "" {
-		return result, nil
-	}
-
-	return "", errors.New("No API Token found in the configuration file or in the TELEMETRY_API_TOKEN environment variable.")
-}
-
-func (c *ConfigFile) APIURL() string {
-	return CLIConfig.APIURL
-}
-
-func (c *ConfigFile) ChannelTag() string {
-	return CLIConfig.ChannelTag
-}
-
-func (c *ConfigFile) DataConfig() DataConfig {
-	return c.Data
-}
-
-func (c *ConfigFile) GraphiteConfig() GraphiteConfig {
-	return c.Graphite
-}
-
-func (c *ConfigFile) SubmissionInterval() time.Duration {
-	if s, ok := c.Server.RawSubmissionInterval.(string); ok {
-		d, err := ParseTimeInterval(s)
-
-		if err == nil {
-			return d
-		}
-	}
-
-	if s, ok := c.Server.RawSubmissionInterval.(float64); ok {
-		return time.Duration(s) * time.Second
-	}
-
-	return 0
-}
-
-func (c *ConfigFile) Jobs() []Job {
-	return c.JobsField
-}
-
-func (c *ConfigFile) OAuthConfig() map[string]OAuthConfigEntry {
-	return c.OAuth
-}
-
+// MapTemplate takes a map of default flow values and produces an interface for
+// gotelemetry to create those flows if they do not exist
 func MapTemplate(from interface{}) interface{} {
 	switch from.(type) {
 	case map[interface{}]interface{}:
@@ -207,4 +162,158 @@ func MapTemplate(from interface{}) interface{} {
 	default:
 		return from
 	}
+}
+
+// SetAPIToken unconditionally replaces the config API token
+func (c *File) SetAPIToken(token string) {
+	c.Server.APIToken = token
+}
+
+// SetAuthKey unconditionally replaces the config auth key
+func (c *File) SetAuthKey(key string) {
+	c.Listener.AuthKey = key
+}
+
+// SetListen unconditionally replaces the server listening port
+func (c *File) SetListen(portNumber string) {
+	c.Listener.Listen = portNumber
+}
+
+// SetDatabaseTTL unconditionally replaces the database series TTL
+func (c *File) SetDatabaseTTL(ttlString string) {
+	c.Data.TTL = ttlString
+}
+
+// SetUDPListenPort unconditionally replaces the graphite UDP port number
+func (c *File) SetUDPListenPort(portString string) {
+	c.Graphite.UDPListenPort = portString
+}
+
+// SetTCPListenPort unconditionally replaces the graphite TCP port number
+func (c *File) SetTCPListenPort(portString string) {
+	c.Graphite.TCPListenPort = portString
+}
+
+// APIToken returns the APIToken value from the configFile if present.
+// Returns the $TELEMETRY_API_TOKEN environment variable value otherwise
+func (c *File) APIToken() string {
+	result := c.Server.APIToken
+
+	if len(result) == 0 {
+		return os.ExpandEnv("$TELEMETRY_API_TOKEN")
+	}
+
+	return result
+}
+
+// APIURL returns the APIURL value form the command line parameters
+func (c *File) APIURL() string {
+	return CLIConfig.APIURL
+}
+
+// ChannelTag returns the ChannelTag value from the command line parameters
+func (c *File) ChannelTag() string {
+	return CLIConfig.ChannelTag
+}
+
+// DataConfig returns the Data object from the configFile
+func (c *File) DataConfig() DataConfig {
+	return c.Data
+}
+
+// GraphiteConfig returns the Graphite object from the configFile
+func (c *File) GraphiteConfig() GraphiteConfig {
+	return c.Graphite
+}
+
+// SubmissionInterval parses the raw interval time from the configFile and
+// returns the interval in duration format
+func (c *File) SubmissionInterval() time.Duration {
+	if s, ok := c.Server.RawSubmissionInterval.(string); ok {
+		d, err := ParseTimeInterval(s)
+
+		if err == nil {
+			return d
+		}
+	}
+
+	if s, ok := c.Server.RawSubmissionInterval.(float64); ok {
+		return time.Duration(s) * time.Second
+	}
+
+	return 0
+}
+
+// Jobs returns an array of JobsField objects from the configFile
+func (c *File) Jobs() []Job {
+	return c.JobsField
+}
+
+// OAuthConfig returns an array of the OAuth objects from the configFile
+func (c *File) OAuthConfig() map[string]OAuthConfigEntry {
+	return c.OAuth
+}
+
+// Listen returns the Listen value from the command line parameters if present and from
+// the configFile object otherwise
+func (c *File) Listen() string {
+	if cliListenPort := CLIConfig.AuthenticationPort; len(cliListenPort) > 0 {
+		return cliListenPort
+	}
+
+	return c.Listener.Listen
+}
+
+// AuthKey returns the AuthKey value from the command line parameters if present and from
+// the configFile object otherwise
+func (c *File) AuthKey() string {
+	if cliAuthKey := CLIConfig.AuthenticationKey; len(cliAuthKey) > 0 {
+		return cliAuthKey
+	}
+
+	return c.Listener.AuthKey
+}
+
+// DatabasePath returns the DatabasePath value from the command line parameters if present and from
+// the configFile object otherwise. Sets a default value of agent.db in the current directory if nil
+func (c *File) DatabasePath() string {
+	if databasePath := CLIConfig.DatabasePath; len(databasePath) > 0 {
+		return databasePath
+	}
+
+	if len(c.Data.DataLocation) == 0 {
+		return "agent.db"
+	}
+
+	return c.Data.DataLocation
+}
+
+// DatabaseTTL returns the DatabaseTTL value from the command line parameters if present and from
+// the configFile object otherwise
+func (c *File) DatabaseTTL() string {
+	if dataTTL := CLIConfig.DatabaseTTL; len(dataTTL) > 0 {
+		return dataTTL
+	}
+
+	return c.Data.TTL
+}
+
+// CertFile returns the CertFile value from the command line parameters if present and from
+// the configFile object otherwise
+func (c *File) CertFile() string {
+	if certFile := CLIConfig.CertFile; len(certFile) > 0 {
+		return certFile
+	}
+
+	return c.Listener.CertFile
+}
+
+// KeyFile returns the KeyFile value from the command line parameters if present and from
+// the configFile object otherwise
+func (c *File) KeyFile() string {
+	if keyFile := CLIConfig.KeyFile; len(keyFile) > 0 {
+		return keyFile
+	}
+
+	return c.Listener.KeyFile
 }

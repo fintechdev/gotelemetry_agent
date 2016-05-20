@@ -2,10 +2,11 @@ package lua
 
 import (
 	"bytes"
-	"github.com/telemetryapp/go-lua"
-	"github.com/telemetryapp/goluago/util"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/telemetryapp/go-lua"
+	"github.com/telemetryapp/goluago/util"
 )
 
 var httpLibrary = []lua.RegistryFunction{

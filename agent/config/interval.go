@@ -10,6 +10,7 @@ import (
 
 var intervalRegex = regexp.MustCompile(`([0-9]+)([smhdw])`)
 
+// ParseTimeInterval replaces the builtin parser by adding support for days and weeks
 func ParseTimeInterval(source string) (time.Duration, error) {
 	matches := intervalRegex.FindStringSubmatch(strings.ToLower(source))
 

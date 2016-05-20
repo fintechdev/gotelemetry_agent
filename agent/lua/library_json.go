@@ -2,6 +2,7 @@ package lua
 
 import (
 	"encoding/json"
+
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
 )

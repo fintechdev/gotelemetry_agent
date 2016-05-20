@@ -4,10 +4,11 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"github.com/garyburd/go-oauth/oauth"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"net/http"
+
+	"github.com/garyburd/go-oauth/oauth"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 type v1ClientData struct {
@@ -37,7 +38,7 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 	}
 
 	var signatureMethod oauth.SignatureMethod
-	var privateKey *rsa.PrivateKey = nil
+	var privateKey *rsa.PrivateKey
 
 	switch entry.SignatureMethod {
 	case "":
@@ -47,7 +48,7 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		signatureMethod = oauth.HMACSHA1
 
 	case "rsa_sha1":
-		return nil, errors.New("RSA oAuth1 signatures are not yet supported.")
+		return nil, errors.New("RSA oAuth1 signatures are not yet supported")
 
 	case "plaintext":
 		signatureMethod = oauth.PLAINTEXT
@@ -73,13 +74,13 @@ func getV1Client(name string, entry config.OAuthConfigEntry) (Client, error) {
 		},
 	}
 
-	aggregations.ReadOAuthToken(res.name, &res.data)
+	database.ReadOAuthToken(res.name, &res.data)
 
 	return res, nil
 }
 
-func (v *v1Client) GetAuthorizationURL() (string, error) {
-	cred, err := v.data.Client.RequestTemporaryCredentials(nil, TelemetryOAuthClientResponseURL, nil)
+func (v *v1Client) getAuthorizationURL() (string, error) {
+	cred, err := v.data.Client.RequestTemporaryCredentials(nil, telemetryOAuthClientResponseURL, nil)
 
 	if err != nil {
 		return "", err
@@ -87,7 +88,7 @@ func (v *v1Client) GetAuthorizationURL() (string, error) {
 
 	v.data.TemporaryCredentials = cred
 
-	err = aggregations.WriteOAuthToken(v.name, v.data)
+	err = database.WriteOAuthToken(v.name, v.data)
 
 	return v.data.Client.AuthorizationURL(cred, nil), err
 }
@@ -102,7 +103,7 @@ func (v *v1Client) ExchangeToken(code, verifier, realm string) error {
 	v.data.PermanentCredentials = cred
 	v.data.Realm = realm
 
-	return aggregations.WriteOAuthToken(v.name, v.data)
+	return database.WriteOAuthToken(v.name, v.data)
 }
 
 func (v *v1Client) Do(req *http.Request) (*http.Response, error) {

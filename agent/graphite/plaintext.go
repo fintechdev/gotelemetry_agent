@@ -2,18 +2,20 @@ package graphite
 
 import (
 	"bufio"
-	"github.com/telemetryapp/gotelemetry"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
-	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 	"io"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/telemetryapp/gotelemetry"
+	"github.com/telemetryapp/gotelemetry_agent/agent/config"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
-func Init(cfg config.ConfigInterface, errorChannel chan error) error {
+// Init the graphite server listener
+func Init(cfg config.Interface, errorChannel chan error) error {
 	graphiteConfig := cfg.GraphiteConfig()
 
 	if graphiteConfig.TCPListenPort != "" {
@@ -112,7 +114,7 @@ func parseTraditionalRequest(remoteAddress string, line []string, errorChannel c
 		)
 	}
 
-	series, isCreated, err := aggregations.GetSeries(seriesName)
+	series, isCreated, err := database.GetSeries(seriesName)
 
 	if err != nil {
 		return gotelemetry.NewErrorWithFormat(
@@ -175,7 +177,7 @@ func parseCounterRequest(remoteAddress string, line []string, errorChannel chan 
 		)
 	}
 
-	counter, isCreated, err := aggregations.GetCounter(counterName)
+	counter, isCreated, err := database.GetCounter(counterName)
 
 	if isCreated {
 		errorChannel <- gotelemetry.NewLogError("Graphite => Started receiving graphite data for '%s'", counterName)

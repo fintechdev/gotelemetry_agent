@@ -2,7 +2,7 @@ package lua
 
 import (
 	"github.com/telemetryapp/go-lua"
-	"github.com/telemetryapp/gotelemetry_agent/agent/aggregations"
+	"github.com/telemetryapp/gotelemetry_agent/agent/database"
 )
 
 var storageLibrary = []lua.RegistryFunction{
@@ -14,7 +14,26 @@ var storageLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
+	{
+		"series_find",
+		func(l *lua.State) int {
+			res, err := database.FindSeries(lua.CheckString(l, 1))
 
+			if err != nil {
+				lua.Errorf(l, "%s", err)
+				panic("unreachable")
+			}
+
+			pushArray(l)
+
+			for index, name := range res {
+				pushSeries(l, name)
+				l.RawSetInt(-2, index+1)
+			}
+
+			return 1
+		},
+	},
 	{
 		"counter",
 		func(l *lua.State) int {
@@ -31,22 +50,22 @@ func openStorageLibrary(l *lua.State) {
 
 		l.NewTable()
 
-		l.PushInteger(int(aggregations.Sum))
+		l.PushInteger(int(database.Sum))
 		l.SetField(-2, "SUM")
 
-		l.PushInteger(int(aggregations.Avg))
+		l.PushInteger(int(database.Avg))
 		l.SetField(-2, "AVG")
 
-		l.PushInteger(int(aggregations.Min))
+		l.PushInteger(int(database.Min))
 		l.SetField(-2, "MIN")
 
-		l.PushInteger(int(aggregations.Max))
+		l.PushInteger(int(database.Max))
 		l.SetField(-2, "MAX")
 
-		l.PushInteger(int(aggregations.Count))
+		l.PushInteger(int(database.Count))
 		l.SetField(-2, "COUNT")
 
-		l.PushInteger(int(aggregations.StdDev))
+		l.PushInteger(int(database.StdDev))
 		l.SetField(-2, "STDDEV")
 
 		l.SetField(-2, "Functions")
