@@ -30,14 +30,12 @@ func openNotificationsLibrary(l *lua.State, p notificationProvider) {
 					dd, err := time.ParseDuration(d)
 
 					if err != nil {
-						lua.Errorf(l, "%s", err)
-						panic("unreachable")
+						lua.Errorf(l, "%s", err.Error())
 					}
 
 					duration = int(dd.Seconds())
 				} else {
 					lua.Errorf(l, "Invalid time duration %v", l.ToValue(5))
-					panic("unreachable")
 				}
 
 				if duration < 1 {

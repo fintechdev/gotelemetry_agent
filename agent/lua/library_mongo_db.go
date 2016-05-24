@@ -15,7 +15,6 @@ var mongoDBFunctions = map[string]func(db *mgo.Database) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			pushArray(l)
@@ -45,21 +44,18 @@ var mongoDBFunctions = map[string]func(db *mgo.Database) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			err = db.Run(cmd, &result)
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			bytes, err := json.Marshal(&result)
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			var resultJSON interface{}

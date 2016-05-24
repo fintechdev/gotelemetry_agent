@@ -25,15 +25,13 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 				duration, err := config.ParseTimeInterval(lua.CheckString(l, 1))
 
 				if err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 
 				since := time.Now().Add(-duration)
 
 				if err = s.TrimSince(since); err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 
 				return 0
@@ -42,8 +40,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			err := s.TrimSince(time.Unix(int64(lua.CheckInteger(l, 1)), 0))
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			return 0
@@ -56,8 +53,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			count := lua.CheckInteger(l, 1)
 
 			if err := s.TrimCount(count); err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			return 0
@@ -70,8 +66,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			timestamp := time.Unix(int64(lua.OptInteger(l, 2, int(time.Now().Unix()))), 0)
 
 			if err := s.Push(&timestamp, value); err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			return 0
@@ -83,8 +78,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			res, err := s.Pop()
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, res)
@@ -98,8 +92,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			res, err := s.Last()
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, res)
@@ -114,8 +107,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			res, err := s.Items(lua.CheckInteger(l, 1))
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			if arr, ok := res.([]interface{}); ok {
@@ -170,8 +162,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 				duration, err := config.ParseTimeInterval(lua.CheckString(l, 2))
 
 				if err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 
 				curTime := time.Now()
@@ -180,8 +171,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 				res, err := s.Compute(database.FunctionType(functionType), &timeSince, &curTime)
 
 				if err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 
 				util.DeepPush(l, res)
@@ -195,8 +185,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			res, err := s.Compute(database.FunctionType(functionType), &start, &end)
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, res)
@@ -216,8 +205,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 				duration, err := config.ParseTimeInterval(lua.CheckString(l, 2))
 
 				if err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 
 				interval = int(duration.Seconds())
@@ -228,8 +216,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 			res, err := s.Aggregate(database.FunctionType(functionType), interval, count, &end)
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			if arr, ok := res.([]interface{}); ok {
@@ -282,7 +269,6 @@ func pushSeries(l *lua.State, name string) {
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	l.NewTable()

@@ -16,7 +16,6 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	if query != "" {
@@ -25,7 +24,6 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 
 		if err != nil {
 			lua.Errorf(l, "%s", err.Error())
-			panic("unreachable")
 		}
 
 		req.Form = parsedQuery
@@ -35,7 +33,6 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	defer res.Body.Close()
@@ -44,7 +41,6 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	util.DeepPush(l, string(data))

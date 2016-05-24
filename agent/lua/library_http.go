@@ -17,8 +17,7 @@ var httpLibrary = []lua.RegistryFunction{
 
 			req, err := http.NewRequest("GET", url, nil)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			argIndex := 2
@@ -49,16 +48,14 @@ var httpLibrary = []lua.RegistryFunction{
 
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			defer resp.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, string(data))
@@ -75,8 +72,7 @@ var httpLibrary = []lua.RegistryFunction{
 
 			req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(body)))
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			argIndex := 3
@@ -107,16 +103,14 @@ var httpLibrary = []lua.RegistryFunction{
 
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			defer resp.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, string(data))
@@ -144,8 +138,7 @@ var httpLibrary = []lua.RegistryFunction{
 				req, err = http.NewRequest(method, url, nil)
 			}
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			argIndex := 4
@@ -176,16 +169,14 @@ var httpLibrary = []lua.RegistryFunction{
 
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			defer resp.Body.Close()
 
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, string(data))

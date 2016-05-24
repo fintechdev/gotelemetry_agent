@@ -18,8 +18,7 @@ var jsonLibrary = []lua.RegistryFunction{
 
 			if l.IsTable(1) {
 				if v, err = util.PullTable(l, 1); err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 			} else {
 				v = l.ToValue(1)
@@ -28,8 +27,7 @@ var jsonLibrary = []lua.RegistryFunction{
 			res, err := json.Marshal(v)
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, string(res))
@@ -45,8 +43,7 @@ var jsonLibrary = []lua.RegistryFunction{
 			err := json.Unmarshal([]byte(lua.CheckString(l, 1)), &res)
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, res)

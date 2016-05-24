@@ -35,8 +35,7 @@ func pushCounter(l *lua.State, name string) {
 	counter, _, err := database.GetCounter(name)
 
 	if err != nil {
-		lua.Errorf(l, "%s", err)
-		panic("unreachable")
+		lua.Errorf(l, "%s", err.Error())
 	}
 
 	l.NewTable()

@@ -20,8 +20,7 @@ var storageLibrary = []lua.RegistryFunction{
 			res, err := database.FindSeries(lua.CheckString(l, 1))
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			pushArray(l)

@@ -36,7 +36,6 @@ var mongoConnectionFunctions = map[string]func(s *mgo.Session) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			for index, dbName := range dbNames {
@@ -62,7 +61,6 @@ func pushGoConnection(l *lua.State, connectionString string) {
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	l.NewTable()
