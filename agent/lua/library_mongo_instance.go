@@ -25,7 +25,6 @@ var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
 				query, err = util.PullTable(l, 1)
 				if err != nil {
 					lua.Errorf(l, "%s", err.Error())
-					panic("unreachable")
 				}
 
 				// Convert basic types into BSON types
@@ -33,7 +32,6 @@ var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
 					query, err = convertTypes(queryMap)
 					if err != nil {
 						lua.Errorf(l, "%s", err.Error())
-						panic("unreachable")
 					}
 				}
 			}
@@ -74,7 +72,6 @@ var mongoQueryFunctions = map[string]func(query *mgo.Query) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			pushMongoResult(l, &result)
@@ -88,7 +85,6 @@ var mongoQueryFunctions = map[string]func(query *mgo.Query) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			l.PushInteger(count)
@@ -105,7 +101,6 @@ var mongoQueryFunctions = map[string]func(query *mgo.Query) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			pushMongoResult(l, &result)
@@ -157,7 +152,6 @@ func pushMongoResult(l *lua.State, result *[]interface{}) {
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	var resultJSON []interface{}

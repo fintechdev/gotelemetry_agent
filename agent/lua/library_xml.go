@@ -17,19 +17,16 @@ var xmlLibrary = []lua.RegistryFunction{
 
 			if l.IsTable(1) {
 				if v, err = util.PullTable(l, 1); err != nil {
-					lua.Errorf(l, "%s", err)
-					panic("unreachable")
+					lua.Errorf(l, "%s", err.Error())
 				}
 			} else {
 				lua.Errorf(l, "Only tables can be converted to XML")
-				panic("unreachable")
 			}
 
 			res, err := mxj.Map(v.(map[string]interface{})).Xml()
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			util.DeepPush(l, string(res))
@@ -45,7 +42,6 @@ var xmlLibrary = []lua.RegistryFunction{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			util.DeepPush(l, res)

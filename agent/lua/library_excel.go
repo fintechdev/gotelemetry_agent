@@ -16,8 +16,7 @@ var excelLibrary = []lua.RegistryFunction{
 			res, err := xlsx.FileToSlice(path)
 
 			if err != nil {
-				lua.Errorf(l, "%s", err)
-				panic("unreachable")
+				lua.Errorf(l, "%s", err.Error())
 			}
 
 			util.DeepPush(l, res)

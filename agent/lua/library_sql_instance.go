@@ -24,14 +24,12 @@ var sqlInstanceFunctions = map[string]func(c *sqlx.DB) lua.Function{
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			defer rs.Close()
 
 			if err != nil {
 				lua.Errorf(l, "%s", err.Error())
-				panic("unreachable")
 			}
 
 			for rs.Next() {
@@ -40,7 +38,6 @@ var sqlInstanceFunctions = map[string]func(c *sqlx.DB) lua.Function{
 
 				if err != nil {
 					lua.Errorf(l, "%s", err.Error())
-					panic("unreachable")
 				}
 
 				result = append(result, row)
@@ -71,7 +68,6 @@ func pushSQLInstance(l *lua.State, driverName, dataSourceName string) {
 
 	if err != nil {
 		lua.Errorf(l, "%s", err.Error())
-		panic("unreachable")
 	}
 
 	l.NewTable()
