@@ -128,7 +128,12 @@ func NewConfigFile() (*File, error) {
 		return nil, fmt.Errorf("Unable to open configuration file at %s. Did you use --config to specify the right path?\n\n", filePath)
 	}
 
-	_, err = toml.Decode(string(source), result)
+	// replace environment variables in config file
+	// NOTE: this is not part of the TOML standard, so we need to deal with this
+	//       before the TOML decode takes place
+	sourceExpanded := os.ExpandEnv(string(source))
+
+	_, err = toml.Decode(string(sourceExpanded), result)
 
 	for _, job := range result.FlowField {
 		result.JobsField = append(result.JobsField, job)
