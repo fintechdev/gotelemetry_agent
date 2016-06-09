@@ -69,7 +69,7 @@ var oauthLibrary = []lua.RegistryFunction{
 			return oauthRequest(
 				l,
 				lua.CheckString(l, 1),
-				"GET",
+				"POST",
 				lua.CheckString(l, 2),
 				lua.CheckString(l, 3),
 				lua.OptString(l, 4, ""),
