@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"
@@ -85,20 +86,29 @@ Done:
 	for len(errorChannel) > 0 {
 	}
 
+	// Give error channel a moment to complete jobs in progress
+	time.Sleep(100 * time.Millisecond)
+
 	log.Println("No more jobs to run; exiting.")
 }
 
 func run() {
 	if err := database.Init(configFile, errorChannel); err != nil {
-		log.Fatalf("Initialization error: %s", err)
+		errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
+		completionChannel <- true
+		return
 	}
 
 	if err := database.MergeDatabaseWithConfigFile(configFile); err != nil {
-		log.Fatalf("Initialization error: %s", err)
+		errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
+		completionChannel <- true
+		return
 	}
 
 	if err := graphite.Init(configFile, errorChannel); err != nil {
-		log.Fatalf("Initialization error: %s", err)
+		errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
+		completionChannel <- true
+		return
 	}
 
 	oauth.Init(configFile.OAuthConfig())
@@ -119,17 +129,23 @@ func run() {
 
 		serverListening, err := routes.Init(configFile, errorChannel)
 		if err != nil {
-			log.Fatalf("Initialization error: %s", err)
+			errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
+			completionChannel <- true
+			return
 		}
 
 		if serverListening {
 			if err := job.Init(configFile, errorChannel, nil); err != nil {
-				log.Fatalf("Initialization error: %s", err)
+				errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
+				completionChannel <- true
+				return
 			}
 			routes.SetAdditionalRoutes()
 		} else {
 			if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
-				log.Fatalf("Initialization error: %s", err)
+				errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
+				completionChannel <- true
+				return
 			}
 		}
 

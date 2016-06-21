@@ -58,7 +58,7 @@ var oauthLibrary = []lua.RegistryFunction{
 				"GET",
 				lua.CheckString(l, 2),
 				"",
-				lua.OptString(l, 4, ""),
+				lua.OptString(l, 3, ""),
 			)
 		},
 	},
