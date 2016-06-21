@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"net"
 
 	"github.com/gin-gonic/gin"
 
@@ -51,8 +52,21 @@ func Init(cfg config.Interface, errorChannel chan error) (bool, error) {
 
 	listen := cfg.Listen()
 	if len(listen) == 0 {
-		listen = ":8080"
+		listen = ":9800"
 	}
+
+	// Check to see if the listen port is open
+	server, err := net.Listen("tcp", listen)
+
+	// If there is an error then the port is likely unavailable. Notify user and do not start the API server
+	if err != nil {
+		errorChannel <- gotelemetry.NewLogError("Port %s is not available. Server will not run. Please specify a different port using the config file or `--listen` flag.", listen)
+		return false, nil
+	}
+
+	// We will not be using this server so close it
+	server.Close()
+
 	errorChannel <- gotelemetry.NewLogError("Listening at port: %s", listen)
 	errorChannel <- gotelemetry.NewLogError("Your Authentication Key is: %s", authKey)
 
