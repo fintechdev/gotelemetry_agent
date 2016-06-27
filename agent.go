@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"fmt"
 	"time"
 
 	"github.com/telemetryapp/gotelemetry"
@@ -24,7 +24,7 @@ var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
 var apiStreamChannel chan string
-var apiRunning bool
+var streamRunning bool
 
 func handleErrors(errorChannel chan error, apiStreamChannel chan string) {
 
@@ -51,8 +51,7 @@ func handleErrors(errorChannel chan error, apiStreamChannel chan string) {
 
 					fmtMessage := fmt.Sprintf("%s: %s", prefix, err)
 
-					// Send the data through through the API
-					if apiRunning {
+					if streamRunning {
 						apiStreamChannel <- fmtMessage
 					}
 
@@ -152,8 +151,7 @@ func run() {
 				return
 			}
 
-			apiRunning = true
-			routes.SetAdditionalRoutes(apiStreamChannel)
+			routes.SetAdditionalRoutes(apiStreamChannel, &streamRunning)
 
 		} else {
 			if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
