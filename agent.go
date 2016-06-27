@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -22,8 +23,10 @@ var VERSION = "3.0.2"
 var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
+var apiStreamChannel chan string
+var streamRunning bool
 
-func handleErrors(errorChannel chan error) {
+func handleErrors(errorChannel chan error, apiStreamChannel chan string) {
 
 	for {
 		select {
@@ -46,7 +49,13 @@ func handleErrors(errorChannel chan error) {
 						prefix = "Debug"
 					}
 
-					log.Printf("%s: %s", prefix, err)
+					fmtMessage := fmt.Sprintf("%s: %s", prefix, err)
+
+					if streamRunning {
+						apiStreamChannel <- fmtMessage
+					}
+
+					log.Print(fmtMessage)
 				}
 
 				continue
@@ -70,8 +79,9 @@ func main() {
 
 	errorChannel = make(chan error, 0)
 	completionChannel = make(chan bool, 1)
+	apiStreamChannel = make(chan string, 2)
 
-	go handleErrors(errorChannel)
+	go handleErrors(errorChannel, apiStreamChannel)
 	go run()
 
 	for {
@@ -140,7 +150,9 @@ func run() {
 				completionChannel <- true
 				return
 			}
-			routes.SetAdditionalRoutes()
+
+			routes.SetAdditionalRoutes(apiStreamChannel, &streamRunning)
+
 		} else {
 			if err := job.Init(configFile, errorChannel, completionChannel); err != nil {
 				errorChannel <- gotelemetry.NewLogError("Initialization error: %s", err)
