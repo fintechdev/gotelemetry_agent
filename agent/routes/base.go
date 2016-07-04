@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"container/list"
 
 	"github.com/gin-gonic/gin"
 
@@ -178,8 +179,8 @@ func errorFunc(errorChannel chan error) gin.HandlerFunc {
 
 // SetAdditionalRoutes initializes all non-configuration routes as the dependencies
 // because these routes may not be set at the time of execution for Init()
-func SetAdditionalRoutes(apiStreamChannel chan string, streamRunning *bool) {
+func SetAdditionalRoutes(apiStreamChannel chan string, streamRunning *bool, logList *list.List) {
 	jobsRoute(g)
 	statsRoute(g)
-	logsRoute(g, apiStreamChannel, streamRunning)
+	logsRoute(g, apiStreamChannel, streamRunning, logList)
 }

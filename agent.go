@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"time"
+	"container/list"
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"
@@ -19,14 +20,14 @@ import (
 
 // VERSION number automatically populated by goxc config file
 var VERSION = "3.0.2"
-
 var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool
 var apiStreamChannel chan string
 var streamRunning bool
+var logList *list.List
 
-func handleErrors(errorChannel chan error, apiStreamChannel chan string) {
+func handleErrors() {
 
 	for {
 		select {
@@ -50,6 +51,12 @@ func handleErrors(errorChannel chan error, apiStreamChannel chan string) {
 					}
 
 					fmtMessage := fmt.Sprintf("%s: %s", prefix, err)
+
+					// Maintain a list of the 100 most recent log items
+					for logList.Len() >= 100 {
+						logList.Remove(logList.Front())
+					}
+					logList.PushBack(fmtMessage)
 
 					if streamRunning {
 						apiStreamChannel <- fmtMessage
@@ -80,8 +87,9 @@ func main() {
 	errorChannel = make(chan error, 0)
 	completionChannel = make(chan bool, 1)
 	apiStreamChannel = make(chan string, 2)
+	logList = list.New()
 
-	go handleErrors(errorChannel, apiStreamChannel)
+	go handleErrors()
 	go run()
 
 	for {
@@ -151,7 +159,7 @@ func run() {
 				return
 			}
 
-			routes.SetAdditionalRoutes(apiStreamChannel, &streamRunning)
+			routes.SetAdditionalRoutes(apiStreamChannel, &streamRunning, logList)
 
 		} else {
 			if err := job.Init(configFile, errorChannel, completionChannel); err != nil {

@@ -4,12 +4,20 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"container/list"
 )
 
-func logsRoute(g *gin.Engine, apiStreamChannel chan string, streamRunning *bool) {
+func logsRoute(g *gin.Engine, apiStreamChannel chan string, streamRunning *bool, logList *list.List) {
 
 	// returns the most recent X (say 100) log events
 	g.GET("/logs", func(g *gin.Context) {
+
+		var logArray []string
+
+		for e := logList.Front(); e != nil; e = e.Next() {
+			logArray = append(logArray, e.Value.(string))
+		}
+		g.JSON(http.StatusOK, logArray)
 	})
 
 	// returns an event source stream of the live log events from the agent
