@@ -49,6 +49,14 @@ func Init(configFile config.Interface, errorChannel chan error) error {
 			return err
 		}
 
+		if _, err = tx.CreateBucketIfNotExists([]byte("_strings")); err != nil {
+			return err
+		}
+
+		if _, err = tx.CreateBucketIfNotExists([]byte("_tables")); err != nil {
+			return err
+		}
+
 		if _, err = tx.CreateBucketIfNotExists([]byte("_oauth")); err != nil {
 			return err
 		}
