@@ -1,12 +1,12 @@
 package routes
 
 import (
+	"container/list"
 	"fmt"
 	"net"
 	"net/http"
 	"strings"
 	"time"
-	"container/list"
 
 	"github.com/gin-gonic/gin"
 

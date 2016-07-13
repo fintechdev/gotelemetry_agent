@@ -1,12 +1,12 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"time"
-	"container/list"
 
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent"

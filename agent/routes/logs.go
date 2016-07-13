@@ -1,10 +1,10 @@
 package routes
 
 import (
+	"container/list"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"container/list"
 )
 
 func logsRoute(g *gin.Engine, apiStreamChannel chan string, streamRunning *bool, logList *list.List) {

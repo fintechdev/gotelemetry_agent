@@ -30,6 +30,7 @@ type graphite struct {
 // Setup instantiates the endpoints used for manipulating jobs
 func configRoute(g *gin.Engine, cfg agentConfig.Interface) {
 	g.PATCH("/config", updateFunc(cfg))
+	g.GET("/config", returnFunc(cfg))
 }
 
 func updateFunc(cfg agentConfig.Interface) gin.HandlerFunc {
@@ -53,11 +54,26 @@ func updateFunc(cfg agentConfig.Interface) gin.HandlerFunc {
 		if len(data.Graphite.UDPListenPort) > 0 {
 			database.WriteConfigParam("listen_udp", data.Graphite.UDPListenPort)
 			cfg.SetUDPListenPort(data.Graphite.UDPListenPort)
-		} else if len(data.Graphite.TCPListenPort) > 0 {
+		}
+
+		if len(data.Graphite.TCPListenPort) > 0 {
 			database.WriteConfigParam("listen_tcp", data.Graphite.TCPListenPort)
 			cfg.SetTCPListenPort(data.Graphite.TCPListenPort)
 		}
 
 		g.Status(http.StatusNoContent)
+	}
+}
+
+func returnFunc(cfg agentConfig.Interface) gin.HandlerFunc {
+	return func(g *gin.Context) {
+
+		configMap := map[string]string{
+			"ttl":        cfg.DatabaseTTL(),
+			"listen_udp": cfg.GraphiteConfig().UDPListenPort,
+			"listen_tcp": cfg.GraphiteConfig().TCPListenPort,
+		}
+
+		g.JSON(http.StatusOK, configMap)
 	}
 }
