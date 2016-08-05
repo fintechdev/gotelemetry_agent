@@ -6,7 +6,7 @@
 		"default"
 	],
 	"BuildConstraints": "!plan9,!nacl,!solaris",
-	"PackageVersion": "3.0.3",
+	"PackageVersion": "3.1.0",
 	"TaskSettings": {
 		"go-fmt": {
 			"dir": "./..."
@@ -21,7 +21,7 @@
 			"dir": "./..."
 		},
 		"publish-github": {
-			"body": "- Added log event stream endpoint\n- Added heartbeat endpoint to show online/offline status in EDM app\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
+			"body": "- Official app.telemetrytv.com release version\n- Added log event stream endpoint\n- Added heartbeat endpoint to show online/offline status in EDM app\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
 			"owner": "telemetryapp",
 			"repository": "gotelemetry_agent"
 		}
