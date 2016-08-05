@@ -6,7 +6,7 @@
 		"default"
 	],
 	"BuildConstraints": "!plan9,!nacl,!solaris",
-	"PackageVersion": "3.0.2",
+	"PackageVersion": "3.0.3",
 	"TaskSettings": {
 		"go-fmt": {
 			"dir": "./..."
@@ -21,7 +21,7 @@
 			"dir": "./..."
 		},
 		"publish-github": {
-			"body": "- The Agent now has an API that allows jobs and settings to be configured remotely\n- Executing the Agent without parameters will now provide instructions for connecting with the TelemetryTV App\n- Plugins are no longer supported\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
+			"body": "- Added log event stream endpoint\n- Added heartbeat endpoint to show online/offline status in EDM app\n\n**Mac OS X Users Note:** The Agent for your platform will be the darwin_amd64 or darwin_386 releases.",
 			"owner": "telemetryapp",
 			"repository": "gotelemetry_agent"
 		}
