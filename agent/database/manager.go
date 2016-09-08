@@ -94,7 +94,7 @@ func Init(configFile config.Interface, errorChannel chan error) error {
 		manager.databaseCleanup()
 
 		// Begin the database trim routine
-		ticker := time.NewTicker(ttl)
+		ticker := time.NewTicker(timeInterval)
 		go func() {
 			for {
 				select {
