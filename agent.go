@@ -19,7 +19,7 @@ import (
 )
 
 // VERSION number automatically populated by goxc config file
-var VERSION = "3.1.0"
+var VERSION = "3.1.1"
 var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool

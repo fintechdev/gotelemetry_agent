@@ -430,7 +430,7 @@ func (s *Series) TrimCount(count int) error {
 		for i := 1; i <= count; i++ {
 			k, _ = cursor.Prev()
 			// We do nothing if we hit a nil value before the trim point
-			if k != nil {
+			if k == nil {
 				return nil
 			}
 		}
