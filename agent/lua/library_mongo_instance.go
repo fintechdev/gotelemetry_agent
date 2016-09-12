@@ -137,6 +137,9 @@ func convertTypes(query map[string]interface{}) (interface{}, error) {
 						return nil, err
 					}
 					query[key] = bson.ObjectId(objectIDBytes)
+				} else if strings.HasPrefix(valueType, "#RegEx=") {
+					regExString := strings.TrimPrefix(valueType, "#RegEx=")
+					query[key] = bson.RegEx{Pattern: regExString, Options: ""}
 				}
 			}
 		}
