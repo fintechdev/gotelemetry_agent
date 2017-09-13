@@ -3,9 +3,9 @@ package lua
 import (
 	"encoding/json"
 
+	"github.com/globalsign/mgo"
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
-	"gopkg.in/mgo.v2"
 )
 
 var mongoDBFunctions = map[string]func(db *mgo.Database) lua.Function{

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/globalsign/mgo"
 	"github.com/telemetryapp/go-lua"
 	"github.com/telemetryapp/goluago/util"
-	"gopkg.in/mgo.v2"
 )
 
 var mongoConnectionFunctions = map[string]func(s *mgo.Session) lua.Function{
