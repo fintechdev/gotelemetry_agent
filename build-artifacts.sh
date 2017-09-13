@@ -11,6 +11,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 rm -vf $DIR/artifacts/gotelemetry_agent-linux-amd64 || echo no previous artifact gotelemetry_agent-linux-amd64 found
+rm -vf $DIR/artifacts/gotelemetry_agent-darwin-amd64 || echo no previous artifact gotelemetry_agent-darwin-amd64 found
 
 cd $DIR
 docker build -t gotelemetry_agent-artifacts-builder .

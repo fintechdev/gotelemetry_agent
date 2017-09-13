@@ -33,6 +33,8 @@ var mongoCollectionFunctions = map[string]func(c *mgo.Collection) lua.Function{
 					if err != nil {
 						lua.Errorf(l, "%s", err.Error())
 					}
+				} else {
+					lua.Errorf(l, "failed to convert query to 'map[string]interface{}' (pre-requisite to convert types)")
 				}
 			}
 
@@ -75,6 +77,23 @@ var mongoQueryFunctions = map[string]func(query *mgo.Query) lua.Function{
 			}
 
 			pushMongoResult(l, &result)
+
+			return 1
+		}
+	},
+	"one": func(query *mgo.Query) lua.Function {
+		return func(l *lua.State) int {
+			var result interface{}
+
+			err := query.One(&result)
+
+			if err != nil {
+				lua.Errorf(l, "%s", err.Error())
+			}
+
+			var p []interface{}
+			p = append(p, result)
+			pushMongoResult(l, &p)
 
 			return 1
 		}
@@ -130,6 +149,13 @@ func convertTypes(query map[string]interface{}) (interface{}, error) {
 						return nil, err
 					}
 					query[key] = time.Unix(timestampInt, 0)
+				} else if strings.HasPrefix(valueType, "#ISODate=") {
+					timestampString := strings.TrimPrefix(valueType, "#ISODate=")
+					t, err := time.Parse(time.RFC3339, timestampString)
+					if err != nil {
+						return nil, err
+					}
+					query[key] = t
 				} else if strings.HasPrefix(valueType, "#ObjectId=") {
 					objectIDString := strings.TrimPrefix(valueType, "#ObjectId=")
 					objectIDBytes, err := hex.DecodeString(objectIDString)

@@ -106,6 +106,7 @@ func parseMongoURI(rawURI string) (*mgo.DialInfo, error) {
 		Addrs:    strings.Split(uri.Host, ","),
 		Database: strings.TrimPrefix(uri.Path, "/"),
 		Timeout:  10 * time.Second,
+		FailFast: true,
 	}
 
 	if uri.User != nil {
