@@ -16,10 +16,11 @@ import (
 	"github.com/telemetryapp/gotelemetry_agent/agent/job"
 	"github.com/telemetryapp/gotelemetry_agent/agent/oauth"
 	"github.com/telemetryapp/gotelemetry_agent/agent/routes"
+	"github.com/telemetryapp/gotelemetry_agent/version"
 )
 
 // VERSION number automatically populated by goxc config file
-var VERSION = "3.1.1-ftd3"
+var VERSION = version.GetVersion().String()
 var configFile *config.File
 var errorChannel chan error
 var completionChannel chan bool

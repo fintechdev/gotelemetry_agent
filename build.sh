@@ -23,7 +23,7 @@ GIT_DIRTY="$(test -n "`git status --porcelain`" && echo "+CHANGES" || true)"
 #arch=amd64
 echo
 echo "Building gotelemetry_agent-$os-$arch now..."
-GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build -v \
+GOOS="$os" GOARCH="$arch" CGO_ENABLED=1 go build -v \
   -o $ARTIFACTS_DIR/gotelemetry_agent-$os-$arch \
   -ldflags "-X github.com/telemetryapp/gotelemetry_agent/version.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
   github.com/telemetryapp/gotelemetry_agent
