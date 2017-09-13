@@ -59,7 +59,7 @@ var CLIConfig CLIConfigType
 
 func banner(version string) {
 	println()
-	println("Telemetry Agent v" + version)
+	println("Telemetry Agent " + version)
 	println("Copyright © 2012-2016 Telemetry Inc.")
 	println()
 	println("For license information, see the LICENSE file")
@@ -69,7 +69,7 @@ func banner(version string) {
 
 // Init the Agent by initializing flags and displaying on screen data
 func Init(version string) {
-	gotelemetry.UserAgentString = "Telemetry Agent v" + version
+	gotelemetry.UserAgentString = "Telemetry Agent " + version
 	banner(version)
 
 	app := kingpin.New("telemetry_agent", "The Telemetry Agent")
