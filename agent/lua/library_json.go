@@ -8,9 +8,9 @@ import (
 )
 
 var jsonLibrary = []lua.RegistryFunction{
-	{
-		"encode",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "encode",
+		Function: func(l *lua.State) int {
 			lua.CheckAny(l, 1)
 
 			var v interface{}
@@ -35,10 +35,9 @@ var jsonLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
-
-	{
-		"decode",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "decode",
+		Function: func(l *lua.State) int {
 			var res interface{}
 			err := json.Unmarshal([]byte(lua.CheckString(l, 1)), &res)
 

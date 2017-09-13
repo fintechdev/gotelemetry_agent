@@ -41,8 +41,8 @@ func WriteJob(job config.Job) error {
 
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_jobs"))
-		err := bucket.Put([]byte(job.ID), jobMarshal)
-		return err
+		err2 := bucket.Put([]byte(job.ID), jobMarshal)
+		return err2
 	})
 
 	return err

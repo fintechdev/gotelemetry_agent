@@ -49,9 +49,9 @@ func oauthRequest(l *lua.State, entryName, method, urlString string, body string
 }
 
 var oauthLibrary = []lua.RegistryFunction{
-	{
-		"get",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "get",
+		Function: func(l *lua.State) int {
 			return oauthRequest(
 				l,
 				lua.CheckString(l, 1),
@@ -62,10 +62,9 @@ var oauthLibrary = []lua.RegistryFunction{
 			)
 		},
 	},
-
-	{
-		"post",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "post",
+		Function: func(l *lua.State) int {
 			return oauthRequest(
 				l,
 				lua.CheckString(l, 1),

@@ -66,7 +66,7 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 	}
 
 	// Fetch jobs located in the database. Do not add jobs already included in the config file
-	jobsDatabase, err := database.GetAllJobs()
+	jobsDatabase, _ := database.GetAllJobs()
 	for _, jobDescription := range jobsDatabase {
 		if _, found := jobManager.jobs[jobDescription.ID]; found {
 			continue

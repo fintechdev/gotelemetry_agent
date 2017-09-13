@@ -76,7 +76,7 @@ func setupUDPListener(listen string, errorChannel chan error) {
 		if n, addr, err := conn.ReadFromUDP(buf); err == nil {
 			remoteAddress := addr.String() + ", UDP"
 
-			if err := parseRequest(remoteAddress, string(buf[0:n]), errorChannel); err != nil {
+			if err = parseRequest(remoteAddress, string(buf[0:n]), errorChannel); err != nil {
 				errorChannel <- gotelemetry.NewErrorWithFormat(400, "Graphite => [%s, UDP] Error %s while receving data", nil, addr, err)
 			}
 		} else {

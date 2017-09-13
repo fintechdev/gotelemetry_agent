@@ -5,9 +5,9 @@ import (
 )
 
 var mongoLibrary = []lua.RegistryFunction{
-	{
-		"open",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "open",
+		Function: func(l *lua.State) int {
 			connString := lua.CheckString(l, 1)
 
 			pushGoConnection(l, connString)

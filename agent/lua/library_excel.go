@@ -7,9 +7,9 @@ import (
 )
 
 var excelLibrary = []lua.RegistryFunction{
-	{
-		"import",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "import",
+		Function: func(l *lua.State) int {
 
 			path := lua.CheckString(l, 1)
 

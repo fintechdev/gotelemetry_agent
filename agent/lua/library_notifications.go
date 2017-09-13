@@ -13,9 +13,9 @@ type notificationProvider interface {
 
 func openNotificationsLibrary(l *lua.State, p notificationProvider) {
 	var notificationsLibrary = []lua.RegistryFunction{
-		{
-			"post",
-			func(l *lua.State) int {
+		lua.RegistryFunction{
+			Name: "post",
+			Function: func(l *lua.State) int {
 				channelTag := lua.CheckString(l, 1)
 				flowTag := lua.CheckString(l, 2)
 				title := lua.CheckString(l, 3)

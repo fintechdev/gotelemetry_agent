@@ -7,9 +7,9 @@ import (
 )
 
 var xmlLibrary = []lua.RegistryFunction{
-	{
-		"encode",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "encode",
+		Function: func(l *lua.State) int {
 			lua.CheckAny(l, 1)
 
 			var v interface{}
@@ -34,10 +34,9 @@ var xmlLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
-
-	{
-		"decode",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "decode",
+		Function: func(l *lua.State) int {
 			res, err := mxj.NewMapXml([]byte(lua.CheckString(l, 1)))
 
 			if err != nil {

@@ -197,7 +197,7 @@ var seriesFunctions = map[string]func(s *database.Series) lua.Function{
 	"aggregate": func(s *database.Series) lua.Function {
 		return func(l *lua.State) int {
 			functionType := lua.CheckInteger(l, 1)
-			interval := 0
+			var interval int
 			count := lua.CheckInteger(l, 3)
 			end := time.Unix(int64(lua.OptInteger(l, 4, int(time.Now().Unix()))), 0)
 

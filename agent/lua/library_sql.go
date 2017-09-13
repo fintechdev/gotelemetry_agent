@@ -5,9 +5,9 @@ import (
 )
 
 var sqlLibrary = []lua.RegistryFunction{
-	{
-		"open",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "open",
+		Function: func(l *lua.State) int {
 			driver := lua.CheckString(l, 1)
 			connString := lua.CheckString(l, 2)
 

@@ -6,17 +6,17 @@ import (
 )
 
 var storageLibrary = []lua.RegistryFunction{
-	{
-		"series",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "series",
+		Function: func(l *lua.State) int {
 			pushSeries(l, lua.CheckString(l, 1))
 
 			return 1
 		},
 	},
-	{
-		"series_find",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "series_find",
+		Function: func(l *lua.State) int {
 			res, err := database.FindSeries(lua.CheckString(l, 1))
 
 			if err != nil {
@@ -33,9 +33,9 @@ var storageLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
-	{
-		"counter",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "counter",
+		Function: func(l *lua.State) int {
 			pushCounter(l, lua.CheckString(l, 1))
 
 			return 1

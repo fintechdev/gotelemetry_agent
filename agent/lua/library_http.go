@@ -14,9 +14,9 @@ import (
 )
 
 var httpLibrary = []lua.RegistryFunction{
-	{
-		"get",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "get",
+		Function: func(l *lua.State) int {
 			url := lua.CheckString(l, 1)
 
 			req, err := http.NewRequest("GET", url, nil)
@@ -94,10 +94,9 @@ var httpLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
-
-	{
-		"post",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "post",
+		Function: func(l *lua.State) int {
 			url := lua.CheckString(l, 1)
 			body := lua.CheckString(l, 2)
 
@@ -176,10 +175,9 @@ var httpLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
-
-	{
-		"custom",
-		func(l *lua.State) int {
+	lua.RegistryFunction{
+		Name: "custom",
+		Function: func(l *lua.State) int {
 			method := lua.CheckString(l, 1)
 			url := lua.CheckString(l, 2)
 			body := lua.OptString(l, 3, "")

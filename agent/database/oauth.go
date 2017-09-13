@@ -25,9 +25,9 @@ func WriteOAuthToken(key string, token interface{}) error {
 	err = manager.conn.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte("_oauth"))
 
-		err := bucket.Put([]byte(key), data)
+		err2 := bucket.Put([]byte(key), data)
 
-		return err
+		return err2
 	})
 
 	return err
