@@ -207,7 +207,13 @@ func parseMongoURI(rawURI string) (*mgo.DialInfo, error) {
 		}
 
 		info.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
-			return tls.Dial("tcp", addr.String(), &tlsConfig)
+			dialer := &net.Dialer{
+				Timeout:   time.Duration(10 * time.Second),
+				Deadline:  time.Now().Add(30 * time.Second),
+				KeepAlive: time.Duration(60 * time.Second),
+			}
+			return tls.DialWithDialer(dialer, "tcp", addr.String(), &tlsConfig)
+			//return tls.Dial("tcp", addr.String(), &tlsConfig)
 		}
 	}
 
