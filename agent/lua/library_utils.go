@@ -58,7 +58,7 @@ var utilsLibrary = []lua.RegistryFunction{
 
 func openUtilsLibrary(l *lua.State) {
 	open := func(l *lua.State) int {
-		lua.NewLibrary(l, jsonLibrary)
+		lua.NewLibrary(l, utilsLibrary)
 		return 1
 	}
 
