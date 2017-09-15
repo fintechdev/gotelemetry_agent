@@ -23,6 +23,7 @@ func Exec(source string, np notificationProvider, args map[string]interface{}) (
 
 	openOAuthLibrary(l)
 	openJSONLibrary(l)
+	openUtilsLibrary(l)
 	openHTTPLibrary(l)
 	openStorageLibrary(l)
 	openExcelLibrary(l)
