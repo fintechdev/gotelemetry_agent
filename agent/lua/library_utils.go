@@ -54,6 +54,52 @@ var utilsLibrary = []lua.RegistryFunction{
 			return 1
 		},
 	},
+	lua.RegistryFunction{
+		Name: "nowutcepoch",
+		Function: func(l *lua.State) int {
+			util.DeepPush(l, int(time.Now().UTC().Unix()))
+			return 1
+		},
+	},
+	lua.RegistryFunction{
+		Name: "nowepoch",
+		Function: func(l *lua.State) int {
+			util.DeepPush(l, int(time.Now().Unix()))
+			return 1
+		},
+	},
+	lua.RegistryFunction{
+		Name: "nowplussecondsepoch",
+		Function: func(l *lua.State) int {
+			seconds := lua.CheckInteger(l, 1)
+			util.DeepPush(l, int(time.Now().Add(time.Duration(seconds)*time.Second).Unix()))
+			return 1
+		},
+	},
+	lua.RegistryFunction{
+		Name: "nowutcplussecondsepoch",
+		Function: func(l *lua.State) int {
+			seconds := lua.CheckInteger(l, 1)
+			util.DeepPush(l, int(time.Now().UTC().Add(time.Duration(seconds)*time.Second).Unix()))
+			return 1
+		},
+	},
+	lua.RegistryFunction{
+		Name: "nowminussecondsepoch",
+		Function: func(l *lua.State) int {
+			seconds := lua.CheckInteger(l, 1)
+			util.DeepPush(l, int(time.Now().Add(-time.Duration(seconds)*time.Second).Unix()))
+			return 1
+		},
+	},
+	lua.RegistryFunction{
+		Name: "nowutcminussecondsepoch",
+		Function: func(l *lua.State) int {
+			seconds := lua.CheckInteger(l, 1)
+			util.DeepPush(l, int(time.Now().UTC().Add(-time.Duration(seconds)*time.Second).Unix()))
+			return 1
+		},
+	},
 }
 
 func openUtilsLibrary(l *lua.State) {
