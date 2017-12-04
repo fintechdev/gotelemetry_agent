@@ -4,24 +4,25 @@ import (
 	"strings"
 )
 
+// Board struct
 type Board struct {
-	credentials      Credentials `json:"-"`
-	Prefix           string      `json:"-"`
-	Id               string      `json:"id,omitempty"`
-	Name             string      `json:"name,omitempty"`
-	Theme            string      `json:"theme,omitempty"`
-	DisplayName      bool        `json:"display_board_name,omitempty"`
-	AspectRatio      string      `json:"aspect_ratio,omitempty"`
-	FontFamily       string      `json:"font_family",omitempty`
-	FontSize         string      `json:"font_size",omitempty`
-	WidgetBackground string      `json:"widget_background",omitempty`
-	WidgetMargins    int64       `json:"widget_margins",omitempty`
-	WidgetPadding    int64       `json:"widget_padding",omitempty`
-	Widgets          []*Widget   `json:"widgets,omitempty"`
-	ChannelIds       []string    `json:"channel_ids",omitempty"`
+	credentials      Credentials
+	Prefix           string    `json:"-"`
+	ID               string    `json:"id,omitempty"`
+	Name             string    `json:"name,omitempty"`
+	Theme            string    `json:"theme,omitempty"`
+	DisplayName      bool      `json:"display_board_name,omitempty"`
+	AspectRatio      string    `json:"aspect_ratio,omitempty"`
+	FontFamily       string    `json:"font_family,omitempty"`
+	FontSize         string    `json:"font_size,omitempty"`
+	WidgetBackground string    `json:"widget_background,omitempty"`
+	WidgetMargins    int64     `json:"widget_margins,omitempty"`
+	WidgetPadding    int64     `json:"widget_padding,omitempty"`
+	Widgets          []*Widget `json:"widgets,omitempty"`
+	ChannelIds       []string  `json:"channel_ids,omitempty"`
 }
 
-// Creates a new board in Telemetry by informing the basic parameters and return a new *Board instance
+// NewBoard creates a new board in Telemetry by informing the basic parameters and return a new *Board instance
 func NewBoard(credentials Credentials, name, theme string, displayName bool, aspectRatio string) (*Board, error) {
 	result := &Board{
 		credentials: credentials,
@@ -36,7 +37,7 @@ func NewBoard(credentials Credentials, name, theme string, displayName bool, asp
 	return result, nil
 }
 
-// Returns a board from Telemetry API by its ID
+// GetBoard returns a board from Telemetry API by its ID
 func GetBoard(credentials Credentials, id string) (*Board, error) {
 	request, err := buildRequest("GET", credentials, "/boards/"+id, nil)
 
@@ -57,6 +58,7 @@ func GetBoard(credentials Credentials, id string) (*Board, error) {
 	return b, err
 }
 
+// GetBoardByName function
 func GetBoardByName(credentials Credentials, name string) (*Board, error) {
 	request, err := buildRequest("GET", credentials, "/boards", nil, map[string]string{"name": name})
 
@@ -82,6 +84,7 @@ func GetBoardByName(credentials Credentials, name string) (*Board, error) {
 	return result, err
 }
 
+// Save function
 func (b *Board) Save() error {
 	request, err := buildRequest("POST", b.credentials, "/boards", b)
 
@@ -94,9 +97,9 @@ func (b *Board) Save() error {
 	return err
 }
 
-// Deletes a board from Telemetry
+// Delete deletes a board from Telemetry
 func (b *Board) Delete() error {
-	request, err := buildRequest("DELETE", b.credentials, "/boards/"+b.Id, nil)
+	request, err := buildRequest("DELETE", b.credentials, "/boards/"+b.ID, nil)
 
 	if err != nil {
 		return err
@@ -106,11 +109,12 @@ func (b *Board) Delete() error {
 	return err
 }
 
+// MapWidgetsToFlows function
 func (b *Board) MapWidgetsToFlows() (map[string]*Flow, error) {
 	var err error
 
 	if b.Widgets == nil {
-		if b, err = GetBoard(b.credentials, b.Id); err != nil {
+		if b, err = GetBoard(b.credentials, b.ID); err != nil {
 			return nil, err
 		}
 	}

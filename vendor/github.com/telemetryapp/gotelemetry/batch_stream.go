@@ -1,6 +1,7 @@
 package gotelemetry
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -10,9 +11,9 @@ type batchStreamSubmission struct {
 	data           interface{}
 }
 
+// BatchStream struct
 type BatchStream struct {
 	C              chan batchStreamSubmission
-	errorChannel   chan error
 	credentials    Credentials
 	channelTag     string
 	control        chan bool
@@ -20,14 +21,29 @@ type BatchStream struct {
 	updateInterval time.Duration
 }
 
-func NewBatchStream(credentials Credentials, channelTag string, submissionInterval time.Duration, errorChannel chan error) (*BatchStream, error) {
+// NewBatchStream function
+func NewBatchStream(credentials Credentials, channelTag string, submissionInterval time.Duration, disableKeepAlives, disableCompression bool) (*BatchStream, error) {
 	if submissionInterval < time.Second {
 		return nil, NewError(500, "Invalid submission interval (must be >= 1s)")
 	}
 
+	// TODO: the client should belong to BatchStream, however, this is impossible
+	//       in the current implementation, we need to work with one global
+	//       static value.
+	client = &http.Client{
+		Transport: &http.Transport{
+			IdleConnTimeout:       120 * time.Second,
+			TLSHandshakeTimeout:   15 * time.Second,
+			ResponseHeaderTimeout: 15 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+			DisableKeepAlives:     disableKeepAlives,
+			DisableCompression:    disableCompression,
+		},
+		Timeout: 30 * time.Second,
+	}
+
 	result := &BatchStream{
 		C:              make(chan batchStreamSubmission, 10),
-		errorChannel:   errorChannel,
 		credentials:    credentials,
 		channelTag:     channelTag,
 		control:        make(chan bool, 0),
@@ -40,6 +56,7 @@ func NewBatchStream(credentials Credentials, channelTag string, submissionInterv
 	return result, nil
 }
 
+// Send function
 func (b *BatchStream) Send(f *Flow) {
 	b.C <- batchStreamSubmission{
 		submissionType: BatchTypePOST,
@@ -48,6 +65,7 @@ func (b *BatchStream) Send(f *Flow) {
 	}
 }
 
+// SendData function
 func (b *BatchStream) SendData(tag string, data interface{}, submissionType BatchType) {
 	b.C <- batchStreamSubmission{
 		submissionType: submissionType,
@@ -56,10 +74,12 @@ func (b *BatchStream) SendData(tag string, data interface{}, submissionType Batc
 	}
 }
 
+// Stop function
 func (b *BatchStream) Stop() {
 	b.control <- true
 }
 
+// Flush function
 func (b *BatchStream) Flush() {
 	b.sendUpdates()
 	b.Stop()
@@ -77,8 +97,6 @@ func (b *BatchStream) handle() {
 		case <-b.control:
 
 			b.sendUpdates()
-			return
-
 			return
 
 		case <-t:
@@ -107,9 +125,8 @@ func (b *BatchStream) sendUpdates() {
 
 	for submissionType, batch := range batches {
 		err := batch.Publish(b.credentials, b.channelTag, submissionType)
-
-		if err != nil && b.errorChannel != nil {
-			b.errorChannel <- err
+		if err != nil {
+			logger.Error("failed to publish batch", "error", err.Error())
 		}
 	}
 

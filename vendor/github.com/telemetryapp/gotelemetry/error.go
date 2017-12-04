@@ -5,14 +5,19 @@ import (
 	"strings"
 )
 
+// LogLevel type
 type LogLevel int
 
 const (
+	// LogLevelDebug constant
 	LogLevelDebug LogLevel = 100
-	LogLevelLog   LogLevel = 200
+	// LogLevelLog constant
+	LogLevelLog LogLevel = 200
+	// LogLevelError constant
 	LogLevelError LogLevel = 300
 )
 
+// Error struct
 type Error struct {
 	StatusCode int         // HTTP status code of the error
 	Message    string      // Error message
@@ -20,18 +25,22 @@ type Error struct {
 	LogLevel   LogLevel    // Whether this is a debug message
 }
 
+// NewError function
 func NewError(statusCode int, message string) *Error {
 	return &Error{statusCode, message, nil, LogLevelError}
 }
 
+// NewErrorWithData function
 func NewErrorWithData(statusCode int, message string, data interface{}) *Error {
 	return &Error{statusCode, message, data, LogLevelError}
 }
 
+// NewErrorWithFormat function
 func NewErrorWithFormat(statusCode int, format string, data interface{}, args ...interface{}) *Error {
 	return &Error{statusCode, fmt.Sprintf(format, args...), data, LogLevelError}
 }
 
+// NewDebugError function
 func NewDebugError(message string, args ...interface{}) *Error {
 	result := NewErrorWithFormat(-1, message, nil, args...)
 	result.SetLogLevel(LogLevelDebug)
@@ -39,6 +48,7 @@ func NewDebugError(message string, args ...interface{}) *Error {
 	return result
 }
 
+// NewLogError function
 func NewLogError(message string, args ...interface{}) *Error {
 	result := NewErrorWithFormat(-1, message, nil, args...)
 	result.SetLogLevel(LogLevelLog)
@@ -68,10 +78,12 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%s (%#v)", e.Message, e.Data)
 }
 
+// SetLogLevel function
 func (e *Error) SetLogLevel(level LogLevel) {
 	e.LogLevel = level
 }
 
+// GetLogLevel function
 func (e *Error) GetLogLevel() LogLevel {
 	return e.LogLevel
 }

@@ -2,60 +2,61 @@ package gotelemetry
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
+// BatchResponse struct
 type BatchResponse struct {
 	Errors  []string `json:"errors"`
 	Skipped []string `json:"skipped"`
 	Updated []string `json:"updated"`
 }
 
+// BatchType type
 type BatchType int
 
 const (
-	BatchTypePOST      BatchType = iota
-	BatchTypePATCH     BatchType = iota
+	// BatchTypePOST constant
+	BatchTypePOST BatchType = iota
+	// BatchTypePATCH constant
+	BatchTypePATCH BatchType = iota
+	// BatchTypeJSONPATCH constant
 	BatchTypeJSONPATCH BatchType = iota
 )
 
-// Type Batch describes a collection of flows that can be submitted simultaneously to the Telemetry servers.
+// Batch type describes a collection of flows that can be submitted simultaneously to the Telemetry servers.
 //
 // Note the underlying data structure of the batch is a map, and therefore batches are not thread safe
 // by default. If you require thread safety, you must mediate access to the batch through some kind
 // of synchronization mechansism, like a mutex.
 type Batch map[string]interface{}
 
-// SetFlow() adds or overwrites a flow to the batch
+// SetFlow adds or overwrites a flow to the batch
 func (b Batch) SetFlow(f *Flow) {
 	b[f.Tag] = f.Data
 }
 
-// SetFlow() adds or overwrites data to the batch
+// SetData adds or overwrites data to the batch
 func (b Batch) SetData(tag string, data interface{}) {
 	b[tag] = data
 }
 
-// DeleteFlow() deletes a flow from the batch
+// DeleteFlow deletes a flow from the batch
 func (b Batch) DeleteFlow(tag string) {
 	delete(b, tag)
 }
 
-// Publish() submits a batch to the Telemetry API servers, and returns either an instance
+// Publish submits a batch to the Telemetry API servers, and returns either an instance
 // of gotelemetry.Error if a REST error occurs, or errors.Error if any other error occurs.
 func (b Batch) Publish(credentials Credentials, channelTag string, submissionType BatchType) error {
 	data := map[string]interface{}{}
 
 	for key, submission := range b {
-		if credentials.DebugChannel != nil {
+		if logger.IsTrace() {
 			payload, _ := json.Marshal(submission)
-
-			credentials.DebugChannel <- NewDebugError(
-				fmt.Sprintf(
-					"About to post flow %s with data %s",
-					key,
-					string(payload),
-				),
+			logger.Trace(
+				"About to post flow with data",
+				"flow", key,
+				"data", string(payload),
 			)
 		}
 
@@ -97,12 +98,19 @@ func (b Batch) Publish(credentials Credentials, channelTag string, submissionTyp
 
 	err = sendJSONRequestInterface(r, &response)
 
-	for _, errString := range response.Errors {
-		credentials.DebugChannel <- NewError(400, "API Error: "+errString)
-	}
-
-	for _, skipped := range response.Skipped {
-		credentials.DebugChannel <- NewError(400, "API Error: The flow `"+skipped+"` was not updated.")
+	if logger.IsWarn() {
+		for _, errString := range response.Errors {
+			logger.Warn(
+				"API Error (Errors)",
+				"error", errString,
+			)
+		}
+		for _, skippedFlow := range response.Skipped {
+			logger.Warn(
+				"API Error (Skipped): The flow was not updated",
+				"flow", skippedFlow,
+			)
+		}
 	}
 
 	return err

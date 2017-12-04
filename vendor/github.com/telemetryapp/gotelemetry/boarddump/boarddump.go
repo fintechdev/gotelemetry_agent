@@ -4,21 +4,22 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/telemetryapp/gotelemetry"
 	"log"
 	"strings"
+
+	"github.com/fintechdev/gotelemetry"
 )
 
 func main() {
 	keyPtr := flag.String("api-key", "", "Telemetry API Key")
 	boardNamePtr := flag.String("n", "", "Name of board to retrieve")
-	boardIdPtr := flag.String("b", "", "ID of board to retrieve")
+	boardIDPtr := flag.String("b", "", "ID of board to retrieve")
 
 	flag.Parse()
 
 	key := strings.TrimSpace(*keyPtr)
 	boardName := strings.TrimSpace(*boardNamePtr)
-	boardId := strings.TrimSpace(*boardIdPtr)
+	boardID := strings.TrimSpace(*boardIDPtr)
 
 	if key == "" {
 		log.Fatal("Missing API Key.")
@@ -30,11 +31,11 @@ func main() {
 		log.Fatalf("Error reported by the Telemetry API while creating a set of credentials: %s", err.Error())
 	}
 
-	if boardName == "" && boardId == "" {
+	if boardName == "" && boardID == "" {
 		log.Fatal("You must specify either a board ID or a board name")
 	}
 
-	if boardName != "" && boardId != "" {
+	if boardName != "" && boardID != "" {
 		log.Fatal("You must specify *either* a board ID or a board name")
 	}
 
@@ -47,10 +48,10 @@ func main() {
 			log.Fatalf("Error reported by the Telemetry API while requesting a board by name: %s", err.Error())
 		}
 
-		boardId = board.Id
+		boardID = board.ID
 	}
 
-	board, err = gotelemetry.GetBoard(credentials, boardId)
+	board, err = gotelemetry.GetBoard(credentials, boardID)
 
 	if err != nil {
 		log.Fatalf("Error reported by the Telemetry API while requesting a board: %s", err.Error())

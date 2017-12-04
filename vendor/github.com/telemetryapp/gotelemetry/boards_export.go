@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 )
 
+// ExportedFlow struct
 type ExportedFlow struct {
 	Tag  string      `json:"tag"`
 	Data interface{} `json:"data"`
 }
 
+// ExportedWidget struct
 type ExportedWidget struct {
 	Flow       *ExportedFlow `json:"flow"`
 	Variant    string        `json:"variant"`
@@ -20,26 +22,28 @@ type ExportedWidget struct {
 	Background string        `json:"background"`
 }
 
+// ExportedBoard struct
 type ExportedBoard struct {
 	Name             string            `json:"name,omitempty"`
 	Theme            string            `json:"theme,omitempty"`
 	DisplayName      bool              `json:"display_board_name,omitempty"`
 	AspectRatio      string            `json:"aspect_ratio,omitempty"`
-	FontFamily       string            `json:"font_family",omitempty`
-	FontSize         string            `json:"font_size",omitempty`
-	WidgetBackground string            `json:"widget_background",omitempty`
-	WidgetMargins    int64             `json:"widget_margins",omitempty`
-	WidgetPadding    int64             `json:"widget_padding",omitempty`
+	FontFamily       string            `json:"font_family,omitempty"`
+	FontSize         string            `json:"font_size,omitempty"`
+	WidgetBackground string            `json:"widget_background,omitempty"`
+	WidgetMargins    int64             `json:"widget_margins,omitempty"`
+	WidgetPadding    int64             `json:"widget_padding,omitempty"`
 	Widgets          []*ExportedWidget `json:"widgets"`
 }
 
+// ImportBoard function
 func ImportBoard(credentials Credentials, name string, prefix string, board *ExportedBoard) (*Board, error) {
 	// First, make sure the board doesn't already exist
 
 	result, err := GetBoardByName(credentials, name)
 
 	if err == nil && result != nil {
-		result, err = GetBoard(credentials, result.Id)
+		result, err = GetBoard(credentials, result.ID)
 
 		if err != nil {
 			return nil, err
@@ -78,7 +82,7 @@ func ImportBoard(credentials Credentials, name string, prefix string, board *Exp
 	}
 
 	for _, exportedWidget := range board.Widgets {
-		var flow *Flow = nil
+		var flow *Flow
 		var err error
 
 		if exportedWidget.Flow != nil {
@@ -130,10 +134,10 @@ func ImportBoard(credentials Credentials, name string, prefix string, board *Exp
 			return nil, err
 		}
 
-		widget.BoardId = result.Id
+		widget.BoardID = result.ID
 
 		if flow != nil {
-			widget.FlowId = flow.Id
+			widget.FlowID = flow.ID
 		}
 
 		err = widget.Save()
@@ -153,6 +157,7 @@ func ImportBoard(credentials Credentials, name string, prefix string, board *Exp
 	return result, nil
 }
 
+// Export function
 func (b *Board) Export() (*ExportedBoard, error) {
 	result := &ExportedBoard{}
 
@@ -189,6 +194,9 @@ func (b *Board) Export() (*ExportedBoard, error) {
 			}
 
 			err = json.Unmarshal(encoded, &result.Widgets[index].Flow)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

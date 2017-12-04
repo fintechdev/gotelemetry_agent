@@ -14,7 +14,7 @@ import (
 	"reflect"
 )
 
-// Struct Flow identifies a flow, defined as the combination of a tag and
+// Flow identifies a flow, defined as the combination of a tag and
 // the data associated with it, which must be a pointer to one of the structs declared
 // in variants.go
 //
@@ -27,8 +27,8 @@ import (
 // of the struct.
 type Flow struct {
 	credentials    Credentials
-	Id             string      `json:"id,omitempty"`
-	EmbedId        string      `json:"embed_id,omitempty"`
+	ID             string      `json:"id,omitempty"`
+	EmbedID        string      `json:"embed_id,omitempty"`
 	Tag            string      `json:"tag"`
 	Data           interface{} `json:"data"`
 	Variant        string      `json:"variant"`
@@ -37,7 +37,7 @@ type Flow struct {
 	Params         string      `json:"params,omitempty"`
 }
 
-// NewFlow() creates a new flow. Note that the `data` parameter *must* be a pointer to
+// NewFlow creates a new flow. Note that the `data` parameter *must* be a pointer to
 // one of the variant structs defined in variant.go. If anything other than a pointer
 // is passed, the function panics to prevent the creation of a silently immutable flow.
 //
@@ -59,6 +59,7 @@ func NewFlow(tag string, data interface{}) *Flow {
 	return &Flow{Tag: tag, Data: data}
 }
 
+// NewFlowWithLayout function
 func NewFlowWithLayout(credentials Credentials, tag string, variant, sourceProvider, filter, params string) (*Flow, error) {
 	result := &Flow{
 		credentials:    credentials,
@@ -78,6 +79,7 @@ func NewFlowWithLayout(credentials Credentials, tag string, variant, sourceProvi
 	return result, nil
 }
 
+// GetFlowLayoutWithTag function
 func GetFlowLayoutWithTag(credentials Credentials, tag string) (*Flow, error) {
 	req, err := buildRequest("GET", credentials, "/flows/"+tag, nil)
 
@@ -96,6 +98,7 @@ func GetFlowLayoutWithTag(credentials Credentials, tag string) (*Flow, error) {
 	return result, nil
 }
 
+// GetFlowLayout function
 func GetFlowLayout(credentials Credentials, id string) (*Flow, error) {
 	req, err := buildRequest("GET", credentials, "/flows/"+id+"/layout", nil)
 
@@ -114,6 +117,7 @@ func GetFlowLayout(credentials Credentials, id string) (*Flow, error) {
 	return result, nil
 }
 
+// SetFlowError function
 func SetFlowError(credentials Credentials, tag string, body interface{}) error {
 	req, err := buildRequest("POST", credentials, "/flows/"+tag+"/error", body)
 
@@ -126,7 +130,7 @@ func SetFlowError(credentials Credentials, tag string, body interface{}) error {
 	return err
 }
 
-// Publish() sends a flow to the Telemetry API servers. On output, the function return
+// Publish sends a flow to the Telemetry API servers. On output, the function return
 // nil if the submission was successful, an instance of gotelemetry.Error if a REST
 // error occurred, or a errors.Error instance otherwise.
 func (f *Flow) Publish(credentials Credentials) error {
@@ -146,6 +150,7 @@ func (f *Flow) Publish(credentials Credentials) error {
 	return err
 }
 
+// Update function
 func (f *Flow) Update(data interface{}) error {
 	encoded, err := json.Marshal(data)
 
@@ -158,6 +163,7 @@ func (f *Flow) Update(data interface{}) error {
 	return nil
 }
 
+// Populate function
 func (f *Flow) Populate(variant string, data interface{}) error {
 	encoded, err := json.Marshal(data)
 
@@ -236,10 +242,10 @@ func (f *Flow) Populate(variant string, data interface{}) error {
 func (f *Flow) Read(credentials Credentials) error {
 	var searchTag string
 
-	if f.EmbedId != "" {
-		searchTag = f.EmbedId
-	} else if f.Id != "" {
-		searchTag = f.Id
+	if f.EmbedID != "" {
+		searchTag = f.EmbedID
+	} else if f.ID != "" {
+		searchTag = f.ID
 	} else {
 		searchTag = f.Tag
 	}
@@ -268,14 +274,14 @@ func (f *Flow) Read(credentials Credentials) error {
 		needsConversion = true
 	}
 
-	err = readJSONResponseBody(res, f.Data, f.credentials.DebugChannel)
+	err = readJSONResponseBody(res, f.Data)
 
 	if err != nil {
 		return err
 	}
 
 	if needsConversion {
-		if err := f.Populate(f.Variant, f.Data); err != nil {
+		if err = f.Populate(f.Variant, f.Data); err != nil {
 			return err
 		}
 	}
@@ -283,6 +289,7 @@ func (f *Flow) Read(credentials Credentials) error {
 	return err
 }
 
+// Save function
 func (f *Flow) Save() error {
 	request, err := buildRequest("POST", f.credentials, "/flows", f)
 
@@ -295,8 +302,9 @@ func (f *Flow) Save() error {
 	return err
 }
 
+// PostUpdate function
 func (f *Flow) PostUpdate() error {
-	request, err := buildRequest("PUT", f.credentials, "/flows/"+f.EmbedId+"/metrics", f.Data)
+	request, err := buildRequest("PUT", f.credentials, "/flows/"+f.EmbedID+"/metrics", f.Data)
 
 	if err != nil {
 		return err
@@ -307,8 +315,9 @@ func (f *Flow) PostUpdate() error {
 	return err
 }
 
+// Delete function
 func (f *Flow) Delete() error {
-	request, err := buildRequest("DELETE", f.credentials, "/flows/"+f.Id, nil)
+	request, err := buildRequest("DELETE", f.credentials, "/flows/"+f.ID, nil)
 
 	if err != nil {
 		return err
@@ -319,162 +328,189 @@ func (f *Flow) Delete() error {
 	return err
 }
 
+// BarchartData function
 func (f *Flow) BarchartData() (*Barchart, bool) {
 	res, ok := f.Data.(*Barchart)
 
 	return res, ok
 }
 
+// BulletchartData function
 func (f *Flow) BulletchartData() (*Bulletchart, bool) {
 	res, ok := f.Data.(*Bulletchart)
 
 	return res, ok
 }
 
+// CountdownData function
 func (f *Flow) CountdownData() (*Countdown, bool) {
 	res, ok := f.Data.(*Countdown)
 
 	return res, ok
 }
 
+// CustomData function
 func (f *Flow) CustomData() (*Custom, bool) {
 	res, ok := f.Data.(*Custom)
 
 	return res, ok
 }
 
+// FunnelchartData function
 func (f *Flow) FunnelchartData() (*Funnelchart, bool) {
 	res, ok := f.Data.(*Funnelchart)
 
 	return res, ok
 }
 
+// GaugeData function
 func (f *Flow) GaugeData() (*Gauge, bool) {
 	res, ok := f.Data.(*Gauge)
 
 	return res, ok
 }
 
+// GraphData function
 func (f *Flow) GraphData() (*Graph, bool) {
 	res, ok := f.Data.(*Graph)
 
 	return res, ok
 }
 
+// GridData function
 func (f *Flow) GridData() (*Grid, bool) {
 	res, ok := f.Data.(*Grid)
 
 	return res, ok
 }
 
+// HistogramData function
 func (f *Flow) HistogramData() (*Histogram, bool) {
 	res, ok := f.Data.(*Histogram)
 
 	return res, ok
 }
 
+// IconData function
 func (f *Flow) IconData() (*Icon, bool) {
 	res, ok := f.Data.(*Icon)
 
 	return res, ok
 }
 
+// ImageData function
 func (f *Flow) ImageData() (*Image, bool) {
 	res, ok := f.Data.(*Image)
 
 	return res, ok
 }
 
+// LogData function
 func (f *Flow) LogData() (*Log, bool) {
 	res, ok := f.Data.(*Log)
 
 	return res, ok
 }
 
+// MapData funcion
 func (f *Flow) MapData() (*Map, bool) {
 	res, ok := f.Data.(*Map)
 
 	return res, ok
 }
 
+// MultigaugeData function
 func (f *Flow) MultigaugeData() (*Multigauge, bool) {
 	res, ok := f.Data.(*Multigauge)
 
 	return res, ok
 }
 
+// MultivalueData function
 func (f *Flow) MultivalueData() (*Multivalue, bool) {
 	res, ok := f.Data.(*Multivalue)
 
 	return res, ok
 }
 
+// PiechartData function
 func (f *Flow) PiechartData() (*Piechart, bool) {
 	res, ok := f.Data.(*Piechart)
 
 	return res, ok
 }
 
+// ScatterplotData function
 func (f *Flow) ScatterplotData() (*Scatterplot, bool) {
 	res, ok := f.Data.(*Scatterplot)
 
 	return res, ok
 }
 
+// ServersData function
 func (f *Flow) ServersData() (*Servers, bool) {
 	res, ok := f.Data.(*Servers)
 
 	return res, ok
 }
 
+// StatusData function
 func (f *Flow) StatusData() (*Status, bool) {
 	res, ok := f.Data.(*Status)
 
 	return res, ok
 }
 
+// TableData function
 func (f *Flow) TableData() (*Table, bool) {
 	res, ok := f.Data.(*Table)
 
 	return res, ok
 }
 
+// TextData function
 func (f *Flow) TextData() (*Text, bool) {
 	res, ok := f.Data.(*Text)
 
 	return res, ok
 }
 
+// TickertapeData function
 func (f *Flow) TickertapeData() (*Tickertape, bool) {
 	res, ok := f.Data.(*Tickertape)
 
 	return res, ok
 }
 
+// TimelineData function
 func (f *Flow) TimelineData() (*Timeline, bool) {
 	res, ok := f.Data.(*Timeline)
 
 	return res, ok
 }
 
+// TimeseriesData function
 func (f *Flow) TimeseriesData() (*Timeseries, bool) {
 	res, ok := f.Data.(*Timeseries)
 
 	return res, ok
 }
 
+// UpstatusData function
 func (f *Flow) UpstatusData() (*Upstatus, bool) {
 	res, ok := f.Data.(*Upstatus)
 
 	return res, ok
 }
 
+// ValueData function
 func (f *Flow) ValueData() (*Value, bool) {
 	res, ok := f.Data.(*Value)
 
 	return res, ok
 }
 
+// WaterfallData function
 func (f *Flow) WaterfallData() (*Waterfall, bool) {
 	res, ok := f.Data.(*Waterfall)
 

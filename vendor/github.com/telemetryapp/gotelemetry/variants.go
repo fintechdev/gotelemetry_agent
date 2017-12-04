@@ -1,11 +1,13 @@
 package gotelemetry
 
+// BarchartBar struct
 type BarchartBar struct {
 	Color string      `json:"color,omitempty"`
 	Label string      `json:"label,omitempty"`
 	Value interface{} `json:"value"`
 }
 
+// Barchart struct
 type Barchart struct {
 	ExpiresAt int64         `json:"expires_at,omitempty"`
 	Opacity   *float64      `json:"opacity,omitempty"`
@@ -17,9 +19,11 @@ type Barchart struct {
 	Bars      []BarchartBar `json:"bars"`
 }
 
+// Box struct
 type Box struct {
 }
 
+// BulletchartChart struct
 type BulletchartChart struct {
 	Colors     []string `json:"colors,omitempty"`
 	Label      string   `json:"label,omitempty"`
@@ -30,6 +34,7 @@ type BulletchartChart struct {
 	ValueType  string   `json:"value_type,omitempty"`
 }
 
+// Bulletchart struct
 type Bulletchart struct {
 	ExpiresAt    int64              `json:"expires_at,omitempty"`
 	Opacity      *float64           `json:"opacity,omitempty"`
@@ -37,6 +42,7 @@ type Bulletchart struct {
 	Bulletcharts []BulletchartChart `json:"bulletcharts"`
 }
 
+// Countdown struct
 type Countdown struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -46,6 +52,7 @@ type Countdown struct {
 	Time      int64    `json:"time"`
 }
 
+// Custom struct
 type Custom struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -53,12 +60,14 @@ type Custom struct {
 	Priority  int      `json:"priority,omitempty"`
 }
 
+// FunnelchartChart struct
 type FunnelchartChart struct {
 	Color string  `json:"color,omitempty"`
 	Label string  `json:"label"`
 	Value float64 `json:"value"`
 }
 
+// Funnelchart struct
 type Funnelchart struct {
 	ExpiresAt int64              `json:"expires_at,omitempty"`
 	Opacity   *float64           `json:"opacity,omitempty"`
@@ -67,6 +76,7 @@ type Funnelchart struct {
 	Values    []FunnelchartChart `json:"values"`
 }
 
+// Gauge struct
 type Gauge struct {
 	ExpiresAt   int64    `json:"expires_at,omitempty"`
 	Opacity     *float64 `json:"opacity,omitempty"`
@@ -85,12 +95,14 @@ type Gauge struct {
 	Icon        string   `json:"icon,omitempty"`
 }
 
+// GraphSeries struct
 type GraphSeries struct {
 	Color  string    `json:"color,omitempty"`
 	Label  string    `json:"label,omitempty"`
 	Values []float64 `json:"values"`
 }
 
+// Graph struct
 type Graph struct {
 	ExpiresAt int64         `json:"expires_at,omitempty"`
 	Opacity   *float64      `json:"opacity,omitempty"`
@@ -110,6 +122,7 @@ type Graph struct {
 	XLabels   []string      `json:"x_labels,omitempty"`
 }
 
+// GridData struct
 type GridData struct {
 	Fill      int    `json:"fill"`
 	Label     string `json:"label"`
@@ -118,6 +131,7 @@ type GridData struct {
 	Color     string `json:"color,omitempty"`
 }
 
+// Grid struct
 type Grid struct {
 	ExpiresAt int64        `json:"expires_at,omitempty"`
 	Opacity   *float64     `json:"opacity,omitempty"`
@@ -126,6 +140,7 @@ type Grid struct {
 	Data      [][]GridData `json:"data"`
 }
 
+// Histogram struct
 type Histogram struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -133,12 +148,14 @@ type Histogram struct {
 	Priority  int      `json:"priority,omitempty"`
 }
 
+// IconIcon struct
 type IconIcon struct {
 	Color string `json:"color"`
 	Label string `json:"label"`
 	Type  string `json:"type"`
 }
 
+// Icon struct
 type Icon struct {
 	ExpiresAt int64      `json:"expires_at,omitempty"`
 	Opacity   *float64   `json:"opacity,omitempty"`
@@ -147,6 +164,7 @@ type Icon struct {
 	Icons     []IconIcon `json:"icons"`
 }
 
+// Image struct
 type Image struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -157,12 +175,14 @@ type Image struct {
 	URL       string   `json:"url"`
 }
 
+// LogMessage struct
 type LogMessage struct {
 	Text      string `json:"text"`
 	Timestamp int64  `json:"timestamp"`
 	Color     string `json:"color,omitempty"`
 }
 
+// Log struct
 type Log struct {
 	ExpiresAt int64        `json:"expires_at,omitempty"`
 	Opacity   *float64     `json:"opacity,omitempty"`
@@ -171,17 +191,20 @@ type Log struct {
 	Messages  []LogMessage `json:"messages"`
 }
 
+// MapCoord struct
 type MapCoord struct {
 	Lat float64 `json:"lat"`
 	Lon float64 `json:"lon"`
 }
 
+// MapCoordWithZoom struct
 type MapCoordWithZoom struct {
 	Lat  float64 `json:"lat"`
 	Lon  float64 `json:"lon"`
 	Zoom int     `json:"zoom"`
 }
 
+// MapCircle struct
 type MapCircle struct {
 	Center      MapCoord `json:"center"`
 	FillColor   string   `json:"fill_color,omitempty"`
@@ -191,6 +214,7 @@ type MapCircle struct {
 	StrokeColor string   `json:"stroke_color"`
 }
 
+// MapMarker struct
 type MapMarker struct {
 	Color  string   `json:"color"`
 	Coords MapCoord `json:"coords"`
@@ -198,6 +222,7 @@ type MapMarker struct {
 	Label  string   `json:"label"`
 }
 
+// MapPolygon struct
 type MapPolygon struct {
 	FillColor   string     `json:"fill_color"`
 	Label       string     `json:"label"`
@@ -206,6 +231,7 @@ type MapPolygon struct {
 	Vertices    []MapCoord `json:"vertices"`
 }
 
+// MapPolyline struct
 type MapPolyline struct {
 	Label       string     `json:"label"`
 	LineWidth   int        `json:"line_width"`
@@ -213,19 +239,21 @@ type MapPolyline struct {
 	Vertices    []MapCoord `json:"vertices"`
 }
 
+// Map struct
 type Map struct {
 	ExpiresAt int64            `json:"expires_at,omitempty"`
 	Opacity   *float64         `json:"opacity,omitempty"`
 	Title     string           `json:"title,omitempty"`
 	Circles   []MapCircle      `json:"circles,omitempty"`
 	Coords    MapCoordWithZoom `json:"coords"`
-	MapboxId  string           `json:"mapbox_id,omitempty"`
+	MapboxID  string           `json:"mapbox_id,omitempty"`
 	Markers   []MapMarker      `json:"markers,omitempty"`
 	Polygons  []MapPolygon     `json:"polygons,omitempty"`
 	Polylines []MapPolyline    `json:"polylines,omitempty"`
 	Type      string           `json:"type,omitempty"`
 }
 
+// MultigaugeGauge struct
 type MultigaugeGauge struct {
 	Label     string  `json:"label"`
 	Value     float64 `json:"value"`
@@ -234,6 +262,7 @@ type MultigaugeGauge struct {
 	Icon      string  `json:"icon,omitempty"`
 }
 
+// Multigauge struct
 type Multigauge struct {
 	GaugeColor string            `json:"gauge_color,omitempty"`
 	ExpiresAt  int64             `json:"expires_at,omitempty"`
@@ -244,6 +273,7 @@ type Multigauge struct {
 	Gauges     []MultigaugeGauge `json:"gauges"`
 }
 
+// MultivalueValue struct
 type MultivalueValue struct {
 	Label      string  `json:"label"`
 	Value      float64 `json:"value"`
@@ -255,6 +285,7 @@ type MultivalueValue struct {
 	LabelColor string  `json:"label_color,omitempty"`
 }
 
+// Multivalue struct
 type Multivalue struct {
 	ExpiresAt int64             `json:"expires_at,omitempty"`
 	Opacity   *float64          `json:"opacity,omitempty"`
@@ -263,6 +294,7 @@ type Multivalue struct {
 	Values    []MultivalueValue `json:"values"`
 }
 
+// Piechart struct
 type Piechart struct {
 	ExpiresAt int64     `json:"expires_at,omitempty"`
 	Opacity   *float64  `json:"opacity,omitempty"`
@@ -274,6 +306,7 @@ type Piechart struct {
 	Values    []float64 `json:"values"`
 }
 
+// Scatterplot struct
 type Scatterplot struct {
 	ExpiresAt int64     `json:"expires_at,omitempty"`
 	Opacity   *float64  `json:"opacity,omitempty"`
@@ -284,27 +317,31 @@ type Scatterplot struct {
 	YLabel    string    `json:"y_label,omitempty"`
 }
 
+// Server struct
 type Server struct {
 	Labels []string  `json:"labels,omitempty"`
 	Name   string    `json:"name"`
 	Values []float64 `json:"values"`
 }
 
+// Servers struct
 type Servers struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
 	Title     string   `json:"title,omitempty"`
 	Priority  int      `json:"priority,omitempty"`
-	Orange    float64  `json:"name,omitempty"`
-	Red       float64  `json:"name,omitempty"`
+	Orange    float64  `json:"orange,omitempty"`
+	Red       float64  `json:"red,omitempty"`
 	Servers   []Server `json:"servers"`
 }
 
+// StatusItem struct
 type StatusItem struct {
 	Color string `json:"color"`
 	Label string `json:"label"`
 }
 
+// Status struct
 type Status struct {
 	ExpiresAt int64        `json:"expires_at,omitempty"`
 	Opacity   *float64     `json:"opacity,omitempty"`
@@ -313,6 +350,7 @@ type Status struct {
 	Statuses  []StatusItem `json:"statuses"`
 }
 
+// TableCell struct
 type TableCell struct {
 	Value     interface{} `json:"value,omitempty"`
 	Color     string      `json:"color,omitempty"`
@@ -322,6 +360,7 @@ type TableCell struct {
 	Sparkline []float64   `json:"sparkline,omitempty"`
 }
 
+// Table struct
 type Table struct {
 	ExpiresAt int64         `json:"expires_at,omitempty"`
 	Opacity   *float64      `json:"opacity,omitempty"`
@@ -331,6 +370,7 @@ type Table struct {
 	Cells     [][]TableCell `json:"cells"`
 }
 
+// Text struct
 type Text struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -340,6 +380,7 @@ type Text struct {
 	Text      string   `json:"text"`
 }
 
+// Tickertape struct
 type Tickertape struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -348,6 +389,7 @@ type Tickertape struct {
 	Messages  []string `json:"messages"`
 }
 
+// TimelineMessage struct
 type TimelineMessage struct {
 	From      string `json:"from"`
 	IconURL   string `json:"icon_url,omitempty"`
@@ -355,6 +397,7 @@ type TimelineMessage struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
+// Timeline struct
 type Timeline struct {
 	ExpiresAt int64             `json:"expires_at,omitempty"`
 	Opacity   *float64          `json:"opacity,omitempty"`
@@ -363,6 +406,7 @@ type Timeline struct {
 	Messages  []TimelineMessage `json:"messages"`
 }
 
+// TimeseriesSeriesMetadata struct
 type TimeseriesSeriesMetadata struct {
 	Aggregation string `json:"aggregation"`
 	Label       string `json:"label,omitempty"`
@@ -371,6 +415,7 @@ type TimeseriesSeriesMetadata struct {
 	Interpolate bool   `json:"interpolate,omitempty"`
 }
 
+// Timeseries struct
 type Timeseries struct {
 	ExpiresAt      int64                      `json:"expires_at,omitempty"`
 	Opacity        *float64                   `json:"opacity,omitempty"`
@@ -383,6 +428,7 @@ type Timeseries struct {
 	Values         []float64                  `json:"values"`
 }
 
+// Upstatus struct
 type Upstatus struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -394,6 +440,7 @@ type Upstatus struct {
 	Uptime    float64  `json:"uptime,omitempty"`
 }
 
+// Video struct
 type Video struct {
 	ExpiresAt int64    `json:"expires_at,omitempty"`
 	Opacity   *float64 `json:"opacity,omitempty"`
@@ -407,6 +454,7 @@ type Video struct {
 	WebM      string   `json:"webm,omitempty"`
 }
 
+// Value struct
 type Value struct {
 	ExpiresAt  int64       `json:"expires_at,omitempty"`
 	Opacity    *float64    `json:"opacity,omitempty"`
@@ -425,11 +473,13 @@ type Value struct {
 	LabelColor string      `json:"label_color,omitempty"`
 }
 
+// WaterfallData struct
 type WaterfallData struct {
 	Serial int           `json:"serial"`
 	Values []interface{} `json:"values"`
 }
 
+// Waterfall struct
 type Waterfall struct {
 	ExpiresAt int64           `json:"expires_at,omitempty"`
 	Opacity   *float64        `json:"opacity,omitempty"`

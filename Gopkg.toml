@@ -65,6 +65,7 @@
 [[constraint]]
   name = "github.com/telemetryapp/gotelemetry"
   branch = "master"
+  source = "github.com/fintechdev/gotelemetry"
 
 [[constraint]]
   branch = "master"

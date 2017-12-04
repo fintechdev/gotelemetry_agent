@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/telemetryapp/gotelemetry"
 	"io/ioutil"
 	"log"
 	"strings"
+
+	"github.com/fintechdev/gotelemetry"
 )
 
 func main() {
