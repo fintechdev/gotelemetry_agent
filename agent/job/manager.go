@@ -41,7 +41,7 @@ func Init(jobConfig config.Interface, errorChannel chan error, completionChannel
 		return err
 	}
 
-	credentials.SetDebugChannel(errorChannel)
+	//credentials.SetDebugChannel(errorChannel)
 
 	jobManager.credentials = credentials
 
@@ -102,7 +102,13 @@ func (m *manager) createJob(jobDescription *config.Job, wait bool) error {
 	if !ok {
 		var err error
 
-		accountStream, err = gotelemetry.NewBatchStream(m.credentials, channelTag, m.submissionInterval, m.credentials.DebugChannel)
+		accountStream, err = gotelemetry.NewBatchStream(
+			m.credentials,
+			channelTag,
+			m.submissionInterval,
+			false,
+			false,
+		)
 
 		if err != nil {
 			return err
@@ -111,7 +117,7 @@ func (m *manager) createJob(jobDescription *config.Job, wait bool) error {
 		m.accountStreams[channelTag] = accountStream
 	}
 
-	job, err := newJob(m.credentials, accountStream, jobDescription.ID, *jobDescription, m.credentials.DebugChannel, m.jobCompletionChannel, wait)
+	job, err := newJob(m.credentials, accountStream, jobDescription.ID, *jobDescription, m.jobCompletionChannel, wait)
 	if err != nil {
 		return err
 	}

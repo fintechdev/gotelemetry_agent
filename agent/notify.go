@@ -29,7 +29,7 @@ func ProcessNotificationRequest(configFile *config.File, errorChannel chan error
 		return
 	}
 
-	credentials.SetDebugChannel(errorChannel)
+	//credentials.SetDebugChannel(errorChannel)
 
 	if len(notificationChannel) > 0 {
 		channel := gotelemetry.NewChannel(notificationChannel)

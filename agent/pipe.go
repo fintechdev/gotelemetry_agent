@@ -43,7 +43,7 @@ func ProcessPipeRequest(configFile *config.File, errorChannel chan error, comple
 		return
 	}
 
-	credentials.SetDebugChannel(errorChannel)
+	//credentials.SetDebugChannel(errorChannel)
 
 	updates := map[string]interface{}{}
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	log "github.com/mgutz/logxi/v1"
 	"github.com/telemetryapp/gotelemetry"
 	"github.com/telemetryapp/gotelemetry_agent/agent/config"
 )
@@ -17,19 +18,19 @@ type Job struct {
 	id                string                   // The ID of the job
 	credentials       gotelemetry.Credentials  // The credentials used by the job
 	stream            *gotelemetry.BatchStream // The batch stream used by the job.
-	instance          *processPlugin           // The process instance
-	errorChannel      chan error               // A channel to which all errors are funneled
-	config            config.Job               // The configuration associated with the job
-	completionChannel chan string              // To be pinged when the job has finished running so that the manager knows when to quit
+	logger            log.Logger
+	instance          *processPlugin // The process instance
+	config            config.Job     // The configuration associated with the job
+	completionChannel chan string    // To be pinged when the job has finished running so that the manager knows when to quit
 }
 
 // newJob creates and starts a new Job
-func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config config.Job, errorChannel chan error, jobCompletionChannel chan string, wait bool) (*Job, error) {
+func newJob(credentials gotelemetry.Credentials, stream *gotelemetry.BatchStream, id string, config config.Job, jobCompletionChannel chan string, wait bool) (*Job, error) {
 	result := &Job{
 		id:                id,
 		credentials:       credentials,
 		stream:            stream,
-		errorChannel:      errorChannel,
+		logger:            log.New("job-" + id),
 		config:            config,
 		completionChannel: jobCompletionChannel,
 	}
@@ -73,7 +74,7 @@ func (j *Job) getOrCreateFlow(tag, variant string, template interface{}) (*gotel
 
 	if err == nil {
 		if f.Variant != variant {
-			return nil, errors.New("Flow " + f.Id + " is of type " + f.Variant + " instead of the expected " + variant)
+			return nil, errors.New("Flow " + f.ID + " is of type " + f.Variant + " instead of the expected " + variant)
 		}
 
 		return f, nil
@@ -124,11 +125,7 @@ func (j *Job) queueDataUpdate(tag string, data interface{}, updateType gotelemet
 // reportError sends a formatted error to the agent's global error log. This should be
 // a plugin's preferred error reporting method when running.
 func (j *Job) reportError(err error) {
-	actualError := errors.New(j.id + ": -> " + err.Error())
-
-	if j.errorChannel != nil {
-		j.errorChannel <- actualError
-	}
+	j.logger.Error(j.id + ": -> " + err.Error())
 }
 
 // setFlowError sets a given flow to the error state
@@ -163,27 +160,21 @@ func (j *Job) SendNotification(notification gotelemetry.Notification, channelTag
 
 // log sends data to the agent's global log. It works like log.Log
 func (j *Job) log(v ...interface{}) {
-	for _, val := range v {
-		if j.errorChannel != nil {
-			if v, ok := val.(string); ok {
-				j.errorChannel <- gotelemetry.NewLogError("%s -> %s", j.id, v)
-			} else {
-				j.errorChannel <- gotelemetry.NewLogError("%s -> %#v", j.id, val)
-			}
-		}
+	if j.logger.IsInfo() {
+		j.logger.Info(fmt.Sprint(v))
 	}
 }
 
 // logf sends a formatted string to the agent's global log. It works like log.Logf
 func (j *Job) logf(format string, v ...interface{}) {
-	if j.errorChannel != nil {
-		j.errorChannel <- gotelemetry.NewLogError("%s -> %#s", j.id, fmt.Sprintf(format, v...))
+	if j.logger.IsInfo() {
+		j.logger.Info(fmt.Sprintf(format, v))
 	}
 }
 
 // debugf sends a formatted string to the agent's debug log, if it exists. It works like log.Logf
 func (j *Job) debugf(format string, v ...interface{}) {
-	if j.errorChannel != nil {
-		j.errorChannel <- gotelemetry.NewDebugError("%s -> %#s", j.id, fmt.Sprintf(format, v...))
+	if j.logger.IsDebug() {
+		j.logger.Debug(fmt.Sprintf(format, v))
 	}
 }
